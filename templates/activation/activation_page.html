@@ -1,0 +1,1448 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ page_title }} | Airvyb{% endblock %}
+{% block body_class %}activation-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Activation Container */
+.activation-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .activation-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Activation Header */
+.activation-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.activation-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-5));
+}
+
+.activation-header i {
+    font-size: 4rem;
+    color: var(--accent-1);
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.activation-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 768px) {
+    .activation-header h1 {
+        font-size: 2rem;
+    }
+}
+
+.activation-header p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Active Membership Banner */
+.active-banner {
+    background: linear-gradient(135deg, rgba(0, 200, 83, 0.1) 0%, rgba(0, 200, 83, 0.2) 100%);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.active-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(0, 200, 83, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.active-icon i {
+    font-size: 2.5rem;
+    color: #00c853;
+}
+
+.active-content {
+    flex: 1;
+}
+
+.active-content h2 {
+    font-size: 1.8rem;
+    color: #00c853;
+    margin-bottom: 10px;
+}
+
+.active-details {
+    display: flex;
+    gap: 30px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.active-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+/* Membership Progress */
+.membership-progress {
+    margin-top: 20px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00c853, var(--accent-5));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Benefits Grid */
+.benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 1023px) {
+    .benefits-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 639px) {
+    .benefits-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.benefit-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 30px 20px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: var(--transition);
+}
+
+.benefit-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-1);
+    box-shadow: var(--shadow-accent);
+}
+
+.benefit-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 0, 110, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.benefit-icon i {
+    font-size: 2rem;
+    color: var(--accent-1);
+}
+
+.benefit-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.benefit-card p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Activation Card */
+.activation-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 35px;
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.activation-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.activation-card h2 i {
+    color: var(--accent-1);
+}
+
+.activation-subtitle {
+    color: var(--text-light);
+    margin-bottom: 25px;
+}
+
+/* Fee Display */
+.fee-display {
+    background: rgba(255, 0, 110, 0.05);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    border: 1px solid rgba(255, 0, 110, 0.1);
+}
+
+.fee-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fee-label i {
+    color: var(--accent-1);
+    font-size: 1.2rem;
+}
+
+.fee-label span {
+    color: var(--text-light);
+}
+
+.fee-amount {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent-1);
+}
+
+.fee-amount small {
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: var(--text-light);
+}
+
+/* Promo Section */
+.promo-section {
+    margin-bottom: 25px;
+}
+
+.promo-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.promo-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+.promo-input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 2px rgba(255, 0, 110, 0.1);
+}
+
+.promo-apply-btn {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.promo-apply-btn:hover {
+    background: var(--accent-1);
+    color: white;
+    border-color: var(--accent-1);
+}
+
+.promo-success {
+    background: rgba(0, 200, 83, 0.1);
+    border: 1px solid rgba(0, 200, 83, 0.2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #00c853;
+}
+
+.promo-success i {
+    font-size: 1.1rem;
+}
+
+/* Payment Methods */
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.payment-method {
+    position: relative;
+}
+
+.payment-method input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.payment-method label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.payment-method input[type="radio"]:checked + label {
+    border-color: var(--accent-1);
+    background: rgba(255, 0, 110, 0.1);
+}
+
+.payment-method label i {
+    font-size: 2rem;
+    color: var(--accent-1);
+    margin-bottom: 10px;
+}
+
+.payment-method label span {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.payment-method label small {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* Phone Input */
+.phone-input-group {
+    position: relative;
+    margin-bottom: 25px;
+    display: none;
+}
+
+.phone-input-group.active {
+    display: block;
+}
+
+.phone-input-group i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-1);
+    font-size: 1.1rem;
+}
+
+.phone-input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.phone-input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 2px rgba(255, 0, 110, 0.1);
+}
+
+/* Wallet Info */
+.wallet-info {
+    background: rgba(58, 134, 255, 0.05);
+    border: 1px solid rgba(58, 134, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    display: none;
+}
+
+.wallet-info.active {
+    display: flex;
+}
+
+.wallet-balance {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wallet-balance i {
+    color: var(--accent-3);
+    font-size: 1.2rem;
+}
+
+.wallet-balance span {
+    color: var(--text-light);
+}
+
+.wallet-balance strong {
+    color: var(--text);
+    font-size: 1.1rem;
+    margin-left: 5px;
+}
+
+.wallet-insufficient {
+    color: var(--accent-1);
+    font-weight: 600;
+}
+
+/* Payment Status */
+.payment-status {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: var(--radius);
+    display: none;
+}
+
+.payment-status.active {
+    display: block;
+}
+
+.status-processing {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-success {
+    background: rgba(0, 200, 83, 0.1);
+    border: 1px solid rgba(0, 200, 83, 0.2);
+    color: #00c853;
+}
+
+.status-failed {
+    background: rgba(255, 0, 110, 0.1);
+    border: 1px solid rgba(255, 0, 110, 0.2);
+    color: var(--accent-1);
+}
+
+.status-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+/* Action Buttons */
+.activation-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-activate {
+    flex: 1;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--accent-1) 0%, #ff3366 100%);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-activate:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+.btn-activate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-cancel {
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-1);
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+/* Success Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    padding: 40px;
+    animation: slideUp 0.4s ease;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: #00c853;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 25px;
+    animation: bounceIn 0.8s ease;
+}
+
+.success-icon i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.success-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #00c853;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.success-message {
+    color: var(--text-light);
+    text-align: center;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.membership-details {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--text-light);
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.detail-value.highlight {
+    color: var(--accent-1);
+}
+
+/* Animations */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .activation-card {
+        padding: 25px;
+    }
+    
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+    
+    .activation-actions {
+        flex-direction: column;
+    }
+    
+    .fee-display {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .active-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .active-details {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activation-container">
+    
+    {% if is_active %}
+        <!-- Active Membership Banner -->
+        <div class="active-banner">
+            <div class="active-icon">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="active-content">
+                <h2>🎉 You're an Active Member!</h2>
+                <p style="color: var(--text-light);">Thank you for being a valued member of Airvyb.</p>
+                
+                <div class="active-details">
+                    <div class="active-detail">
+                        <span class="detail-label">Membership ID</span>
+                        <span class="detail-value">{{ activation.reference }}</span>
+                    </div>
+                    <div class="active-detail">
+                        <span class="detail-label">Activated On</span>
+                        <span class="detail-value">{{ activation.activated_at|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="active-detail">
+                        <span class="detail-label">Expires On</span>
+                        <span class="detail-value">{{ activation.expires_at|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="active-detail">
+                        <span class="detail-label">Days Remaining</span>
+                        <span class="detail-value" style="color: #00c853;">{{ activation.days_remaining }} days</span>
+                    </div>
+                </div>
+                
+                <!-- Membership Progress -->
+                <div class="membership-progress">
+                    <div class="progress-header">
+                        <span>Membership Period</span>
+                        <span>{{ activation.progress_percentage|floatformat:0 }}% completed</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ activation.progress_percentage|floatformat:0 }}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Header -->
+    <div class="activation-header">
+        <i class="fas fa-crown"></i>
+        <h1>{% if is_active %}Membership Active{% else %}Activate Your Membership{% endif %}</h1>
+        <p>Join Airvyb's premium membership for exclusive investment opportunities and benefits</p>
+    </div>
+    
+    <!-- Benefits Grid -->
+    <div class="benefits-grid">
+        {% for benefit in benefits %}
+        <div class="benefit-card">
+            <div class="benefit-icon">
+                <i class="fas fa-{{ benefit.icon }}"></i>
+            </div>
+            <h3>{{ benefit.name }}</h3>
+            <p>{{ benefit.description }}</p>
+        </div>
+        {% empty %}
+        <div class="benefit-card">
+            <div class="benefit-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h3>Early Access</h3>
+            <p>Get early access to new ventures and investment opportunities</p>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-icon">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <h3>Reduced Fees</h3>
+            <p>Enjoy lower transaction fees on all investments</p>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Priority Support</h3>
+            <p>Get priority customer support and faster response times</p>
+        </div>
+        <div class="benefit-card">
+            <div class="benefit-icon">
+                <i class="fas fa-gem"></i>
+            </div>
+            <h3>Exclusive Deals</h3>
+            <p>Access to exclusive member-only ventures and deals</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if not is_active %}
+    <!-- Activation Card -->
+    <div class="activation-card">
+        <h2>
+            <i class="fas fa-lock-open"></i>
+            Unlock Membership
+        </h2>
+        <p class="activation-subtitle">Pay a one-time fee of KSH 100 to activate your lifetime membership</p>
+        
+        <!-- Fee Display -->
+        <div class="fee-display">
+            <div class="fee-label">
+                <i class="fas fa-tag"></i>
+                <span>Membership Fee</span>
+            </div>
+            <div class="fee-amount" id="feeAmount">
+                {% if discount > 0 %}
+                <span style="text-decoration: line-through; color: var(--text-light); font-size: 1.2rem;">KSH 100</span>
+                KSH {{ final_amount|floatformat:0|intcomma }}
+                <small>({{ promo.discount_percent }}% off)</small>
+                {% else %}
+                KSH 100
+                <small>one-time</small>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Promo Code -->
+        <div class="promo-section">
+            <div class="promo-input-group">
+                <input type="text" id="promoCode" class="promo-input" placeholder="Enter promo code" value="{{ promo.code|default:'' }}">
+                <button type="button" class="promo-apply-btn" onclick="applyPromoCode()">
+                    <i class="fas fa-ticket-alt"></i> Apply
+                </button>
+            </div>
+            <div id="promoMessage"></div>
+        </div>
+        
+        <!-- Payment Methods -->
+        <div class="payment-methods">
+            <div class="payment-method">
+                <input type="radio" name="payment_method" id="methodMpesa" value="mpesa" checked>
+                <label for="methodMpesa">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>M-Pesa</span>
+                    <small>Pay via mobile money</small>
+                </label>
+            </div>
+            <div class="payment-method">
+                <input type="radio" name="payment_method" id="methodWallet" value="wallet" {% if not wallet or wallet.available_balance < 100 %}disabled{% endif %}>
+                <label for="methodWallet" {% if not wallet or wallet.available_balance < 100 %}style="opacity: 0.5;"{% endif %}>
+                    <i class="fas fa-wallet"></i>
+                    <span>Wallet Balance</span>
+                    <small>
+                        {% if wallet %}
+                            Available: KSH {{ wallet.available_balance|floatformat:0|intcomma }}
+                        {% else %}
+                            No wallet
+                        {% endif %}
+                    </small>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Phone Input (M-Pesa) -->
+        <div id="mpesaInput" class="phone-input-group active">
+            <i class="fas fa-phone"></i>
+            <input type="tel" id="phone" class="phone-input" placeholder="M-Pesa number (e.g., 0712345678)" maxlength="10">
+            <small style="color: var(--text-light); display: block; margin-top: 8px;">
+                <i class="fas fa-info-circle"></i> Enter 10-digit number without spaces
+            </small>
+        </div>
+        
+        <!-- Wallet Info -->
+        <div id="walletInfo" class="wallet-info">
+            <div class="wallet-balance">
+                <i class="fas fa-wallet"></i>
+                <span>Wallet Balance:</span>
+                <strong>KSH {{ wallet.available_balance|floatformat:0|intcomma|default:'0' }}</strong>
+            </div>
+            {% if wallet and wallet.available_balance < 100 %}
+            <span class="wallet-insufficient">
+                <i class="fas fa-exclamation-triangle"></i> Insufficient balance
+            </span>
+            {% endif %}
+        </div>
+        
+        <!-- Payment Status Display -->
+        <div id="paymentStatus" class="payment-status"></div>
+        
+        <!-- Action Buttons -->
+        <div class="activation-actions">
+            <button type="button" id="activateBtn" class="btn-activate" onclick="activateMembership()">
+                <i class="fas fa-crown"></i> Activate Now
+            </button>
+            <a href="{% url 'finance:dashboard' %}" class="btn-cancel">
+                Cancel
+            </a>
+        </div>
+        
+        <!-- Loading Overlay -->
+        <div id="activationLoading" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Processing...</div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Already Active Actions -->
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'venture_list' %}" class="btn-activate" style="display: inline-flex; padding: 16px 40px; text-decoration: none;">
+            <i class="fas fa-rocket"></i> Start Investing
+        </a>
+        <a href="{% url 'finance:dashboard' %}" class="btn-cancel" style="display: inline-flex; padding: 16px 40px; text-decoration: none; margin-left: 15px;">
+            <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <h2 class="success-title">Welcome to Airvyb!</h2>
+        <p class="success-message" id="successMessage">
+            Your membership has been activated successfully.
+        </p>
+        
+        <div class="membership-details" id="membershipDetails">
+            <!-- Will be populated by JavaScript -->
+        </div>
+        
+        <div style="display: flex; gap: 15px;">
+            <button onclick="window.location.href='{% url 'venture_list' %}'" class="btn-activate" style="flex: 1;">
+                <i class="fas fa-rocket"></i> Start Investing
+            </button>
+            <button onclick="window.location.href='{% url 'finance:dashboard' %}'" class="btn-cancel" style="flex: 1;">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// STATE MANAGEMENT
+// ============================================
+let currentInvoiceId = null;
+let statusCheckInterval = null;
+let currentAmount = {{ final_amount|default:100|floatformat:0 }};
+
+// ============================================
+// PAYMENT METHOD TOGGLE
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const methodMpesa = document.getElementById('methodMpesa');
+    const methodWallet = document.getElementById('methodWallet');
+    const mpesaInput = document.getElementById('mpesaInput');
+    const walletInfo = document.getElementById('walletInfo');
+    
+    if (methodMpesa && methodWallet) {
+        methodMpesa.addEventListener('change', function() {
+            if (this.checked) {
+                mpesaInput.classList.add('active');
+                walletInfo.classList.remove('active');
+            }
+        });
+        
+        methodWallet.addEventListener('change', function() {
+            if (this.checked) {
+                mpesaInput.classList.remove('active');
+                walletInfo.classList.add('active');
+            }
+        });
+    }
+    
+    // Phone input validation
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) value = value.substring(0, 10);
+            e.target.value = value;
+        });
+    }
+});
+
+// ============================================
+// PROMO CODE FUNCTIONS
+// ============================================
+async function applyPromoCode() {
+    const code = document.getElementById('promoCode').value.trim();
+    const promoMessage = document.getElementById('promoMessage');
+    
+    if (!code) {
+        promoMessage.innerHTML = '<span style="color: var(--accent-1);">Please enter a promo code</span>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{% url 'activation:verify_promo' %}?code=${encodeURIComponent(code)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            promoMessage.innerHTML = `
+                <div class="promo-success">
+                    <i class="fas fa-check-circle"></i>
+                    Promo applied! ${data.discount_percent}% off - Pay KSH ${data.final_amount.toLocaleString()}
+                </div>
+            `;
+            
+            // Update fee display
+            const feeDisplay = document.getElementById('feeAmount');
+            feeDisplay.innerHTML = `
+                <span style="text-decoration: line-through; color: var(--text-light); font-size: 1.2rem;">KSH 100</span>
+                KSH ${data.final_amount.toLocaleString()}
+                <small>(${data.discount_percent}% off)</small>
+            `;
+            
+            currentAmount = data.final_amount;
+        } else {
+            promoMessage.innerHTML = `<span style="color: var(--accent-1);">${data.error}</span>`;
+        }
+    } catch (error) {
+        console.error('Promo error:', error);
+        promoMessage.innerHTML = '<span style="color: var(--accent-1);">Failed to verify promo code</span>';
+    }
+}
+
+// ============================================
+// ACTIVATION FUNCTION
+// ============================================
+async function activateMembership() {
+    const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+    const phone = document.getElementById('phone')?.value || '';
+    const promoCode = document.getElementById('promoCode')?.value || '';
+    const activateBtn = document.getElementById('activateBtn');
+    const loading = document.getElementById('activationLoading');
+    const paymentStatus = document.getElementById('paymentStatus');
+    
+    // Clear previous status
+    paymentStatus.style.display = 'none';
+    paymentStatus.className = 'payment-status';
+    
+    // Validate phone for M-Pesa
+    if (paymentMethod === 'mpesa') {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phone || !phoneRegex.test(phone)) {
+            showToast('Please enter a valid 10-digit M-Pesa number', 'error');
+            document.getElementById('phone').focus();
+            return;
+        }
+    }
+    
+    // Disable button and show loading
+    activateBtn.disabled = true;
+    activateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    loading.style.display = 'flex';
+    
+    try {
+        const response = await fetch("{% url 'activation:initiate' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                payment_method: paymentMethod,
+                phone: phone,
+                promo_code: promoCode
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (paymentMethod === 'mpesa') {
+                // Hide loading but keep button disabled
+                loading.style.display = 'none';
+                
+                // Show payment pending status
+                paymentStatus.className = 'payment-status status-processing active';
+                paymentStatus.innerHTML = `
+                    <div class="status-message">
+                        <i class="fas fa-clock"></i>
+                        <span>STK push sent! Please check your phone and enter PIN to complete payment.</span>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.9rem;">
+                        Waiting for payment confirmation...
+                    </div>
+                `;
+                
+                showToast('STK push sent! Check your phone to complete payment.', 'success');
+                
+                // Store invoice ID for status checking
+                currentInvoiceId = data.transaction.invoice_id;
+                
+                // Start polling for status
+                startStatusPolling();
+            } else {
+                // Wallet payment - immediate success
+                loading.style.display = 'none';
+                showSuccessModal(data.activation);
+                
+                // Re-enable button
+                activateBtn.disabled = false;
+                activateBtn.innerHTML = '<i class="fas fa-crown"></i> Activate Now';
+            }
+        } else {
+            loading.style.display = 'none';
+            activateBtn.disabled = false;
+            activateBtn.innerHTML = '<i class="fas fa-crown"></i> Activate Now';
+            
+            // Show error status
+            paymentStatus.className = 'payment-status status-failed active';
+            paymentStatus.innerHTML = `
+                <div class="status-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${data.error || 'Activation failed'}</span>
+                </div>
+            `;
+            
+            showToast(data.error || 'Activation failed', 'error');
+        }
+    } catch (error) {
+        console.error('Activation error:', error);
+        loading.style.display = 'none';
+        activateBtn.disabled = false;
+        activateBtn.innerHTML = '<i class="fas fa-crown"></i> Activate Now';
+        
+        // Show error status
+        paymentStatus.className = 'payment-status status-failed active';
+        paymentStatus.innerHTML = `
+            <div class="status-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>An error occurred. Please try again.</span>
+            </div>
+        `;
+        
+        showToast('An error occurred. Please try again.', 'error');
+    }
+}
+
+// ============================================
+// STATUS POLLING (for M-Pesa)
+// ============================================
+function startStatusPolling() {
+    // Clear any existing interval
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+    
+    const paymentStatus = document.getElementById('paymentStatus');
+    let attempts = 0;
+    const maxAttempts = 40; // Check for about 2 minutes (40 * 3 seconds)
+    
+    statusCheckInterval = setInterval(async () => {
+        attempts++;
+        
+        try {
+            // Build URL with invoice_id if available
+            let url = "{% url 'activation:status' %}";
+            if (currentInvoiceId) {
+                url += `?invoice_id=${currentInvoiceId}`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update status based on response
+                if (data.is_active) {
+                    // Payment successful
+                    clearInterval(statusCheckInterval);
+                    
+                    paymentStatus.className = 'payment-status status-success active';
+                    paymentStatus.innerHTML = `
+                        <div class="status-message">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Payment confirmed! Your membership is now active.</span>
+                        </div>
+                    `;
+                    
+                    // Show success modal
+                    setTimeout(() => {
+                        showSuccessModal(data);
+                    }, 1000);
+                    
+                } else if (data.status === 'failed') {
+                    // Payment failed
+                    clearInterval(statusCheckInterval);
+                    
+                    paymentStatus.className = 'payment-status status-failed active';
+                    paymentStatus.innerHTML = `
+                        <div class="status-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>${data.failed_reason || 'Payment failed'}</span>
+                        </div>
+                    `;
+                    
+                    // Re-enable activate button
+                    document.getElementById('activateBtn').disabled = false;
+                    document.getElementById('activateBtn').innerHTML = '<i class="fas fa-crown"></i> Try Again';
+                    
+                } else if (data.status === 'processing') {
+                    // Still processing - update message
+                    paymentStatus.innerHTML = `
+                        <div class="status-message">
+                            <i class="fas fa-clock"></i>
+                            <span>Processing payment... (${attempts}/${maxAttempts})</span>
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('Status check error:', error);
+        }
+        
+        // Stop after max attempts
+        if (attempts >= maxAttempts) {
+            clearInterval(statusCheckInterval);
+            
+            paymentStatus.className = 'payment-status status-failed active';
+            paymentStatus.innerHTML = `
+                <div class="status-message">
+                    <i class="fas fa-clock"></i>
+                    <span>Payment timeout. Please check transaction status in your dashboard.</span>
+                </div>
+            `;
+            
+            // Re-enable activate button
+            document.getElementById('activateBtn').disabled = false;
+            document.getElementById('activateBtn').innerHTML = '<i class="fas fa-crown"></i> Try Again';
+        }
+    }, 3000); // Check every 3 seconds
+}
+
+// ============================================
+// SUCCESS MODAL
+// ============================================
+function showSuccessModal(activationData) {
+    const modal = document.getElementById('successModal');
+    const details = document.getElementById('membershipDetails');
+    
+    // Format dates
+    let activatedDate = 'Just now';
+    let expiresDate = '';
+    
+    if (activationData.activated_at) {
+        activatedDate = new Date(activationData.activated_at).toLocaleDateString('en-KE', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+    
+    if (activationData.expires_at) {
+        expiresDate = new Date(activationData.expires_at).toLocaleDateString('en-KE', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } else {
+        // Default to 1 year from now
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        expiresDate = nextYear.toLocaleDateString('en-KE', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+    
+    details.innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Membership ID:</span>
+            <span class="detail-value highlight">${activationData.reference || 'ACT-' + Date.now()}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Activated On:</span>
+            <span class="detail-value">${activatedDate}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Valid Until:</span>
+            <span class="detail-value">${expiresDate}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Amount Paid:</span>
+            <span class="detail-value highlight">KSH ${currentAmount.toLocaleString()}</span>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Stop any ongoing polling
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        statusCheckInterval = null;
+    }
+}
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-left: 4px solid ${type === 'success' ? '#00c853' : type === 'error' ? 'var(--accent-1)' : 'var(--accent-3)'};
+        border-radius: 12px;
+        padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        color: var(--text);
+    `;
+    
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+               style="font-size: 1.2rem; color: ${type === 'success' ? '#00c853' : type === 'error' ? 'var(--accent-1)' : 'var(--accent-3)'};"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ============================================
+// MODAL CLOSE HANDLERS
+// ============================================
+window.onclick = function(event) {
+    const modal = document.getElementById('successModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('successModal');
+        if (modal.style.display === 'block') {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+});
+
+// ============================================
+// CLEANUP ON PAGE UNLOAD
+// ============================================
+window.addEventListener('beforeunload', function() {
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+});
+</script>
+
+<style>
+/* Add toast animation */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+</style>
+{% endblock %}

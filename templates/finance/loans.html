@@ -1,0 +1,1467 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Loans & Borrowing | Airvyb{% endblock %}
+{% block body_class %}loans-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Loans Container */
+.loans-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .loans-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Loans Header */
+.loans-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .loans-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.loans-title h1 {
+    font-size: 1.75rem;
+    margin-bottom: 5px;
+    background: linear-gradient(to right, #fff 30%, var(--accent-5) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .loans-title h1 {
+        font-size: 2.2rem;
+    }
+}
+
+.loans-title p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.loans-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Eligibility Card */
+.eligibility-card {
+    background: linear-gradient(135deg, rgba(255, 190, 11, 0.1) 0%, rgba(255, 0, 110, 0.1) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 190, 11, 0.2);
+    padding: 25px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .eligibility-card {
+        padding: 30px;
+    }
+}
+
+.eligibility-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.eligibility-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 190, 11, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.eligibility-icon i {
+    font-size: 1.8rem;
+    color: var(--accent-5);
+}
+
+.eligibility-text h3 {
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.eligibility-text p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+.eligibility-amount {
+    text-align: right;
+}
+
+.eligibility-amount .label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.eligibility-amount .value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent-5);
+    line-height: 1;
+}
+
+.eligibility-amount .sub {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+/* Loans Grid */
+.loans-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+}
+
+@media (min-width: 1024px) {
+    .loans-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+}
+
+/* Loans Card */
+.loans-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .loans-card {
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+}
+
+.loans-card:last-child {
+    margin-bottom: 0;
+}
+
+.card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .card-title {
+        font-size: 1.5rem;
+    }
+}
+
+.card-title i {
+    color: var(--accent-5);
+    font-size: 1.4rem;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Loan Items */
+.loan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.loan-item {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    transition: var(--transition);
+}
+
+.loan-item:hover {
+    border-color: var(--accent-5);
+    background: rgba(255, 190, 11, 0.05);
+}
+
+.loan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.loan-reference {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    font-family: monospace;
+}
+
+.loan-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.loan-badge.pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.loan-badge.approved {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.loan-badge.active {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.loan-badge.repaid {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+}
+
+.loan-badge.rejected {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.loan-details {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 15px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 639px) {
+    .loan-details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.loan-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    color: var(--text-light);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.detail-value.highlight {
+    color: var(--accent-5);
+}
+
+.loan-progress {
+    margin-bottom: 15px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.progress-label {
+    color: var(--text-light);
+}
+
+.progress-percent {
+    font-weight: 700;
+    color: var(--accent-5);
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-5), var(--accent-1));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.loan-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.loan-meta {
+    display: flex;
+    gap: 20px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.loan-meta i {
+    color: var(--accent-5);
+    margin-right: 5px;
+}
+
+.loan-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Loan Application Form */
+.loan-application-form {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent-5);
+    box-shadow: 0 0 0 2px rgba(255, 190, 11, 0.2);
+}
+
+.form-control:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.input-group:focus-within {
+    border-color: var(--accent-5);
+    box-shadow: 0 0 0 2px rgba(255, 190, 11, 0.2);
+}
+
+.input-group-text {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.input-group .form-control {
+    border: none;
+    box-shadow: none;
+}
+
+.input-group .form-control:focus {
+    box-shadow: none;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* Loan Calculator */
+.loan-calculator {
+    background: linear-gradient(135deg, rgba(255, 190, 11, 0.05) 0%, rgba(255, 0, 110, 0.05) 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.calculator-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calculator-item:last-child {
+    border-bottom: none;
+}
+
+.calculator-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.calculator-value {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.calculator-value.highlight {
+    color: var(--accent-5);
+    font-size: 1.2rem;
+}
+
+/* Quick Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--accent-5);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.empty-state p {
+    margin-bottom: 30px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Info Box */
+.info-box {
+    background: rgba(58, 134, 255, 0.05);
+    border: 1px solid rgba(58, 134, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+}
+
+.info-box i {
+    color: var(--accent-3);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.info-content {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .eligibility-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .eligibility-info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .eligibility-amount {
+        text-align: center;
+    }
+    
+    .loan-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .loan-actions {
+        width: 100%;
+    }
+    
+    .loan-actions .btn {
+        flex: 1;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="loans-container">
+    <!-- Loans Header -->
+    <div class="loans-header">
+        <div class="loans-title">
+            <h1>Loans & Borrowing</h1>
+            <p>Access flexible financing to grow your investments</p>
+        </div>
+        <div class="loans-actions">
+            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Finance
+            </a>
+        </div>
+    </div>
+    
+    <!-- Eligibility Card -->
+    <div class="eligibility-card">
+        <div class="eligibility-info">
+            <div class="eligibility-icon">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <div class="eligibility-text">
+                <h3>Your Loan Eligibility</h3>
+                <p>Based on your investment history and wallet activity</p>
+            </div>
+        </div>
+        <div class="eligibility-amount">
+            <div class="label">Maximum Loan Amount</div>
+            <div class="value">Ksh {{ max_eligible|floatformat:0|intcomma }}</div>
+            <div class="sub">Interest rates from 8% - 12% p.a.</div>
+        </div>
+    </div>
+    
+    <!-- Loans Grid -->
+    <div class="loans-grid">
+        <!-- Left Column - Active Loans & History -->
+        <div class="loans-column">
+            <!-- Active Loans -->
+            <div class="loans-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-clock"></i> Active Loans
+                    </h2>
+                    <div class="card-actions">
+                        <span class="badge" style="background: rgba(255,190,11,0.1); color: var(--accent-5); padding: 8px 16px;">
+                            {{ active_loans.count }} Active
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="loan-list">
+                    {% if active_loans %}
+                        {% for loan in active_loans %}
+                        <div class="loan-item">
+                            <div class="loan-header">
+                                <span class="loan-reference">{{ loan.reference }}</span>
+                                <span class="loan-badge {{ loan.status }}">{{ loan.get_status_display|upper }}</span>
+                            </div>
+                            
+                            <div class="loan-details">
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Amount</span>
+                                    <span class="detail-value highlight">Ksh {{ loan.amount_approved|floatformat:0|intcomma }}</span>
+                                </div>
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Outstanding</span>
+                                    <span class="detail-value">Ksh {{ loan.outstanding_balance|floatformat:0|intcomma }}</span>
+                                </div>
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Interest</span>
+                                    <span class="detail-value">{{ loan.interest_rate }}% p.a.</span>
+                                </div>
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Monthly</span>
+                                    <span class="detail-value">Ksh {{ loan.monthly_installment|floatformat:0|intcomma }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="loan-progress">
+                                <div class="progress-header">
+                                    <span class="progress-label">Repayment Progress</span>
+                                    <span class="progress-percent">{{ loan.progress_percentage|floatformat:1 }}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ loan.progress_percentage|floatformat:0 }}%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="loan-footer">
+                                <div class="loan-meta">
+                                    <span><i class="fas fa-calendar-alt"></i> Taken: {{ loan.disbursed_at|date:"M d, Y" }}</span>
+                                    <span><i class="fas fa-hourglass-half"></i> {{ loan.tenure_months }} months</span>
+                                </div>
+                                <div class="loan-actions">
+                                    <a href="{% url 'finance:loan_detail' loan.id %}" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-eye"></i> Details
+                                    </a>
+                                    {% if loan.status == 'active' %}
+                                    <button onclick="openRepayModal({{ loan.id }}, '{{ loan.reference }}', {{ loan.outstanding_balance }})" 
+                                            class="btn btn-sm btn-primary">
+                                        <i class="fas fa-credit-card"></i> Repay
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            <h3>No Active Loans</h3>
+                            <p>You don't have any active loans at the moment. Apply for a loan to get started.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Loan History -->
+            <div class="loans-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-history"></i> Loan History
+                    </h2>
+                </div>
+                
+                <div class="loan-list">
+                    {% if all_loans %}
+                        {% for loan in all_loans|slice:":5" %}
+                        <div class="loan-item" style="opacity: 0.8;">
+                            <div class="loan-header">
+                                <span class="loan-reference">{{ loan.reference }}</span>
+                                <span class="loan-badge {{ loan.status }}">{{ loan.get_status_display|upper }}</span>
+               templates/loans/finance/loans.html             </div>
+                            
+                            <div class="loan-details">
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Amount</span>
+                                    <span class="detail-value">Ksh {{ loan.amount_approved|default:loan.amount_requested|floatformat:0|intcomma }}</span>
+                                </div>
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Applied</span>
+                                    <span class="detail-value">{{ loan.applied_at|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Status</span>
+                                    <span class="detail-value">{{ loan.get_status_display }}</span>
+                                </div>
+                                <div class="loan-detail-item">
+                                    <span class="detail-label">Completed</span>
+                                    <span class="detail-value">{{ loan.completed_at|date:"M d, Y"|default:"-" }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="loan-footer">
+                                <div class="loan-meta">
+                                    <span><i class="fas fa-tag"></i> {{ loan.get_purpose_display }}</span>
+                                </div>
+                                <div class="loan-actions">
+                                    <a href="{% url 'finance:loan_detail' loan.id %}" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if all_loans.count > 5 %}
+                        <div style="text-align: center; margin-top: 20px;">
+                            <a href="#" class="btn btn-outline">View All Loans</a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-history"></i>
+                            <h3>No Loan History</h3>
+                            <p>You haven't taken any loans yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column - Apply for Loan -->
+        <div class="loans-column">
+            <div class="loans-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-file-invoice"></i> Apply for Loan
+                    </h2>
+                </div>
+                
+                {% if is_eligible %}
+                <div class="loan-application-form">
+                    <form id="loanApplicationForm">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="purpose">Purpose of Loan</label>
+                            <select id="purpose" name="purpose" class="form-control" required>
+                                <option value="">Select purpose</option>
+                                {% for purpose_value, purpose_label in loan_purposes %}
+                                <option value="{{ purpose_value }}">{{ purpose_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="amount">Loan Amount (KES)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Ksh</span>
+                                    <input type="number" 
+                                           id="amount" 
+                                           name="amount" 
+                                           class="form-control" 
+                                           placeholder="Enter amount"
+                                           min="10000"
+                                           max="{{ max_eligible }}"
+                                           step="1000"
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tenure">Tenure (Months)</label>
+                                <select id="tenure" name="tenure_months" class="form-control" required>
+                                    <option value="6">6 months</option>
+                                    <option value="12" selected>12 months</option>
+                                    <option value="18">18 months</option>
+                                    <option value="24">24 months</option>
+                                    <option value="36">36 months</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="repayment_frequency">Repayment Frequency</label>
+                            <select id="repayment_frequency" name="repayment_frequency" class="form-control" required>
+                                {% for freq_value, freq_label in repayment_frequencies %}
+                                <option value="{{ freq_value }}" {% if freq_value == 'monthly' %}selected{% endif %}>{{ freq_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Loan Calculator -->
+                        <div class="loan-calculator" id="loanCalculator" style="display: none;">
+                            <h4 style="margin-bottom: 15px; color: var(--accent-5);">Loan Summary</h4>
+                            
+                            <div class="calculator-item">
+                                <span class="calculator-label">Loan Amount</span>
+                                <span class="calculator-value" id="calcAmount">Ksh 0</span>
+                            </div>
+                            <div class="calculator-item">
+                                <span class="calculator-label">Interest Rate</span>
+                                <span class="calculator-value" id="calcInterestRate">0% p.a.</span>
+                            </div>
+                            <div class="calculator-item">
+                                <span class="calculator-label">Tenure</span>
+                                <span class="calculator-value" id="calcTenure">0 months</span>
+                            </div>
+                            <div class="calculator-item">
+                                <span class="calculator-label">Total Interest</span>
+                                <span class="calculator-value" id="calcTotalInterest">Ksh 0</span>
+                            </div>
+                            <div class="calculator-item">
+                                <span class="calculator-label">Total Repayable</span>
+                                <span class="calculator-value highlight" id="calcTotalRepayable">Ksh 0</span>
+                            </div>
+                            <div class="calculator-item">
+                                <span class="calculator-label">Monthly Installment</span>
+                                <span class="calculator-value" id="calcMonthlyInstallment">Ksh 0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <div class="info-content">
+                                <strong>Loan Terms:</strong> Interest rates are calculated based on loan amount and tenure. 
+                                Approved loans are disbursed instantly to your wallet. Repayments are automatically deducted monthly.
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block" style="width: 100%; padding: 16px; margin-top: 20px;" id="applyLoanBtn">
+                            <i class="fas fa-paper-plane"></i> Submit Application
+                        </button>
+                    </form>
+                    
+                    <div id="loanLoading" style="display: none; text-align: center; padding: 30px;">
+                        <div class="loading-spinner" style="margin: 0 auto 15px;"></div>
+                        <div style="color: var(--text-light);">Processing your application...</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h3>Not Eligible Yet</h3>
+                    <p>To qualify for a loan, you need at least Ksh 10,000 in total deposits or investments.</p>
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'finance:deposit' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> Add Funds
+                        </a>
+                        <a href="{% url 'venture_list' %}" class="btn btn-outline" style="margin-left: 10px;">
+                            <i class="fas fa-search"></i> Explore Ventures
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="loans-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Loan Statistics
+                    </h2>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ summary.total_loans_taken|floatformat:0|intcomma }}</div>
+                        <div class="stat-label">Total Borrowed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ summary.total_loans_repaid|floatformat:0|intcomma }}</div>
+                        <div class="stat-label">Total Repaid</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ summary.active_loans_count }}</div>
+                        <div class="stat-label">Active Loans</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="color: var(--text-light);">Credit Score</span>
+                        <span style="font-weight: 700; color: var(--accent-5);">750</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-light);">Loan Success Rate</span>
+                        <span style="font-weight: 700; color: #00c853;">100%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Repayment Modal -->
+<div id="repayModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-credit-card"></i> Repay Loan</h3>
+            <button type="button" class="close-modal" onclick="closeRepayModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="repayLoanInfo" style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.02); border-radius: var(--radius);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-light);">Loan Reference:</span>
+                    <span style="font-weight: 600;" id="repayLoanReference"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-light);">Outstanding Balance:</span>
+                    <span style="font-weight: 700; color: var(--accent-5);" id="repayOutstandingBalance"></span>
+                </div>
+            </div>
+            
+            <form id="repayForm">
+                {% csrf_token %}
+                <input type="hidden" id="repayLoanId" name="loan_id">
+                
+                <div class="form-group">
+                    <label>Repayment Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Ksh</span>
+                        <input type="number" 
+                               id="repayAmount" 
+                               name="amount" 
+                               class="form-control" 
+                               placeholder="Enter amount" 
+                               min="100" 
+                               step="100"
+                               required>
+                    </div>
+                    <div class="form-text">Available balance: Ksh <span id="availableBalance">{{ wallet.available_balance|floatformat:0|intcomma }}</span></div>
+                </div>
+                
+                <div class="quick-amounts" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px;">
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(1000)">1,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(5000)">5,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(10000)">10,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(25000)">25,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(50000)">50,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setFullRepayment()">FULL</button>
+                </div>
+                
+                <div class="form-actions" style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closeRepayModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;" id="repaySubmitBtn">
+                        <i class="fas fa-check-circle"></i> Confirm Repayment
+                    </button>
+                </div>
+            </form>
+            
+            <div id="repayLoading" style="display: none; text-align: center; padding: 30px;">
+                <div class="loading-spinner" style="margin: 0 auto 15px;"></div>
+                <div style="color: var(--text-light);">Processing repayment...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+.modal-header {
+    padding: 25px;
+    background: linear-gradient(to right, rgba(255, 190, 11, 0.1), rgba(255, 0, 110, 0.1));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #fff, var(--accent-5));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-modal:hover {
+    background: var(--accent-5);
+    color: white;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-5);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Quick Amount Buttons */
+.quick-amount-btn {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.quick-amount-btn:hover {
+    background: rgba(255, 190, 11, 0.1);
+    border-color: var(--accent-5);
+    color: var(--accent-5);
+}
+
+/* Responsive */
+@media (max-width: 639px) {
+    .quick-amounts {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+</style>
+
+<script>
+// ============================================
+// LOAN CALCULATOR
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.getElementById('amount');
+    const tenureSelect = document.getElementById('tenure');
+    const purposeSelect = document.getElementById('purpose');
+    const calculator = document.getElementById('loanCalculator');
+    
+    if (amountInput && tenureSelect) {
+        // Calculate loan on input change
+        function calculateLoan() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const tenure = parseInt(tenureSelect.value) || 12;
+            
+            if (amount >= 10000) {
+                // Determine interest rate based on amount
+                let interestRate;
+                if (amount <= 50000) {
+                    interestRate = 12.0;
+                } else if (amount <= 200000) {
+                    interestRate = 10.0;
+                } else {
+                    interestRate = 8.0;
+                }
+                
+                // Calculate repayments
+                const totalInterest = amount * (interestRate / 100) * (tenure / 12);
+                const totalRepayable = amount + totalInterest;
+                const monthlyInstallment = totalRepayable / tenure;
+                
+                // Update calculator display
+                document.getElementById('calcAmount').textContent = 'Ksh ' + amount.toLocaleString();
+                document.getElementById('calcInterestRate').textContent = interestRate + '% p.a.';
+                document.getElementById('calcTenure').textContent = tenure + ' months';
+                document.getElementById('calcTotalInterest').textContent = 'Ksh ' + totalInterest.toLocaleString(undefined, {maximumFractionDigits: 0});
+                document.getElementById('calcTotalRepayable').textContent = 'Ksh ' + totalRepayable.toLocaleString(undefined, {maximumFractionDigits: 0});
+                document.getElementById('calcMonthlyInstallment').textContent = 'Ksh ' + monthlyInstallment.toLocaleString(undefined, {maximumFractionDigits: 0});
+                
+                // Show calculator
+                calculator.style.display = 'block';
+            } else {
+                calculator.style.display = 'none';
+            }
+        }
+        
+        amountInput.addEventListener('input', calculateLoan);
+        tenureSelect.addEventListener('change', calculateLoan);
+    }
+});
+
+// ============================================
+// LOAN APPLICATION
+// ============================================
+document.getElementById('loanApplicationForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = document.getElementById('applyLoanBtn');
+    const loading = document.getElementById('loanLoading');
+    
+    // Validate amount
+    const amount = parseFloat(document.getElementById('amount').value);
+    const maxAmount = parseFloat('{{ max_eligible }}');
+    
+    if (amount < 10000) {
+        showToast('Minimum loan amount is KES 10,000', 'error');
+        return;
+    }
+    
+    if (amount > maxAmount) {
+        showToast(`Maximum loan amount is KES ${maxAmount.toLocaleString()}`, 'error');
+        return;
+    }
+    
+    // Show loading
+    form.style.display = 'none';
+    loading.style.display = 'block';
+    submitBtn.disabled = true;
+    
+    try {
+        const formData = new FormData(form);
+        const data = {
+            amount: amount,
+            purpose: formData.get('purpose'),
+            tenure_months: parseInt(formData.get('tenure_months')),
+            repayment_frequency: formData.get('repayment_frequency')
+        };
+        
+        const response = await fetch("{% url 'finance:apply_loan' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Loan application approved and disbursed!', 'success');
+            
+            // Redirect to loan detail page
+            setTimeout(() => {
+                window.location.href = `/finance/loans/${result.loan.id}/`;
+            }, 1500);
+        } else {
+            throw new Error(result.error || 'Loan application failed');
+        }
+        
+    } catch (error) {
+        console.error('Loan application error:', error);
+        showToast(error.message, 'error');
+        
+        // Restore form
+        form.style.display = 'block';
+        loading.style.display = 'none';
+        submitBtn.disabled = false;
+    }
+});
+
+// ============================================
+// LOAN REPAYMENT FUNCTIONS
+// ============================================
+let currentLoanId = null;
+let currentOutstandingBalance = 0;
+
+function openRepayModal(loanId, reference, outstandingBalance) {
+    currentLoanId = loanId;
+    currentOutstandingBalance = outstandingBalance;
+    
+    document.getElementById('repayLoanId').value = loanId;
+    document.getElementById('repayLoanReference').textContent = reference;
+    document.getElementById('repayOutstandingBalance').textContent = 'Ksh ' + outstandingBalance.toLocaleString();
+    document.getElementById('repayAmount').value = '';
+    
+    document.getElementById('repayModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRepayModal() {
+    document.getElementById('repayModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function setRepayAmount(amount) {
+    const input = document.getElementById('repayAmount');
+    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'));
+    input.value = Math.min(amount, maxAmount);
+}
+
+function setFullRepayment() {
+    const input = document.getElementById('repayAmount');
+    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'));
+    input.value = maxAmount;
+}
+
+// Repay form submission
+document.getElementById('repayForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const loanId = document.getElementById('repayLoanId').value;
+    const amount = parseFloat(document.getElementById('repayAmount').value);
+    const submitBtn = document.getElementById('repaySubmitBtn');
+    const form = this;
+    const loading = document.getElementById('repayLoading');
+    
+    if (!amount || amount < 100) {
+        showToast('Please enter a valid amount (minimum KES 100)', 'error');
+        return;
+    }
+    
+    if (amount > currentOutstandingBalance) {
+        showToast('Amount exceeds outstanding balance', 'error');
+        return;
+    }
+    
+    if (amount > parseFloat('{{ wallet.available_balance }}')) {
+        showToast('Insufficient balance', 'error');
+        return;
+    }
+    
+    // Show loading
+    form.style.display = 'none';
+    loading.style.display = 'block';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`/finance/loans/${loanId}/repay/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ amount: amount })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Repayment successful!', 'success');
+            closeRepayModal();
+            
+            // Refresh page after 1.5 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            throw new Error(data.error || 'Repayment failed');
+        }
+        
+    } catch (error) {
+        console.error('Repayment error:', error);
+        showToast(error.message, 'error');
+        
+        // Restore form
+        form.style.display = 'block';
+        loading.style.display = 'none';
+        submitBtn.disabled = false;
+    }
+});
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-left: 4px solid ${type === 'success' ? '#00c853' : type === 'error' ? '#ff4444' : 'var(--accent-3)'};
+        border-radius: 12px;
+        padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 99999;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+               style="font-size: 1.2rem; color: ${type === 'success' ? '#00c853' : type === 'error' ? '#ff4444' : 'var(--accent-3)'};"></i>
+            <span style="flex: 1; font-size: 0.95rem; color: var(--text);">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('repayModal');
+    if (event.target === modal) {
+        closeRepayModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('repayModal');
+        if (modal.style.display === 'block') {
+            closeRepayModal();
+        }
+    }
+});
+</script>
+{% endblock %}

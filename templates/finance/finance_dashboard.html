@@ -1,0 +1,1586 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Finance Dashboard | Airvyb{% endblock %}
+{% block body_class %}finance-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Finance Container */
+.finance-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .finance-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Finance Header */
+.finance-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .finance-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.finance-title h1 {
+    font-size: 1.75rem;
+    margin-bottom: 5px;
+    background: linear-gradient(to right, #fff 30%, #00c853 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .finance-title h1 {
+        font-size: 2.2rem;
+    }
+}
+
+.finance-title p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.finance-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+    .finance-actions {
+        width: 100%;
+    }
+    
+    .finance-actions .btn {
+        flex: 1;
+    }
+}
+
+/* Wallet Overview */
+.wallet-overview {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .wallet-overview {
+        padding: 35px;
+        margin-bottom: 40px;
+    }
+}
+
+.wallet-overview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #00c853, #00e676);
+}
+
+.wallet-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+    position: relative;
+    z-index: 2;
+}
+
+@media (min-width: 768px) {
+    .wallet-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 30px;
+    }
+}
+
+.wallet-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.wallet-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.wallet-label i {
+    color: #00c853;
+    font-size: 1rem;
+}
+
+.wallet-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 5px;
+    line-height: 1;
+}
+
+@media (min-width: 768px) {
+    .wallet-value {
+        font-size: 2rem;
+    }
+}
+
+.wallet-sub {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.wallet-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.change-positive {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.change-negative {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+/* Finance Grid */
+.finance-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+}
+
+@media (min-width: 1024px) {
+    .finance-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+}
+
+/* Finance Cards */
+.finance-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .finance-card {
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+}
+
+.finance-card:last-child {
+    margin-bottom: 0;
+}
+
+.card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .card-title {
+        font-size: 1.5rem;
+    }
+}
+
+.card-title i {
+    color: #00c853;
+    font-size: 1.4rem;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.card-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.card-action-btn:hover {
+    background: #00c853;
+    color: white;
+    border-color: #00c853;
+}
+
+/* Transaction List */
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    gap: 16px;
+}
+
+@media (min-width: 768px) {
+    .transaction-item {
+        padding: 20px;
+        gap: 20px;
+    }
+}
+
+.transaction-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(0, 200, 83, 0.2);
+    transform: translateX(3px);
+}
+
+.transaction-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.transaction-icon.deposit {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.transaction-icon.withdrawal {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.transaction-icon.investment {
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--accent-1);
+}
+
+.transaction-icon.dividend {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.transaction-icon.contribution {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.transaction-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.transaction-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.transaction-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.transaction-reference {
+    color: #00c853;
+    font-size: 0.75rem;
+    font-family: monospace;
+    background: rgba(0, 200, 83, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.transaction-date {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.transaction-amount {
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.transaction-amount.deposit,
+.transaction-amount.dividend,
+.transaction-amount.contribution {
+    color: #00c853;
+}
+
+.transaction-amount.withdrawal,
+.transaction-amount.investment {
+    color: var(--accent-1);
+}
+
+.transaction-status {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.status-completed {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.status-pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.status-processing {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+/* Contribution Summary Cards */
+.contribution-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.contribution-stat {
+    background: rgba(0, 200, 83, 0.05);
+    border: 1px solid rgba(0, 200, 83, 0.1);
+    border-radius: var(--radius);
+    padding: 15px;
+    text-align: center;
+}
+
+.contribution-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #00c853;
+    line-height: 1.2;
+    margin-bottom: 5px;
+}
+
+.contribution-stat-label {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* Loan Item */
+.loan-item {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 15px;
+}
+
+.loan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.loan-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.loan-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.loan-badge.active {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.loan-badge.approved {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.loan-progress {
+    margin-bottom: 15px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+}
+
+.progress-label {
+    color: var(--text-light);
+}
+
+.progress-percent {
+    font-weight: 700;
+    color: #00c853;
+}
+
+.progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00c853, #00e676);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.loan-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: #00c853;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Quick Stats */
+.finance-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+@media (min-width: 768px) {
+    .finance-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.stat-card-small {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-icon-small {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.stat-icon-small.blue {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.stat-icon-small.green {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.stat-icon-small.orange {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.stat-content-small {
+    flex: 1;
+}
+
+.stat-label-small {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.stat-value-small {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 639px) {
+    .transaction-item {
+        flex-wrap: wrap;
+    }
+    
+    .transaction-status {
+        margin-left: 64px;
+    }
+    
+    .wallet-grid {
+        gap: 20px;
+    }
+    
+    .wallet-value {
+        font-size: 1.5rem;
+    }
+    
+    .contribution-summary {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="finance-container">
+    <!-- Finance Header -->
+    <div class="finance-header">
+        <div class="finance-title">
+            <h1>Finance Dashboard</h1>
+            <p>Manage your wallet, monthly contributions, withdrawals, and loans</p>
+        </div>
+        <div class="finance-actions">
+            <a href="{% url 'finance:deposit' %}" class="btn btn-primary">
+                <i class="fas fa-calendar-plus"></i> Monthly Contribution
+            </a>
+            <a href="{% url 'finance:withdrawal' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-up"></i> Withdraw
+            </a>
+            <a href="{% url 'finance:loans' %}" class="btn btn-outline">
+                <i class="fas fa-hand-holding-usd"></i> Borrow
+            </a>
+        </div>
+    </div>
+    
+    <!-- Wallet Overview -->
+    <div class="wallet-overview">
+        <div class="wallet-grid">
+            <div class="wallet-item">
+                <span class="wallet-label">
+                    <i class="fas fa-wallet"></i> Available
+                </span>
+                <div class="wallet-value">Ksh {{ wallet.available_balance|floatformat:0|intcomma }}</div>
+                <span class="wallet-sub">This Year's Contributions</span>
+                {% if wallet.balance > wallet.available_balance %}
+                <span class="wallet-change change-positive">
+                    <i class="fas fa-lock"></i> Ksh {{ wallet.locked_balance|floatformat:0|intcomma }} locked
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="wallet-item">
+                <span class="wallet-label">
+                    <i class="fas fa-calendar-alt"></i> Current Month
+                </span>
+                <div class="wallet-value">Ksh {{ current_month_contribution|floatformat:0|intcomma }}</div>
+                <span class="wallet-sub">Contributed this month</span>
+                <span class="wallet-change change-positive">
+                    <i class="fas fa-clock"></i> Target: Ksh {{ monthly_target|floatformat:0|intcomma }}
+                </span>
+            </div>
+            
+            <div class="wallet-item">
+                <span class="wallet-label">
+                    <i class="fas fa-chart-line"></i> Total Contributions
+                </span>
+                <div class="wallet-value">Ksh {{ wallet.total_deposited|floatformat:0|intcomma }}</div>
+                <span class="wallet-sub">Lifetime contributions</span>
+                <span class="wallet-change change-positive">
+                    <i class="fas fa-calendar"></i> Last: {% if wallet.last_deposit_at %}{{ wallet.last_deposit_at|date:"M d, Y" }}{% else %}Never{% endif %}
+                </span>
+            </div>
+            
+            <div class="wallet-item">
+                <span class="wallet-label">
+                    <i class="fas fa-credit-card"></i> Total Withdrawn
+                </span>
+                <div class="wallet-value">Ksh {{ wallet.total_withdrawn|floatformat:0|intcomma }}</div>
+                <span class="wallet-sub">Lifetime withdrawals</span>
+                <span class="wallet-change change-negative">
+                    <i class="fas fa-arrow-up"></i> Last: {% if wallet.last_withdrawal_at %}{{ wallet.last_withdrawal_at|date:"M d, Y" }}{% else %}Never{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Finance Grid -->
+    <div class="finance-grid">
+        <!-- Left Column -->
+        <div class="finance-column">
+            <!-- Contribution Progress -->
+            <div class="finance-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Monthly Contribution Progress
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'finance:deposit' %}" class="card-action-btn">
+                            <i class="fas fa-plus-circle"></i> Make Contribution
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="contribution-summary">
+                    <div class="contribution-stat">
+                        <div class="contribution-stat-value">Ksh {{ current_month_contribution|floatformat:0|intcomma }}</div>
+                        <div class="contribution-stat-label">Contributed This Month</div>
+                    </div>
+                    <div class="contribution-stat">
+                        <div class="contribution-stat-value">Ksh {{ monthly_target|floatformat:0|intcomma }}</div>
+                        <div class="contribution-stat-label">Monthly Target</div>
+                    </div>
+                    <div class="contribution-stat">
+                        <div class="contribution-stat-value">{{ contribution_percentage|floatformat:0 }}%</div>
+                        <div class="contribution-stat-label">Progress</div>
+                    </div>
+                </div>
+                
+                <div class="limit-progress" style="margin-bottom: 20px;">
+                    <div class="progress-header">
+                        <span class="progress-label">{{ current_month_name }} {{ current_year }} Progress</span>
+                        <span class="progress-percent">{{ contribution_percentage|floatformat:0 }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ contribution_percentage|floatformat:0 }}%;"></div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; justify-content: space-between; color: var(--text-light); font-size: 0.9rem;">
+                    <span><i class="fas fa-calendar-check" style="color: #00c853;"></i> Next Month: {{ next_month_name }} {{ next_year }}</span>
+                    <span><i class="fas fa-arrow-up" style="color: #00c853;"></i> Min: Ksh 500</span>
+                </div>
+            </div>
+            
+            <!-- Recent Transactions -->
+            <div class="finance-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-history"></i> Recent Transactions
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'finance:transactions' %}" class="card-action-btn">
+                            <i class="fas fa-eye"></i> View All
+                        </a>
+                        <a href="{% url 'finance:transactions' %}?export=1" class="card-action-btn">
+                            <i class="fas fa-download"></i> Export
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="transaction-list">
+                    {% if recent_transactions %}
+                        {% for tx in recent_transactions %}
+                        <a href="{% url 'finance:transaction_detail' tx.id %}" class="transaction-item">
+                            <div class="transaction-icon {% if tx.transaction_type == 'deposit' %}contribution{% else %}{{ tx.transaction_type }}{% endif %}">
+                                <i class="fas fa-{% if tx.transaction_type == 'deposit' %}calendar-check{% elif tx.transaction_type == 'withdrawal' %}arrow-up{% elif tx.transaction_type == 'investment' %}hand-holding-usd{% elif tx.transaction_type == 'dividend' %}coins{% elif tx.transaction_type == 'loan' %}money-bill{% else %}exchange-alt{% endif %}"></i>
+                            </div>
+                            <div class="transaction-info">
+                                <div class="transaction-title">
+                                    {% if tx.transaction_type == 'deposit' %}
+                                        Monthly Contribution - {{ tx.month_name|default:tx.description|truncatechars:50 }}
+                                    {% else %}
+                                        {{ tx.description|truncatechars:50 }}
+                                    {% endif %}
+                                </div>
+                                <div class="transaction-meta">
+                                    <span class="transaction-reference">{{ tx.reference }}</span>
+                                    <span class="transaction-date">
+                                        <i class="fas fa-calendar-alt"></i> {{ tx.initiated_at|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="transaction-amount {% if tx.transaction_type == 'deposit' %}deposit{% else %}{{ tx.transaction_type }}{% endif %}">
+                                {% if tx.transaction_type == 'withdrawal' or tx.transaction_type == 'investment' %}-{% else %}+{% endif %}
+                                Ksh {{ tx.amount|floatformat:0|intcomma }}
+                            </div>
+                            <div class="transaction-status status-{{ tx.status }}">
+                                {{ tx.get_status_display|upper }}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-exchange-alt"></i>
+                            <h3>No Transactions Yet</h3>
+                            <p>Your transaction history will appear here.</p>
+                            <a href="{% url 'finance:deposit' %}" class="btn btn-primary">
+                                <i class="fas fa-calendar-plus"></i> Make Your First Contribution
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Finance Summary Stats -->
+            <div class="finance-stats-grid">
+                <div class="stat-card-small">
+                    <div class="stat-icon-small green">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-content-small">
+                        <div class="stat-label-small">Total Invested</div>
+                        <div class="stat-value-small">Ksh {{ summary.total_invested|floatformat:0|intcomma }}</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-small">
+                    <div class="stat-icon-small blue">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="stat-content-small">
+                        <div class="stat-label-small">Total Dividends</div>
+                        <div class="stat-value-small">Ksh {{ summary.total_dividends|floatformat:0|intcomma }}</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-small">
+                    <div class="stat-icon-small orange">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="stat-content-small">
+                        <div class="stat-label-small">Active Loans</div>
+                        <div class="stat-value-small">{{ summary.active_loans_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="finance-column">
+            <!-- Upcoming Contributions -->
+            <div class="finance-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-calendar-alt"></i> Upcoming Months
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'finance:deposit' %}" class="card-action-btn">
+                            <i class="fas fa-plus"></i> Plan Ahead
+                        </a>
+                    </div>
+                </div>
+                
+                {% if upcoming_months %}
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for month in upcoming_months|slice:":3" %}
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 15px; background: rgba(0,200,83,0.02); border-radius: var(--radius); border: 1px solid rgba(0,200,83,0.1);">
+                            <div style="width: 45px; height: 45px; border-radius: 10px; background: rgba(0,200,83,0.1); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-calendar" style="color: #00c853;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; margin-bottom: 4px;">{{ month.name }} {{ month.year }}</div>
+                                <div style="color: var(--text-light); font-size: 0.8rem;">
+                                    Target: Ksh {{ month.target|floatformat:0|intcomma }}
+                                </div>
+                            </div>
+                            <a href="{% url 'finance:deposit' %}?month={{ month.value }}" class="btn btn-outline btn-sm" style="padding: 6px 12px;">
+                                <i class="fas fa-plus"></i> Pay
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>No Upcoming Months</h3>
+                        <p>Check back later for upcoming contribution months.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Active Loans -->
+            <div class="finance-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-hand-holding-usd"></i> Active Loans
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'finance:loans' %}" class="card-action-btn">
+                            <i class="fas fa-plus"></i> Apply for Loan
+                        </a>
+                    </div>
+                </div>
+                
+                {% if active_loans %}
+                    {% for loan in active_loans %}
+                    <div class="loan-item">
+                        <div class="loan-header">
+                            <span class="loan-title">{{ loan.reference }}</span>
+                            <span class="loan-badge {{ loan.status }}">
+                                {{ loan.get_status_display|upper }}
+                            </span>
+                        </div>
+                        <div class="loan-details" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <div style="color: var(--text-light); font-size: 0.75rem;">Amount</div>
+                                <div style="font-weight: 700; color: #00c853;">Ksh {{ loan.amount_approved|floatformat:0|intcomma }}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-light); font-size: 0.75rem;">Outstanding</div>
+                                <div style="font-weight: 700; color: var(--accent-1);">Ksh {{ loan.outstanding_balance|floatformat:0|intcomma }}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-light); font-size: 0.75rem;">Interest Rate</div>
+                                <div style="font-weight: 600;">{{ loan.interest_rate }}% p.a.</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-light); font-size: 0.75rem;">Monthly</div>
+                                <div style="font-weight: 600;">Ksh {{ loan.monthly_installment|floatformat:0|intcomma }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="loan-progress">
+                            <div class="progress-header">
+                                <span class="progress-label">Repayment Progress</span>
+                                <span class="progress-percent">{{ loan.progress_percentage|floatformat:0 }}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ loan.progress_percentage|floatformat:0 }}%;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="loan-actions">
+                            <a href="{% url 'finance:loan_detail' loan.id %}" class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i> Details
+                            </a>
+                            <button onclick="openRepayModal({{ loan.id }}, '{{ loan.reference }}', {{ loan.outstanding_balance }})" class="btn btn-primary btn-sm">
+                                <i class="fas fa-credit-card"></i> Repay
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <h3>No Active Loans</h3>
+                        <p>You don't have any active loans at the moment.</p>
+                        <a href="{% url 'finance:loans' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> Apply for a Loan
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Saved Payment Methods -->
+            <div class="finance-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-credit-card"></i> Payment Methods
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'finance:payment_methods' %}" class="card-action-btn">
+                            <i class="fas fa-plus"></i> Add New
+                        </a>
+                    </div>
+                </div>
+                
+                {% if payment_methods %}
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for method in payment_methods %}
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.02); border-radius: var(--radius);">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(0,200,83,0.1); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-{% if method.method_type == 'mpesa' %}mobile-alt{% elif method.method_type == 'bank_account' %}university{% else %}credit-card{% endif %}" style="color: #00c853;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; margin-bottom: 4px;">
+                                    {% if method.method_type == 'mpesa' %}
+                                        M-Pesa - {{ method.phone_number }}
+                                    {% elif method.method_type == 'bank_account' %}
+                                        {{ method.bank_name }} - {{ method.account_number }}
+                                    {% else %}
+                                        {{ method.card_brand }} - ****{{ method.card_last4 }}
+                                    {% endif %}
+                                </div>
+                                <div style="color: var(--text-light); font-size: 0.8rem;">
+                                    Added {{ method.created_at|date:"M d, Y" }}
+                                </div>
+                            </div>
+                            {% if method.is_default %}
+                            <span style="padding: 4px 8px; background: rgba(0,200,83,0.1); color: #00c853; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">DEFAULT</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>No Payment Methods</h3>
+                        <p>Add a payment method to make contributions and withdrawals faster.</p>
+                        <a href="{% url 'finance:payment_methods' %}" class="btn btn-outline">
+                            <i class="fas fa-plus-circle"></i> Add Payment Method
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions Footer -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 30px;">
+        <a href="{% url 'finance:deposit' %}" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: rgba(0,200,83,0.05); border-radius: var(--radius); border: 1px solid rgba(0,200,83,0.1); text-decoration: none; color: var(--text); transition: var(--transition);">
+            <i class="fas fa-calendar-plus" style="font-size: 1.5rem; color: #00c853; margin-bottom: 10px;"></i>
+            <span style="font-weight: 600; margin-bottom: 4px;">Contribute</span>
+            <span style="color: var(--text-light); font-size: 0.8rem;">Monthly contribution (Min Ksh 500)</span>
+        </a>
+        
+        <a href="{% url 'finance:withdrawal' %}" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: var(--text); transition: var(--transition);">
+            <i class="fas fa-arrow-up" style="font-size: 1.5rem; color: var(--accent-1); margin-bottom: 10px;"></i>
+            <span style="font-weight: 600; margin-bottom: 4px;">Withdraw</span>
+            <span style="color: var(--text-light); font-size: 0.8rem;">Send to M-Pesa</span>
+        </a>
+        
+        <a href="{% url 'finance:loans' %}" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: var(--text); transition: var(--transition);">
+            <i class="fas fa-hand-holding-usd" style="font-size: 1.5rem; color: var(--accent-5); margin-bottom: 10px;"></i>
+            <span style="font-weight: 600; margin-bottom: 4px;">Borrow</span>
+            <span style="color: var(--text-light); font-size: 0.8rem;">Apply for a loan</span>
+        </a>
+        
+        <a href="{% url 'finance:transactions' %}" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: var(--text); transition: var(--transition);">
+            <i class="fas fa-history" style="font-size: 1.5rem; color: var(--accent-3); margin-bottom: 10px;"></i>
+            <span style="font-weight: 600; margin-bottom: 4px;">History</span>
+            <span style="color: var(--text-light); font-size: 0.8rem;">View all transactions</span>
+        </a>
+    </div>
+</div>
+
+<!-- Repayment Modal -->
+<div id="repayModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-credit-card"></i> Repay Loan</h3>
+            <button type="button" class="close-modal" onclick="closeRepayModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="repayLoanInfo" style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.02); border-radius: var(--radius);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: var(--text-light);">Loan Reference:</span>
+                    <span style="font-weight: 600;" id="repayLoanReference"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-light);">Outstanding Balance:</span>
+                    <span style="font-weight: 700; color: #00c853;" id="repayOutstandingBalance"></span>
+                </div>
+            </div>
+            
+            <form id="repayForm">
+                {% csrf_token %}
+                <input type="hidden" id="repayLoanId" name="loan_id">
+                
+                <div class="form-group">
+                    <label>Repayment Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Ksh</span>
+                        <input type="number" 
+                               id="repayAmount" 
+                               name="amount" 
+                               class="form-control" 
+                               placeholder="Enter amount" 
+                               min="100" 
+                               step="100"
+                               required>
+                    </div>
+                    <div class="form-text">Available balance: Ksh <span id="availableBalance">{{ wallet.available_balance|floatformat:0|intcomma }}</span></div>
+                </div>
+                
+                <div class="quick-amounts" style="margin-bottom: 25px;">
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(1000)">1,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(5000)">5,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(10000)">10,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(25000)">25,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setRepayAmount(50000)">50,000</button>
+                    <button type="button" class="quick-amount-btn" onclick="setFullRepayment()">FULL</button>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-action btn-cancel" onclick="closeRepayModal()">Cancel</button>
+                    <button type="submit" class="btn-action btn-proceed" id="repaySubmitBtn">
+                        <i class="fas fa-check-circle"></i> Confirm Repayment
+                    </button>
+                </div>
+            </form>
+            
+            <div id="repayLoading" style="display: none; text-align: center; padding: 30px;">
+                <div class="loading-spinner" style="margin: 0 auto 15px;"></div>
+                <div style="color: var(--text-light);">Processing repayment...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// LOAN REPAYMENT FUNCTIONS
+// ============================================
+let currentLoanId = null;
+let currentOutstandingBalance = 0;
+
+function openRepayModal(loanId, reference, outstandingBalance) {
+    currentLoanId = loanId;
+    currentOutstandingBalance = outstandingBalance;
+    
+    document.getElementById('repayLoanId').value = loanId;
+    document.getElementById('repayLoanReference').textContent = reference;
+    document.getElementById('repayOutstandingBalance').textContent = 'Ksh ' + outstandingBalance.toLocaleString();
+    document.getElementById('repayAmount').value = '';
+    
+    document.getElementById('repayModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRepayModal() {
+    document.getElementById('repayModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function setRepayAmount(amount) {
+    const input = document.getElementById('repayAmount');
+    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'));
+    input.value = Math.min(amount, maxAmount);
+}
+
+function setFullRepayment() {
+    const input = document.getElementById('repayAmount');
+    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'));
+    input.value = maxAmount;
+}
+
+// Initialize repayment form
+document.addEventListener('DOMContentLoaded', function() {
+    const repayForm = document.getElementById('repayForm');
+    if (repayForm) {
+        repayForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loanId = document.getElementById('repayLoanId').value;
+            const amount = document.getElementById('repayAmount').value;
+            
+            if (!amount || parseFloat(amount) < 100) {
+                showToast('Please enter a valid amount (minimum KES 100)', 'error');
+                return;
+            }
+            
+            if (parseFloat(amount) > currentOutstandingBalance) {
+                showToast('Amount exceeds outstanding balance', 'error');
+                return;
+            }
+            
+            if (parseFloat(amount) > parseFloat('{{ wallet.available_balance }}')) {
+                showToast('Insufficient balance', 'error');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('repayForm').style.display = 'none';
+            document.getElementById('repayLoading').style.display = 'block';
+            document.getElementById('repaySubmitBtn').disabled = true;
+            
+            try {
+                const response = await fetch(`/finance/loans/${loanId}/repay/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ amount: amount })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Repayment successful!', 'success');
+                    closeRepayModal();
+                    
+                    // Refresh page after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || 'Repayment failed');
+                }
+                
+            } catch (error) {
+                console.error('Repayment error:', error);
+                showToast(error.message, 'error');
+                
+                // Restore form
+                document.getElementById('repayForm').style.display = 'block';
+                document.getElementById('repayLoading').style.display = 'none';
+                document.getElementById('repaySubmitBtn').disabled = false;
+            }
+        });
+    }
+});
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-left: 4px solid ${type === 'success' ? '#00c853' : type === 'error' ? '#ff4444' : 'var(--accent-3)'};
+        border-radius: 12px;
+        padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 99999;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+               style="font-size: 1.2rem; color: ${type === 'success' ? '#00c853' : type === 'error' ? '#ff4444' : 'var(--accent-3)'};"></i>
+            <span style="flex: 1; font-size: 0.95rem; color: var(--text);">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('repayModal');
+    if (event.target === modal) {
+        closeRepayModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('repayModal');
+        if (modal.style.display === 'block') {
+            closeRepayModal();
+        }
+    }
+});
+</script>
+
+<style>
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+.modal-header {
+    padding: 25px;
+    background: linear-gradient(to right, rgba(0, 200, 83, 0.1), rgba(0, 230, 118, 0.1));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #fff, #00c853);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-header h3 i {
+    font-size: 1.3rem;
+    color: #00c853;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-modal:hover {
+    background: #00c853;
+    color: white;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #00c853;
+    box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.2);
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.input-group:focus-within {
+    border-color: #00c853;
+    box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.2);
+}
+
+.input-group-text {
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.input-group .form-control {
+    border: none;
+    box-shadow: none;
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 5px;
+}
+
+/* Quick Amounts */
+.quick-amounts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.quick-amount-btn {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.quick-amount-btn:hover {
+    background: rgba(0, 200, 83, 0.1);
+    border-color: #00c853;
+    color: #00c853;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+@media (max-width: 480px) {
+    .form-actions {
+        flex-direction: column;
+    }
+}
+
+.btn-action {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-proceed {
+    background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+}
+
+.btn-proceed:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 200, 83, 0.4);
+}
+
+.btn-proceed:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: #00c853;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+</style>
+{% endblock %}

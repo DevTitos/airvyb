@@ -1,0 +1,2103 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Dashboard | Airvyb{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Dashboard Container */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .dashboard-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .dashboard-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.welcome-message {
+    flex: 1;
+}
+
+.welcome-message h1 {
+    font-size: 1.75rem;
+    margin-bottom: 5px;
+    background: linear-gradient(to right, #fff 30%, var(--accent-1) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .welcome-message h1 {
+        font-size: 2.2rem;
+    }
+}
+
+.welcome-message p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+    .welcome-message p {
+        font-size: 1.1rem;
+    }
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        flex: 1;
+    }
+}
+
+/* Stats Overview */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 640px) {
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+@media (min-width: 768px) {
+    .stat-card {
+        padding: 25px;
+    }
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-1);
+    box-shadow: var(--shadow-accent);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--gradient-1);
+}
+
+.stat-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+}
+
+.stat-icon.gradient-1 {
+    background: var(--gradient-1);
+}
+
+.stat-icon.gradient-2 {
+    background: var(--gradient-2);
+}
+
+.stat-icon.gradient-3 {
+    background: var(--gradient-3);
+}
+
+.stat-icon.gradient-4 {
+    background: linear-gradient(135deg, var(--accent-5) 0%, var(--accent-4) 100%);
+}
+
+.stat-refresh {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.stat-refresh:hover {
+    color: var(--accent-1);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-refresh:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.stat-content {
+    margin-top: 10px;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+    .stat-value {
+        font-size: 2.5rem;
+    }
+}
+
+.stat-value .currency {
+    font-size: 0.6em;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+@media (min-width: 768px) {
+    .stat-trend {
+        padding: 5px 10px;
+        font-size: 0.9rem;
+    }
+}
+
+.trend-up {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.trend-down {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.trend-neutral {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+/* Main Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+}
+
+.dashboard-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 1024px) {
+    .dashboard-column {
+        gap: 30px;
+    }
+}
+
+.dashboard-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 768px) {
+    .dashboard-card {
+        padding: 30px;
+    }
+}
+
+.card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+}
+
+.card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-title i {
+    color: var(--accent-1);
+    font-size: 1.4rem;
+}
+
+@media (min-width: 768px) {
+    .card-title {
+        font-size: 1.5rem;
+    }
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.card-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+
+@media (min-width: 768px) {
+    .card-action {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+.card-action:hover {
+    background: var(--accent-1);
+    color: white;
+    border-color: var(--accent-1);
+    transform: translateY(-1px);
+}
+
+.card-action i {
+    font-size: 0.9em;
+}
+
+/* ============================================ */
+/* DEALS STYLES */
+/* ============================================ */
+
+.deal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.deal-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: var(--transition);
+}
+
+.deal-item:hover {
+    background: rgba(255,0,110,0.05);
+    border-color: var(--accent-1);
+    transform: translateX(3px);
+}
+
+.deal-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    background: rgba(255,0,110,0.1);
+    color: var(--accent-1);
+}
+
+.deal-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.deal-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+.deal-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 5px;
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.deal-category {
+    color: var(--accent-1);
+    background: rgba(255,0,110,0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.deal-risk {
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.risk-low {
+    background: rgba(0,200,83,0.1);
+    color: #00c853;
+}
+
+.risk-medium {
+    background: rgba(255,193,7,0.1);
+    color: #ffc107;
+}
+
+.risk-high {
+    background: rgba(255,0,110,0.1);
+    color: var(--accent-1);
+}
+
+.deal-amount {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.deal-amount strong {
+    color: var(--accent-5);
+    font-weight: 700;
+}
+
+.deal-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.status-active {
+    background: rgba(0,200,83,0.1);
+    color: #00c853;
+}
+
+.status-monitoring {
+    background: rgba(255,193,7,0.1);
+    color: #ffc107;
+}
+
+.status-setup {
+    background: rgba(58,134,255,0.1);
+    color: var(--accent-3);
+}
+
+.status-opt_in_open {
+    background: rgba(255,0,110,0.1);
+    color: var(--accent-1);
+}
+
+/* Open Deals */
+.open-deals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.open-deal-item {
+    display: block;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,0.05);
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+}
+
+.open-deal-item:hover {
+    background: rgba(255,0,110,0.05);
+    border-color: var(--accent-1);
+    transform: translateY(-2px);
+}
+
+.deal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.deal-header .deal-category {
+    font-size: 0.8rem;
+}
+
+.deal-header .deal-risk {
+    font-size: 0.8rem;
+}
+
+.open-deal-item .deal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.deal-objective {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.deal-meta-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.deal-meta-row i {
+    color: var(--accent-1);
+    margin-right: 5px;
+    width: 16px;
+}
+
+.deal-progress {
+    margin: 15px 0;
+}
+
+.deal-progress .progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.deal-progress .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.deal-progress .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-5));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.btn-view-deal {
+    width: 100%;
+    padding: 10px;
+    background: var(--gradient-1);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 10px;
+}
+
+.btn-view-deal:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+/* Deal Updates */
+.updates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.update-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent-3);
+    transition: var(--transition);
+}
+
+.update-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.update-item.important {
+    border-left-color: var(--accent-1);
+    background: rgba(255,0,110,0.05);
+}
+
+.update-icon i {
+    color: var(--accent-3);
+    font-size: 1.1rem;
+}
+
+.update-item.important .update-icon i {
+    color: var(--accent-1);
+}
+
+.update-content {
+    flex: 1;
+}
+
+.update-title {
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.update-deal {
+    color: var(--accent-1);
+    font-size: 0.8rem;
+    margin-bottom: 3px;
+}
+
+.update-time {
+    color: var(--text-light);
+    font-size: 0.7rem;
+}
+
+/* ============================================ */
+/* FINANCE STYLES */
+/* ============================================ */
+
+.investment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.investment-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .investment-item {
+        padding: 20px;
+        gap: 20px;
+    }
+}
+
+.investment-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 0, 110, 0.2);
+    transform: translateX(3px);
+}
+
+.investment-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+@media (max-width: 639px) {
+    .investment-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+
+.investment-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.investment-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.investment-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.investment-detail {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.investment-detail i {
+    font-size: 0.8rem;
+    color: var(--accent-1);
+}
+
+.investment-amount {
+    font-weight: 700;
+    color: var(--accent-5);
+    font-size: 0.9rem;
+}
+
+.investment-status {
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .investment-status {
+        padding: 8px 15px;
+        font-size: 0.8rem;
+    }
+}
+
+.status-confirmed,
+.status-active {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.status-pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.status-matured {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+/* Transaction List */
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .transaction-item {
+        padding: 20px;
+        gap: 20px;
+    }
+}
+
+.transaction-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 0, 110, 0.2);
+}
+
+.transaction-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+@media (max-width: 639px) {
+    .transaction-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+}
+
+.transaction-icon.investment {
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--accent-1);
+}
+
+.transaction-icon.dividend {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.transaction-icon.withdrawal {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.transaction-icon.deposit {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.transaction-icon.fee {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.transaction-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.transaction-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.transaction-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.transaction-reference {
+    color: var(--accent-1);
+    font-size: 0.75rem;
+    font-family: monospace;
+}
+
+.transaction-amount {
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.transaction-amount.positive {
+    color: #00c853;
+}
+
+.transaction-amount.negative {
+    color: var(--accent-1);
+}
+
+.transaction-status {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.transaction-status.completed {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.transaction-status.pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.transaction-status.failed {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+/* Wallet Balance Card */
+.wallet-card {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: var(--radius-lg);
+    padding: 25px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.wallet-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.wallet-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wallet-label i {
+    color: var(--accent-1);
+}
+
+.wallet-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.wallet-amount.highlight {
+    color: var(--accent-5);
+}
+
+.wallet-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.wallet-action {
+    flex: 1;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.wallet-action:hover {
+    background: var(--accent-1);
+    color: white;
+    border-color: var(--accent-1);
+}
+
+/* ============================================ */
+/* NOTIFICATION STYLES */
+/* ============================================ */
+
+.notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    gap: 15px;
+    cursor: pointer;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .notification-item {
+        padding: 20px;
+        gap: 20px;
+    }
+}
+
+.notification-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 0, 110, 0.2);
+}
+
+.notification-item.notification-unread {
+    background: rgba(255, 0, 110, 0.05);
+    border-left: 3px solid var(--accent-1);
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+@media (max-width: 639px) {
+    .notification-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+}
+
+.notification-icon.investment {
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--accent-1);
+}
+
+.notification-icon.dividend {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.notification-icon.deal {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.notification-icon.system {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.notification-message {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.notification-time {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.notification-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-1);
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    animation: pulse 2s infinite;
+}
+
+/* ============================================ */
+/* QUICK ACTIONS */
+/* ============================================ */
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 639px) {
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .quick-actions {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    text-align: center;
+    text-decoration: none;
+    color: var(--text);
+    cursor: pointer;
+    border: none;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .quick-action {
+        padding: 25px 15px;
+    }
+}
+
+.quick-action:hover {
+    background: rgba(255, 0, 110, 0.1);
+    border-color: var(--accent-1);
+    transform: translateY(-3px);
+}
+
+.quick-action i {
+    font-size: 1.75rem;
+    margin-bottom: 12px;
+    color: var(--accent-1);
+}
+
+@media (min-width: 768px) {
+    .quick-action i {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+}
+
+.quick-action span {
+    font-weight: 600;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+@media (min-width: 768px) {
+    .quick-action span {
+        font-size: 0.9rem;
+    }
+}
+
+/* ============================================ */
+/* EMPTY STATE */
+/* ============================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: var(--accent-1);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state .btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--gradient-1);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.empty-state .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+/* ============================================ */
+/* MOBILE NAVIGATION */
+/* ============================================ */
+
+.mobile-dashboard-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-dark);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    z-index: 100;
+}
+
+@media (max-width: 767px) {
+    .mobile-dashboard-nav {
+        display: flex;
+        justify-content: space-around;
+    }
+}
+
+.mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.75rem;
+    padding: 8px;
+    flex: 1;
+    border-radius: var(--radius);
+    transition: var(--transition);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.mobile-nav-btn.active {
+    color: var(--accent-1);
+    background: rgba(255, 0, 110, 0.1);
+}
+
+.mobile-nav-btn i {
+    font-size: 1.25rem;
+}
+
+/* ============================================ */
+/* FOOTER */
+/* ============================================ */
+
+.dashboard-footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+}
+
+@media (min-width: 768px) {
+    .dashboard-footer {
+        padding: 30px;
+        font-size: 0.9rem;
+        margin-top: 30px;
+    }
+}
+
+.dashboard-footer .small {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+/* ============================================ */
+/* ANIMATIONS */
+/* ============================================ */
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================ */
+/* TOAST NOTIFICATIONS */
+/* ============================================ */
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 15px 20px;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 99999;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+.toast.success {
+    border-left-color: #00c853;
+}
+
+.toast.success i {
+    color: #00c853;
+}
+
+.toast.error {
+    border-left-color: var(--accent-1);
+}
+
+.toast.error i {
+    color: var(--accent-1);
+}
+
+.toast.info {
+    border-left-color: var(--accent-3);
+}
+
+.toast.info i {
+    color: var(--accent-3);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-content i {
+    font-size: 1.2rem;
+}
+
+.toast-content span {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--text);
+}
+
+/* ============================================ */
+/* ACCESSIBILITY */
+/* ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-card,
+    .quick-action,
+    .card-action,
+    .investment-item,
+    .deal-item,
+    .open-deal-item,
+    .notification-item,
+    .transaction-item,
+    .btn-view-deal,
+    .wallet-action {
+        transition: none !important;
+        animation: none !important;
+    }
+    
+    .notification-unread-dot {
+        animation: none;
+    }
+}
+
+/* ============================================ */
+/* PRINT STYLES */
+/* ============================================ */
+
+@media print {
+    .dashboard-header,
+    .dashboard-footer,
+    .card-actions,
+    .quick-actions,
+    .mobile-dashboard-nav,
+    .wallet-actions,
+    .btn-view-deal {
+        display: none !important;
+    }
+    
+    .stat-card,
+    .dashboard-card,
+    .wallet-card {
+        border: 1px solid #000;
+        break-inside: avoid;
+        background: white !important;
+        color: black !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="welcome-message">
+            <h1>Welcome back, {{ user.first_name|default:user.email|title }}!</h1>
+            <p>Track your deals • Manage finances • Stay updated</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'deals:list' %}" class="btn btn-primary">
+                <i class="fas fa-handshake"></i> <span class="btn-text">Browse Deals</span>
+            </a>
+            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
+                <i class="fas fa-chart-bar"></i> <span class="btn-text">Finance</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Overview - DEALS & FINANCE ONLY -->
+    <div class="dashboard-stats">
+        <!-- Deals Stats -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon gradient-1">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <button class="stat-refresh" onclick="refreshStat('dealsOptedIn')" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="dealsOptedInValue">
+                    {{ deal_performance.total_opted_in|default:0 }}
+                </div>
+                <div class="stat-label">Deals Opted In</div>
+                <div class="stat-trend trend-up">
+                    <i class="fas fa-arrow-up"></i> 
+                    {{ deal_performance.active_deals|default:0 }} Active
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wallet Balance -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon gradient-2">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <button class="stat-refresh" onclick="refreshStat('walletBalance')" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="walletBalanceValue">
+                    Ksh {{ wallet_balance|default:0|floatformat:0|intcomma }}
+                </div>
+                <div class="stat-label">Wallet Balance</div>
+                <div class="stat-trend trend-neutral">
+                    <i class="fas fa-clock"></i> 
+                    Available: Ksh {{ available_balance|default:0|floatformat:0|intcomma }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Invested in Deals -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon gradient-3">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <button class="stat-refresh" onclick="refreshStat('totalInvestedInDeals')" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="totalInvestedInDealsValue">
+                    Ksh {{ deal_performance.total_invested_in_deals|default:0|floatformat:0|intcomma }}
+                </div>
+                <div class="stat-label">Invested in Deals</div>
+                <div class="stat-trend trend-up">
+                    <i class="fas fa-handshake"></i> 
+                    Across {{ deal_performance.total_opted_in|default:0 }} deals
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Dividends -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon gradient-4">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <button class="stat-refresh" onclick="refreshStat('totalDividends')" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="totalDividendsValue">
+                    Ksh {{ total_dividends|default:0|floatformat:0|intcomma }}
+                </div>
+                <div class="stat-label">Total Dividends</div>
+                <div class="stat-trend trend-up">
+                    <i class="fas fa-arrow-up"></i> 
+                    Earned to date
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+        <!-- Left Column - DEALS FOCUS -->
+        <div class="dashboard-column">
+            <!-- My Opted-In Deals -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-handshake"></i> My Deals
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'deals:my_deals' %}" class="card-action">
+                            <i class="fas fa-eye"></i> View All
+                        </a>
+                        <a href="{% url 'deals:list' %}" class="card-action">
+                            <i class="fas fa-plus"></i> Explore Deals
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="deal-list">
+                    {% if my_opted_deals %}
+                        {% for opt_in in my_opted_deals %}
+                        <a href="{% url 'deals:detail' opt_in.deal.slug %}" class="deal-item" style="text-decoration: none;">
+                            <div class="deal-icon">
+                                <i class="fas fa-{{ opt_in.deal.category.icon|default:'handshake' }}"></i>
+                            </div>
+                            <div class="deal-info">
+                                <div class="deal-name">{{ opt_in.deal.title|truncatechars:40 }}</div>
+                                <div class="deal-meta">
+                                    <span class="deal-category">{{ opt_in.deal.category.name|default:'Deal' }}</span>
+                                    <span class="deal-risk risk-{{ opt_in.deal.risk_level }}">
+                                        {{ opt_in.deal.get_risk_level_display }}
+                                    </span>
+                                </div>
+                                <div class="deal-amount">
+                                    Opt-In: <strong>Ksh {{ opt_in.amount|floatformat:0|intcomma }}</strong>
+                                </div>
+                            </div>
+                            <div class="deal-status status-{{ opt_in.deal.status }}">
+                                {{ opt_in.deal.get_status_display }}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-handshake"></i>
+                            <h3>No Deals Yet</h3>
+                            <p>You haven't opted into any deals. Explore available opportunities.</p>
+                            <a href="{% url 'deals:list' %}" class="btn">
+                                <i class="fas fa-search"></i> Browse Deals
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Deal Updates -->
+            {% if recent_updates %}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-bell"></i> Deal Updates
+                    </h2>
+                </div>
+                
+                <div class="updates-list">
+                    {% for update in recent_updates %}
+                    <div class="update-item {% if update.is_important %}important{% endif %}">
+                        <div class="update-icon">
+                            <i class="fas fa-{% if update.is_important %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                        </div>
+                        <div class="update-content">
+                            <div class="update-title">{{ update.title }}</div>
+                            <div class="update-deal">{{ update.deal.title|truncatechars:30 }}</div>
+                            <div class="update-time">{{ update.created_at|timesince }} ago</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Column - FINANCE & USER FOCUS -->
+        <div class="dashboard-column">
+            <!-- Wallet Card -->
+            <div class="wallet-card">
+                <div class="wallet-row">
+                    <span class="wallet-label">
+                        <i class="fas fa-wallet"></i> Total Balance
+                    </span>
+                    <span class="wallet-amount">Ksh {{ wallet_balance|default:0|floatformat:0|intcomma }}</span>
+                </div>
+                <div class="wallet-row">
+                    <span class="wallet-label">
+                        <i class="fas fa-check-circle" style="color: #00c853;"></i> Available
+                    </span>
+                    <span class="wallet-amount highlight">Ksh {{ available_balance|default:0|floatformat:0|intcomma }}</span>
+                </div>
+                
+                <div class="wallet-actions">
+                    <a href="{% url 'finance:deposit' %}" class="wallet-action">
+                        <i class="fas fa-plus-circle"></i> Add Funds
+                    </a>
+                    <a href="{% url 'finance:withdrawal' %}" class="wallet-action">
+                        <i class="fas fa-arrow-up"></i> Withdraw
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Recent Transactions 
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-history"></i> Recent Transactions
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'finance:transactions' %}" class="card-action">
+                            <i class="fas fa-eye"></i> View All
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="transaction-list">
+                    {% if recent_transactions %}
+                        {% for tx in recent_transactions %}
+                        <a href="{% url 'finance:transaction_detail' tx.id %}" class="transaction-item" style="text-decoration: none;">
+                            <div class="transaction-icon {{ tx.transaction_type }}">
+                                <i class="fas fa-{% if tx.transaction_type == 'deposit' %}arrow-down{% elif tx.transaction_type == 'withdrawal' %}arrow-up{% elif tx.transaction_type == 'investment' %}hand-holding-usd{% elif tx.transaction_type == 'dividend' %}coins{% elif tx.transaction_type == 'fee' %}receipt{% else %}exchange-alt{% endif %}"></i>
+                            </div>
+                            <div class="transaction-info">
+                                <div class="transaction-title">{{ tx.description|truncatechars:25 }}</div>
+                                <div class="transaction-meta">
+                                    <span class="transaction-date">{{ tx.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                            <div class="transaction-amount {% if tx.transaction_type in 'deposit,dividend' %}positive{% else %}negative{% endif %}">
+                                {% if tx.transaction_type in 'deposit,dividend' %}+{% else %}-{% endif %}
+                                Ksh {{ tx.amount|floatformat:0|intcomma }}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-exchange-alt"></i>
+                            <p>No recent transactions</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>-->
+            
+            <!-- Open Deals for Opt-In -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-clock"></i> Open for Opt-In
+                    </h2>
+                    <div class="card-actions">
+                        <a href="{% url 'deals:list' %}" class="card-action">
+                            <i class="fas fa-arrow-right"></i> View All
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="open-deals-list">
+                    {% if open_deals %}
+                        {% for deal in open_deals %}
+                        <a href="{% url 'deals:detail' deal.slug %}" class="open-deal-item">
+                            <div class="deal-header">
+                                <span class="deal-category">{{ deal.category.name|default:'Deal' }}</span>
+                                <span class="deal-risk risk-{{ deal.risk_level }}">{{ deal.get_risk_level_display }}</span>
+                            </div>
+                            <h4 class="deal-title">{{ deal.title|truncatechars:40 }}</h4>
+                            <p class="deal-objective">{{ deal.objective|truncatechars:60 }}</p>
+                            
+                            <div class="deal-meta-row">
+                                <span><i class="fas fa-tag"></i> Ksh {{ deal.opt_in_amount|floatformat:0|intcomma }}</span>
+                                <span><i class="fas fa-clock"></i> {{ deal.duration_months }} months</span>
+                            </div>
+                            
+                            <div class="deal-progress">
+                                <div class="progress-header">
+                                    <span>Opt-Ins: {{ deal.total_opted_in }}{% if deal.max_opt_in_members %} / {{ deal.max_opt_in_members }}{% endif %}</span>
+                                    <span>{% widthratio deal.total_opted_in deal.max_opt_in_members 100 %}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {% widthratio deal.total_opted_in deal.max_opt_in_members 100 %}%;"></div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn-view-deal">View Deal <i class="fas fa-arrow-right"></i></button>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <p>No open deals at the moment</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h2>
+                </div>
+                
+                <div class="quick-actions">
+                    <a href="{% url 'deals:list' %}" class="quick-action">
+                        <i class="fas fa-handshake"></i>
+                        <span>Browse Deals</span>
+                    </a>
+                    <a href="{% url 'finance:deposit' %}" class="quick-action">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Funds</span>
+                    </a>
+                    <a href="{% url 'finance:withdrawal' %}" class="quick-action">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Withdraw</span>
+                    </a>
+                    <a href="{% url 'profile' %}" class="quick-action">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Profile</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Notifications -->
+            {% if notifications %}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-bell"></i> Notifications
+                    </h2>
+                    <button class="card-action" onclick="markAllAsRead()">
+                        <i class="fas fa-check-double"></i> Mark All Read
+                    </button>
+                </div>
+                
+                <div class="notification-list">
+                    {% for notification in notifications %}
+                    <div class="notification-item {% if not notification.is_read %}notification-unread{% endif %}" 
+                         onclick="markNotificationRead({{ notification.id }})"
+                         data-id="{{ notification.id }}">
+                        {% if not notification.is_read %}
+                            <span class="notification-unread-dot"></span>
+                        {% endif %}
+                        <div class="notification-icon {{ notification.notification_type }}">
+                            <i class="fas fa-{% if notification.notification_type == 'deal' %}handshake{% elif notification.notification_type == 'dividend' %}coins{% elif notification.notification_type == 'investment' %}chart-line{% else %}bell{% endif %}"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">{{ notification.title }}</div>
+                            <div class="notification-message">{{ notification.message|truncatechars:60 }}</div>
+                            <div class="notification-time">{{ notification.created_at|timesince }} ago</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Mobile Dashboard Navigation -->
+    <div class="mobile-dashboard-nav">
+        <button class="mobile-nav-btn active" onclick="scrollToTop()">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </button>
+        <a href="{% url 'deals:list' %}" class="mobile-nav-btn">
+            <i class="fas fa-handshake"></i>
+            <span>Deals</span>
+        </a>
+        <a href="{% url 'finance:dashboard' %}" class="mobile-nav-btn">
+            <i class="fas fa-wallet"></i>
+            <span>Finance</span>
+        </a>
+        <a href="{% url 'profile' %}" class="mobile-nav-btn">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </div>
+    
+    <!-- Dashboard Footer -->
+    <div class="dashboard-footer">
+        <p>Airvyb • Strategic Investment Platform</p>
+        <p class="small">Last updated: <span id="currentTime">{% now "F j, Y, g:i a" %}</span></p>
+    </div>
+</div>
+
+<script>
+// CSRF Token
+const csrfToken = '{{ csrf_token }}';
+
+// ============================================
+// DASHBOARD INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Update current time
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 60000);
+    
+    // Load initial data
+    loadDashboardData();
+    
+    // Set up notification click handlers
+    setupNotificationHandlers();
+});
+
+// ============================================
+// DASHBOARD DATA & STATS
+// ============================================
+function updateCurrentTime() {
+    const now = new Date();
+    const options = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+    };
+    const timeString = now.toLocaleDateString('en-US', options);
+    const element = document.getElementById('currentTime');
+    if (element) element.textContent = timeString;
+}
+
+function loadDashboardData() {
+    // This would load real-time data via AJAX
+    // For now, we'll just rely on server-side rendering
+}
+
+async function refreshStat(statName) {
+    const button = event.currentTarget;
+    const icon = button.querySelector('i');
+    
+    // Show loading state
+    const originalClass = icon.className;
+    icon.className = 'fas fa-spinner fa-spin';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/ajax/dashboard-stats/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update stat values
+            if (statName === 'dealsOptedIn' && data.deals_opted_in !== undefined) {
+                document.getElementById('dealsOptedInValue').textContent = data.deals_opted_in;
+            }
+            if (statName === 'walletBalance' && data.wallet_balance !== undefined) {
+                document.getElementById('walletBalanceValue').textContent = 'Ksh ' + data.wallet_balance.toLocaleString();
+            }
+            if (statName === 'totalInvestedInDeals' && data.total_invested_in_deals !== undefined) {
+                document.getElementById('totalInvestedInDealsValue').textContent = 'Ksh ' + data.total_invested_in_deals.toLocaleString();
+            }
+            if (statName === 'totalDividends' && data.total_dividends !== undefined) {
+                document.getElementById('totalDividendsValue').textContent = 'Ksh ' + data.total_dividends.toLocaleString();
+            }
+            
+            showToast('Stats updated', 'success');
+        }
+    } catch (error) {
+        console.error('Failed to refresh stats:', error);
+        showToast('Failed to refresh', 'error');
+    } finally {
+        // Restore button state
+        icon.className = originalClass;
+        button.disabled = false;
+    }
+}
+
+// ============================================
+// NOTIFICATION HANDLERS
+// ============================================
+function setupNotificationHandlers() {
+    // Individual notification clicks are handled inline with onclick
+}
+
+async function markNotificationRead(notificationId) {
+    const notification = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+    if (!notification || !notification.classList.contains('notification-unread')) return;
+    
+    try {
+        const response = await fetch(`/ajax/notifications/${notificationId}/read/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            notification.classList.remove('notification-unread');
+            const dot = notification.querySelector('.notification-unread-dot');
+            if (dot) dot.remove();
+            
+            showToast('Notification marked as read', 'success');
+        }
+    } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+    }
+}
+
+async function markAllAsRead() {
+    const unreadNotifications = document.querySelectorAll('.notification-item.notification-unread');
+    if (unreadNotifications.length === 0) {
+        showToast('No unread notifications', 'info');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/ajax/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            unreadNotifications.forEach(notification => {
+                notification.classList.remove('notification-unread');
+                const dot = notification.querySelector('.notification-unread-dot');
+                if (dot) dot.remove();
+            });
+            
+            showToast('All notifications marked as read', 'success');
+        }
+    } catch (error) {
+        console.error('Failed to mark all as read:', error);
+        showToast('Failed to update notifications', 'error');
+    }
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(message, type = 'info') {
+    // Remove existing toasts
+    const existingToasts = document.querySelectorAll('.toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Set icon
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'times-circle';
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Add to body
+    document.body.appendChild(toast);
+    
+    // Show with animation
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
+    }, 10);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateX(100%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ============================================
+// MOBILE NAVIGATION
+// ============================================
+// Handle window resize
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+        const mobileNav = document.querySelector('.mobile-dashboard-nav');
+        if (mobileNav) {
+            if (window.innerWidth <= 767) {
+                mobileNav.style.display = 'flex';
+            } else {
+                mobileNav.style.display = 'none';
+            }
+        }
+    }, 250);
+});
+
+// Update active mobile nav button on scroll
+window.addEventListener('scroll', function() {
+    const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
+    const scrollPosition = window.scrollY;
+    
+    mobileNavBtns.forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Set dashboard button as active when at top
+    if (scrollPosition < 100) {
+        const dashboardBtn = document.querySelector('.mobile-nav-btn:first-child');
+        if (dashboardBtn) dashboardBtn.classList.add('active');
+    }
+});
+</script>
+{% endblock %}

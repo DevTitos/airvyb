@@ -1,0 +1,1766 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Withdraw Funds | Airvyb{% endblock %}
+{% block body_class %}withdrawal-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Withdrawal Container */
+.withdrawal-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .withdrawal-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Withdrawal Header */
+.withdrawal-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .withdrawal-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.withdrawal-title h1 {
+    font-size: 1.75rem;
+    margin-bottom: 5px;
+    background: linear-gradient(to right, #fff 30%, var(--accent-1) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .withdrawal-title h1 {
+        font-size: 2.2rem;
+    }
+}
+
+.withdrawal-title p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.withdrawal-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Wallet Summary */
+.wallet-summary {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.wallet-summary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-1), #ff3366);
+}
+
+.wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.wallet-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 0, 110, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wallet-icon i {
+    font-size: 1.8rem;
+    color: var(--accent-1);
+}
+
+.wallet-details h3 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.wallet-details p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.wallet-balance {
+    text-align: right;
+}
+
+.wallet-balance .label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.wallet-balance .value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent-1);
+    line-height: 1;
+}
+
+.wallet-balance .available {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.wallet-balance .available strong {
+    color: var(--accent-5);
+}
+
+/* Withdrawal Grid */
+.withdrawal-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+}
+
+@media (min-width: 1024px) {
+    .withdrawal-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+}
+
+/* Withdrawal Card */
+.withdrawal-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .withdrawal-card {
+        padding: 35px;
+    }
+}
+
+.card-header {
+    margin-bottom: 25px;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.card-title i {
+    color: var(--accent-1);
+    font-size: 1.4rem;
+}
+
+.card-subtitle {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Saved Methods */
+.saved-methods {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.saved-methods-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.saved-methods-title h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.saved-methods-title a {
+    color: var(--accent-1);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.saved-methods-title a:hover {
+    text-decoration: underline;
+}
+
+.saved-method-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.saved-method-item:hover {
+    background: rgba(255, 0, 110, 0.05);
+    border-color: var(--accent-1);
+}
+
+.saved-method-item:last-child {
+    margin-bottom: 0;
+}
+
+.saved-method-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 0, 110, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.saved-method-icon i {
+    font-size: 1.2rem;
+    color: var(--accent-1);
+}
+
+.saved-method-info {
+    flex: 1;
+}
+
+.saved-method-number {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+}
+
+.saved-method-meta {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.saved-method-default {
+    padding: 4px 8px;
+    background: rgba(255, 0, 110, 0.1);
+    border-radius: 12px;
+    color: var(--accent-1);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* Withdrawal Form */
+.withdrawal-form {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.phone-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.phone-input-group i {
+    position: absolute;
+    left: 16px;
+    color: var(--accent-1);
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.phone-input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.phone-input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(255, 0, 110, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.phone-input::placeholder {
+    color: var(--text-light);
+    opacity: 0.5;
+}
+
+.amount-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.amount-input-wrapper i {
+    position: absolute;
+    left: 16px;
+    color: var(--accent-1);
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.amount-input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 700;
+    transition: var(--transition);
+}
+
+.amount-input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(255, 0, 110, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.currency-symbol {
+    position: absolute;
+    right: 16px;
+    color: var(--text-light);
+    font-weight: 600;
+    z-index: 2;
+}
+
+.amount-hint {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.amount-hint span i {
+    color: var(--accent-1);
+    margin-right: 5px;
+}
+
+/* Quick Amounts */
+.quick-amounts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+@media (max-width: 639px) {
+    .quick-amounts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.quick-amount-btn {
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.quick-amount-btn:hover {
+    background: rgba(255, 0, 110, 0.1);
+    border-color: var(--accent-1);
+    color: var(--accent-1);
+    transform: translateY(-2px);
+}
+
+.quick-amount-btn.active {
+    background: var(--accent-1);
+    border-color: var(--accent-1);
+    color: white;
+}
+
+/* Withdrawal Limits */
+.withdrawal-limits {
+    background: rgba(255, 190, 11, 0.05);
+    border: 1px solid rgba(255, 190, 11, 0.1);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.limit-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-5);
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.limit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.limit-item:last-child {
+    border-bottom: none;
+}
+
+.limit-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.limit-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.limit-progress {
+    margin-top: 15px;
+}
+
+.limit-progress .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.limit-progress .progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.limit-progress .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-5), var(--accent-1));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+/* Info Box */
+.info-box {
+    background: rgba(58, 134, 255, 0.05);
+    border: 1px solid rgba(58, 134, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    gap: 15px;
+}
+
+.info-box i {
+    color: var(--accent-3);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.info-content {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.info-content strong {
+    color: var(--accent-3);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+@media (max-width: 639px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+
+.btn-action {
+    flex: 1;
+    padding: 16px 24px;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-proceed {
+    background: linear-gradient(135deg, var(--accent-1) 0%, #ff3366 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
+}
+
+.btn-proceed:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 0, 110, 0.4);
+}
+
+.btn-proceed:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Sidebar Cards */
+.sidebar-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.sidebar-card:last-child {
+    margin-bottom: 0;
+}
+
+.sidebar-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.sidebar-title i {
+    color: var(--accent-1);
+}
+
+/* Fee Table */
+.fee-table {
+    width: 100%;
+}
+
+.fee-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fee-row:last-child {
+    border-bottom: none;
+}
+
+.fee-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.fee-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.fee-value.free {
+    color: #00c853;
+}
+
+/* Recent Withdrawals */
+.recent-withdrawal-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.recent-withdrawal-item:last-child {
+    border-bottom: none;
+}
+
+.recent-withdrawal-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 0, 110, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recent-withdrawal-icon i {
+    color: var(--accent-1);
+    font-size: 1.1rem;
+}
+
+.recent-withdrawal-info {
+    flex: 1;
+}
+
+.recent-withdrawal-amount {
+    font-weight: 700;
+    color: var(--accent-1);
+    margin-bottom: 3px;
+}
+
+.recent-withdrawal-meta {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.recent-withdrawal-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.status-pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.status-processing {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.status-failed {
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--accent-1);
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-1);
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.loading-text {
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+/* Success State */
+.success-state {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: #00c853;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: bounceIn 0.8s ease;
+}
+
+.success-icon i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.success-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #00c853;
+}
+
+.success-message {
+    color: var(--text-light);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+/* Confirmation Details */
+.confirmation-details {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin: 25px 0;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.detail-value.highlight {
+    color: var(--accent-1);
+    font-size: 1.1rem;
+}
+
+.detail-value.reference {
+    font-family: monospace;
+    color: var(--accent-1);
+}
+
+/* Animations */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .wallet-summary {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .wallet-info {
+        flex-direction: column;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .wallet-balance {
+        text-align: center;
+    }
+}
+
+@media (max-width: 639px) {
+    .withdrawal-card {
+        padding: 20px;
+    }
+    
+    .quick-amounts {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .fee-row {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 5px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="withdrawal-container">
+    <!-- Withdrawal Header -->
+    <div class="withdrawal-header">
+        <div class="withdrawal-title">
+            <h1>Withdraw Funds</h1>
+            <p>Withdraw money from your wallet to your M-Pesa account</p>
+        </div>
+        <div class="withdrawal-actions">
+            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Finance
+            </a>
+            <a href="{% url 'finance:transactions' %}" class="btn btn-outline">
+                <i class="fas fa-history"></i> Transaction History
+            </a>
+        </div>
+    </div>
+    
+    <!-- Wallet Summary -->
+    <div class="wallet-summary">
+        <div class="wallet-info">
+            <div class="wallet-icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="wallet-details">
+                <h3>Your Wallet Balance</h3>
+                <p>Available for withdrawal</p>
+            </div>
+        </div>
+        <div class="wallet-balance">
+            <div class="label">Current Balance</div>
+            <div class="value">Ksh {{ wallet.balance|floatformat:0|intcomma }}</div>
+            <div class="available">
+                Available: <strong>Ksh {{ wallet.available_balance|floatformat:0|intcomma }}</strong>
+                {% if wallet.locked_balance > 0 %}
+                <span style="color: var(--text-light); margin-left: 10px;">
+                    <i class="fas fa-lock"></i> Locked: Ksh {{ wallet.locked_balance|floatformat:0|intcomma }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Withdrawal Grid -->
+    <div class="withdrawal-grid">
+        <!-- Left Column - Withdrawal Form -->
+        <div class="withdrawal-column">
+            <div class="withdrawal-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-mobile-alt"></i> Withdraw to M-Pesa
+                    </h2>
+                    <p class="card-subtitle">
+                        Instant withdrawals to your M-Pesa account. Funds are sent immediately.
+                    </p>
+                </div>
+                
+                <!-- Saved Payment Methods -->
+                {% if saved_methods %}
+                <div class="saved-methods">
+                    <div class="saved-methods-title">
+                        <h4>Saved M-Pesa Numbers</h4>
+                        <a href="{% url 'finance:payment_methods' %}">Manage</a>
+                    </div>
+                    {% for method in saved_methods %}
+                    <div class="saved-method-item" onclick="selectSavedMethod('{{ method.phone_number }}')">
+                        <div class="saved-method-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="saved-method-info">
+                            <div class="saved-method-number">{{ method.phone_number }}</div>
+                            <div class="saved-method-meta">Added {{ method.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        {% if method.is_default %}
+                        <span class="saved-method-default">DEFAULT</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Withdrawal Form -->
+                <form id="withdrawalForm" class="withdrawal-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="phone">M-Pesa Phone Number</label>
+                        <div class="phone-input-group">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" 
+                                   id="phone" 
+                                   name="phone" 
+                                   class="phone-input" 
+                                   placeholder="e.g., 0712345678" 
+                                   value="{{ saved_methods.0.phone_number|default:'' }}"
+                                   pattern="[0-9]{10}"
+                                   maxlength="10"
+                                   autocomplete="off"
+                                   required>
+                        </div>
+                        <div class="amount-hint">
+                            <span><i class="fas fa-info-circle"></i> Enter 10-digit number without spaces</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">Amount to Withdraw</label>
+                        <div class="amount-input-wrapper">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <input type="number" 
+                                   id="amount" 
+                                   name="amount" 
+                                   class="amount-input" 
+                                   placeholder="0" 
+                                   min="{{ min_withdrawal }}" 
+                                   max="{{ max_withdrawal }}"
+                                   step="100"
+                                   required>
+                            <span class="currency-symbol">KES</span>
+                        </div>
+                        <div class="amount-hint">
+                            <span><i class="fas fa-arrow-up"></i> Min: Ksh {{ min_withdrawal|intcomma }}</span>
+                            <span><i class="fas fa-arrow-down"></i> Max: Ksh {{ max_withdrawal|intcomma }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Amount Buttons -->
+                    <div class="quick-amounts">
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(500)">500</button>
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(1000)">1,000</button>
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(2000)">2,000</button>
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(5000)">5,000</button>
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(10000)">10,000</button>
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(20000)">20,000</button>
+                        <button type="button" class="quick-amount-btn" onclick="setAmount(50000)">50,000</button>
+                        <button type="button" class="quick-amount-btn" onclick="setMaxAmount()">MAX</button>
+                    </div>
+                    
+                    <!-- Withdrawal Limits Info -->
+                    <div class="withdrawal-limits">
+                        <div class="limit-title">
+                            <i class="fas fa-shield-alt"></i> Withdrawal Limits
+                        </div>
+                        <div class="limit-item">
+                            <span class="limit-label">Daily Limit</span>
+                            <span class="limit-value">Ksh {{ wallet.daily_withdrawal_limit|floatformat:0|intcomma }}</span>
+                        </div>
+                        <div class="limit-item">
+                            <span class="limit-label">Used Today</span>
+                            <span class="limit-value">Ksh {{ today_withdrawals|floatformat:0|intcomma }}</span>
+                        </div>
+                        <div class="limit-item">
+                            <span class="limit-label">Remaining</span>
+                            <span class="limit-value" style="color: var(--accent-1);">Ksh {{ wallet.remaining_daily_withdrawal|floatformat:0|intcomma }}</span>
+                        </div>
+                        
+                        <div class="limit-progress">
+                            <div class="progress-header">
+                                <span>Daily Usage</span>
+                                <span id="dailyUsagePercentage">
+                                    {% if wallet.daily_withdrawal_limit > 0 %}
+                                        {% widthratio today_withdrawals wallet.daily_withdrawal_limit 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" 
+                                     style="width: {% if wallet.daily_withdrawal_limit > 0 %}{% widthratio today_withdrawals wallet.daily_withdrawal_limit 100 %}{% else %}0{% endif %}%;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <i class="fas fa-clock"></i>
+                        <div class="info-content">
+                            <strong>Processing Time:</strong> Withdrawals are processed instantly and sent to your M-Pesa within seconds. 
+                            M-Pesa charges a small fee of <strong>KES 10-35</strong> depending on the amount.
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button type="button" class="btn-action btn-cancel" onclick="window.location.href='{% url 'finance:dashboard' %}'">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-action btn-proceed" id="withdrawButton">
+                            <i class="fas fa-paper-plane"></i> Withdraw Now
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Loading Overlay -->
+                <div id="withdrawalLoading" class="loading-overlay" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Processing withdrawal...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column - Information Sidebar -->
+        <div class="withdrawal-column">
+            <!-- Withdrawal Fees -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <i class="fas fa-coins"></i> Withdrawal Fees
+                </h3>
+                <div class="fee-table">
+                    <div class="fee-row">
+                        <span class="fee-label">KES 1 - 49</span>
+                        <span class="fee-value">KES 10</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">KES 50 - 100</span>
+                        <span class="fee-value">KES 13</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">KES 101 - 500</span>
+                        <span class="fee-value">KES 23</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">KES 501 - 2,500</span>
+                        <span class="fee-value">KES 28</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">KES 2,501 - 15,000</span>
+                        <span class="fee-value">KES 30</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label">KES 15,001 - 35,000</span>
+                        <span class="fee-value">KES 35</span>
+                    </div>
+                </div>
+                <p style="color: var(--text-light); font-size: 0.8rem; margin-top: 15px;">
+                    <i class="fas fa-info-circle"></i> Fees charged by M-Pesa, not Airvyb
+                </p>
+            </div>
+            
+            <!-- Recent Withdrawals -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <i class="fas fa-history"></i> Recent Withdrawals
+                </h3>
+                {% if recent_withdrawals %}
+                    {% for withdrawal in recent_withdrawals %}
+                    <div class="recent-withdrawal-item">
+                        <div class="recent-withdrawal-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="recent-withdrawal-info">
+                            <div class="recent-withdrawal-amount">- Ksh {{ withdrawal.amount|floatformat:0|intcomma }}</div>
+                            <div class="recent-withdrawal-meta">{{ withdrawal.initiated_at|date:"M d, Y H:i" }} • {{ withdrawal.phone_number }}</div>
+                        </div>
+                        <span class="recent-withdrawal-status status-{{ withdrawal.status }}">
+                            {{ withdrawal.get_status_display|upper }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 30px 0; color: var(--text-light);">
+                        <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <p>No recent withdrawals</p>
+                    </div>
+                {% endif %}
+                
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="{% url 'finance:transactions' %}?type=withdrawal" class="btn btn-outline btn-sm">
+                        View All Withdrawals
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Need Help? -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <i class="fas fa-question-circle"></i> Need Help?
+                </h3>
+                <div style="color: var(--text-light); font-size: 0.95rem; line-height: 1.6;">
+                    <p style="margin-bottom: 15px;">
+                        <i class="fas fa-phone" style="color: var(--accent-1); margin-right: 8px;"></i> 
+                        M-Pesa Support: 0722000000
+                    </p>
+                    <p style="margin-bottom: 15px;">
+                        <i class="fas fa-envelope" style="color: var(--accent-1); margin-right: 8px;"></i> 
+                        support@airvyb.com
+                    </p>
+                    <p>
+                        <i class="fas fa-clock" style="color: var(--accent-1); margin-right: 8px;"></i> 
+                        24/7 Customer Support
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-check-circle"></i> Withdrawal Successful</h3>
+            <button type="button" class="close-modal" onclick="closeSuccessModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="success-state">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                
+                <h3 class="success-title">Withdrawal Initiated!</h3>
+                
+                <p class="success-message">
+                    Your withdrawal of <strong id="successAmount">KES 0</strong> has been processed successfully.
+                </p>
+                
+                <div class="confirmation-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Transaction ID:</span>
+                        <span class="detail-value reference" id="successReference">TXN-XXXXXX</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">M-Pesa Number:</span>
+                        <span class="detail-value" id="successPhone">07XXXXXXXX</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date & Time:</span>
+                        <span class="detail-value" id="successDateTime">Just now</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">New Balance:</span>
+                        <span class="detail-value highlight" id="successBalance">Ksh 0</span>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{% url 'finance:dashboard' %}" class="btn-action btn-proceed" style="text-decoration: none;">
+                        <i class="fas fa-check"></i> Done
+                    </a>
+                    <a href="{% url 'finance:transactions' %}" class="btn-action btn-cancel" style="text-decoration: none;">
+                        <i class="fas fa-history"></i> View Transaction
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div id="errorModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-circle"></i> Withdrawal Failed</h3>
+            <button type="button" class="close-modal" onclick="closeErrorModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="error-state" style="text-align: center; padding: 20px 0;">
+                <div style="width: 80px; height: 80px; background: var(--accent-1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fas fa-times" style="font-size: 2.5rem; color: white;"></i>
+                </div>
+                
+                <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 15px; color: var(--accent-1);">Withdrawal Failed</h3>
+                
+                <p style="color: var(--text-light); font-size: 1rem; line-height: 1.6; margin-bottom: 25px;" id="errorMessage">
+                    Your withdrawal could not be processed. Please try again.
+                </p>
+                
+                <div class="action-buttons">
+                    <button type="button" class="btn-action btn-proceed" onclick="closeErrorModal()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button type="button" class="btn-action btn-cancel" onclick="retryWithdrawal()">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// WITHDRAWAL STATE MANAGEMENT
+// ============================================
+let withdrawalState = {
+    amount: 0,
+    phone: '',
+    isProcessing: false
+};
+
+// ============================================
+// AMOUNT SETTING
+// ============================================
+function setAmount(amount) {
+    const amountInput = document.getElementById('amount');
+    const quickButtons = document.querySelectorAll('.quick-amount-btn');
+    const maxAmount = parseFloat('{{ wallet.available_balance }}');
+    const dailyRemaining = parseFloat('{{ wallet.remaining_daily_withdrawal }}');
+    
+    // Respect both wallet balance and daily limit
+    let finalAmount = Math.min(amount, maxAmount, dailyRemaining);
+    
+    if (amountInput) {
+        amountInput.value = finalAmount;
+        
+        // Update active state
+        quickButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.replace(/,/g, '') == amount || 
+                (btn.textContent === 'MAX' && finalAmount === maxAmount)) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Trigger input event for any listeners
+        amountInput.dispatchEvent(new Event('input'));
+    }
+}
+
+function setMaxAmount() {
+    const maxAmount = parseFloat('{{ wallet.available_balance }}');
+    const dailyRemaining = parseFloat('{{ wallet.remaining_daily_withdrawal }}');
+    const finalAmount = Math.min(maxAmount, dailyRemaining);
+    setAmount(finalAmount);
+}
+
+function selectSavedMethod(phone) {
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.value = phone;
+        phoneInput.style.borderColor = 'var(--accent-1)';
+    }
+}
+
+// ============================================
+// FORM VALIDATION
+// ============================================
+function validateWithdrawalForm() {
+    const phoneInput = document.getElementById('phone');
+    const amountInput = document.getElementById('amount');
+    
+    // Validate phone
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneInput || !phoneInput.value || !phoneRegex.test(phoneInput.value)) {
+        showToast('Please enter a valid 10-digit M-Pesa number', 'error');
+        phoneInput?.focus();
+        return false;
+    }
+    
+    // Validate amount
+    const amount = parseFloat(amountInput.value);
+    const minAmount = parseFloat('{{ min_withdrawal }}');
+    const maxAmount = parseFloat('{{ max_withdrawal }}');
+    const availableBalance = parseFloat('{{ wallet.available_balance }}');
+    const dailyRemaining = parseFloat('{{ wallet.remaining_daily_withdrawal }}');
+    
+    if (!amount || amount < minAmount) {
+        showToast(`Minimum withdrawal amount is Ksh ${minAmount.toLocaleString()}`, 'error');
+        amountInput?.focus();
+        return false;
+    }
+    
+    if (amount > maxAmount) {
+        showToast(`Maximum withdrawal amount is Ksh ${maxAmount.toLocaleString()}`, 'error');
+        amountInput?.focus();
+        return false;
+    }
+    
+    if (amount > availableBalance) {
+        showToast(`Insufficient balance. Available: Ksh ${availableBalance.toLocaleString()}`, 'error');
+        amountInput?.focus();
+        return false;
+    }
+    
+    if (amount > dailyRemaining) {
+        showToast(`Daily withdrawal limit exceeded. Remaining: Ksh ${dailyRemaining.toLocaleString()}`, 'error');
+        amountInput?.focus();
+        return false;
+    }
+    
+    return {
+        phone: phoneInput.value,
+        amount: amount
+    };
+}
+
+// ============================================
+// WITHDRAWAL SUBMISSION
+// ============================================
+document.getElementById('withdrawalForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Prevent double submission
+    if (withdrawalState.isProcessing) return;
+    
+    // Validate form
+    const validation = validateWithdrawalForm();
+    if (!validation) return;
+    
+    const withdrawButton = document.getElementById('withdrawButton');
+    const loadingElement = document.getElementById('withdrawalLoading');
+    const loadingText = document.getElementById('loadingText');
+    
+    // Store in state
+    withdrawalState.phone = validation.phone;
+    withdrawalState.amount = validation.amount;
+    withdrawalState.isProcessing = true;
+    
+    // Disable button
+    if (withdrawButton) {
+        withdrawButton.disabled = true;
+        withdrawButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+    
+    // Show loading
+    if (loadingElement) {
+        loadingElement.style.display = 'flex';
+        loadingText.textContent = 'Processing withdrawal...';
+    }
+    
+    try {
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('phone', validation.phone);
+        formData.append('amount', validation.amount);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        // Make API request
+        const response = await fetch("{% url 'finance:process_withdrawal' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Hide loading
+            if (loadingElement) loadingElement.style.display = 'none';
+            
+            // Show success modal
+            showSuccessModal(data.transaction);
+            
+            // Reset form
+            resetWithdrawalForm();
+            
+            // Show success toast
+            showToast('Withdrawal processed successfully!', 'success');
+            
+        } else {
+            throw new Error(data.error || 'Withdrawal failed');
+        }
+        
+    } catch (error) {
+        console.error('Withdrawal error:', error);
+        
+        // Hide loading
+        if (loadingElement) loadingElement.style.display = 'none';
+        
+        // Show error modal
+        showErrorModal(error.message);
+        
+    } finally {
+        // Re-enable button
+        withdrawalState.isProcessing = false;
+        if (withdrawButton) {
+            withdrawButton.disabled = false;
+            withdrawButton.innerHTML = '<i class="fas fa-paper-plane"></i> Withdraw Now';
+        }
+    }
+});
+
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
+function showSuccessModal(transaction) {
+    const modal = document.getElementById('successModal');
+    
+    // Update modal content
+    document.getElementById('successAmount').textContent = 'KES ' + transaction.amount.toLocaleString();
+    document.getElementById('successReference').textContent = transaction.reference;
+    document.getElementById('successPhone').textContent = transaction.phone;
+    
+    const now = new Date();
+    document.getElementById('successDateTime').textContent = now.toLocaleString('en-KE', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    document.getElementById('successBalance').textContent = 'Ksh ' + transaction.balance_after.toLocaleString();
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    window.location.href = '{% url " finance:dashboard" %}';
+}
+
+function showErrorModal(message) {
+    const modal = document.getElementById('errorModal');
+    document.getElementById('errorMessage').textContent = message || 'Your withdrawal could not be processed. Please try again.';
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeErrorModal() {
+    document.getElementById('errorModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function retryWithdrawal() {
+    closeErrorModal();
+    // Focus on amount input
+    document.getElementById('amount').focus();
+}
+
+// ============================================
+// FORM RESET
+// ============================================
+function resetWithdrawalForm() {
+    const form = document.getElementById('withdrawalForm');
+    if (form) form.reset();
+    
+    // Clear active states from quick amount buttons
+    document.querySelectorAll('.quick-amount-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Hide loading
+    document.getElementById('withdrawalLoading').style.display = 'none';
+}
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+function showToast(message, type = 'info') {
+    // Remove existing toasts
+    const existingToasts = document.querySelectorAll('.toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-left: 4px solid ${type === 'success' ? '#00c853' : type === 'error' ? 'var(--accent-1)' : 'var(--accent-3)'};
+        border-radius: 12px;
+        padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 99999;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+               style="font-size: 1.2rem; color: ${type === 'success' ? '#00c853' : type === 'error' ? 'var(--accent-1)' : 'var(--accent-3)'};"></i>
+            <span style="flex: 1; font-size: 0.95rem; color: var(--text);">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ============================================
+// PHONE INPUT VALIDATION
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) value = value.substring(0, 10);
+            e.target.value = value;
+            
+            // Visual feedback
+            if (value.length === 10) {
+                e.target.style.borderColor = 'var(--accent-1)';
+            } else {
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            }
+        });
+    }
+    
+    // Amount input validation
+    const amountInput = document.getElementById('amount');
+    if (amountInput) {
+        amountInput.addEventListener('input', function(e) {
+            let value = parseFloat(e.target.value);
+            const min = parseFloat(e.target.min);
+            const max = parseFloat(e.target.max);
+            const available = parseFloat('{{ wallet.available_balance }}');
+            const dailyRemaining = parseFloat('{{ wallet.remaining_daily_withdrawal }}');
+            
+            if (!isNaN(value)) {
+                // Respect all limits
+                const effectiveMax = Math.min(max, available, dailyRemaining);
+                if (value < min) e.target.value = min;
+                if (value > effectiveMax) e.target.value = effectiveMax;
+            }
+        });
+        
+        // Focus effects
+        amountInput.addEventListener('focus', function(e) {
+            e.target.parentElement.style.boxShadow = '0 0 0 3px rgba(255, 0, 110, 0.1)';
+        });
+        
+        amountInput.addEventListener('blur', function(e) {
+            e.target.parentElement.style.boxShadow = 'none';
+        });
+    }
+});
+
+// ============================================
+// CLOSE MODAL WITH ESCAPE KEY
+// ============================================
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        if (document.getElementById('successModal').style.display === 'block') {
+            closeSuccessModal();
+        }
+        if (document.getElementById('errorModal').style.display === 'block') {
+            closeErrorModal();
+        }
+    }
+});
+
+// ============================================
+// CLOSE MODAL WHEN CLICKING OUTSIDE
+// ============================================
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        if (document.getElementById('successModal').style.display === 'block') {
+            closeSuccessModal();
+        }
+        if (document.getElementById('errorModal').style.display === 'block') {
+            closeErrorModal();
+        }
+    }
+}
+</script>
+
+<!-- Add modal styles -->
+<style>
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+.modal-header {
+    padding: 25px;
+    background: linear-gradient(to right, rgba(255, 0, 110, 0.1), rgba(58, 134, 255, 0.1));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-modal:hover {
+    background: var(--accent-1);
+    color: white;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+</style>
+{% endblock %}

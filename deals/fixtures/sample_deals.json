@@ -1,0 +1,61 @@
+[
+  {
+    "model": "deals.dealcategory",
+    "pk": 1,
+    "fields": {
+      "name": "M-Pesa Outlet",
+      "description": "Investment in M-Pesa agent outlets with steady commission income",
+      "icon": "mobile-alt",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "deals.dealcategory",
+    "pk": 2,
+    "fields": {
+      "name": "Service Unit",
+      "description": "Service-based business units with recurring revenue",
+      "icon": "concierge-bell",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "deals.dealcategory",
+    "pk": 3,
+    "fields": {
+      "name": "Asset",
+      "description": "Physical assets that generate rental or appreciation income",
+      "icon": "building",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "deals.deal",
+    "pk": 1,
+    "fields": {
+      "title": "Nairobi CBD M-Pesa Outlet",
+      "slug": "nairobi-cbd-m-pesa-outlet",
+      "reference": "DL-001",
+      "category": 1,
+      "objective": "Establish a high-volume M-Pesa agent outlet in Nairobi CBD",
+      "description": "This outlet will be located in a prime location in Nairobi CBD with high foot traffic.",
+      "opt_in_amount": 5000.00,
+      "total_capital_required": 500000.00,
+      "min_opt_in_members": 50,
+      "max_opt_in_members": 100,
+      "expected_operations": "Daily M-Pesa transactions, bill payments, money transfers",
+      "risk_level": "low",
+      "duration_months": 24,
+      "management_fee_percent": 10.00,
+      "performance_carry_percent": 20.00,
+      "status": "opt_in_open",
+      "total_opted_in": 45,
+      "total_collected": 225000.00,
+      "created_at": "2024-02-01T10:00:00Z",
+      "updated_at": "2024-02-26T10:00:00Z"
+    }
+  }
+]

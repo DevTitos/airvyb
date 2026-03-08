@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | Airvyb</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #000000;
+            --secondary: #0a0a0a;
+            --accent: #ff006e;
+            --accent-light: #ff3385;
+            --text: #ffffff;
+            --text-light: #b0b0b0;
+            --card: #111111;
+            --radius: 12px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 600px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        /* Left Panel - Brand */
+        .brand-panel {
+            background: linear-gradient(135deg, #000000 0%, #1a0033 100%);
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 110, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 110, 0.05) 0%, transparent 50%);
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff 30%, var(--accent) 70%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tagline {
+            font-size: 20px;
+            color: var(--text-light);
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .quote {
+            font-style: italic;
+            color: var(--text-light);
+            font-size: 18px;
+            border-left: 3px solid var(--accent);
+            padding-left: 20px;
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
+            max-width: 400px;
+        }
+
+        /* Right Panel - Login Form */
+        .form-panel {
+            background: var(--card);
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #fff 30%, var(--accent) 70%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .form-header p {
+            color: var(--text-light);
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255, 0, 110, 0.05);
+            box-shadow: 0 0 0 3px rgba(255, 0, 110, 0.1);
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .forgot-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 0, 110, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .auth-footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error-message {
+            color: #ff4757;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--card);
+            padding: 16px 24px;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--accent);
+            box-shadow: var(--shadow);
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+                max-width: 450px;
+            }
+
+            .brand-panel {
+                padding: 40px 30px;
+            }
+
+            .form-panel {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .form-panel {
+                padding: 30px 20px;
+            }
+
+            .brand-panel {
+                padding: 30px 20px;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+
+            .form-header h1 {
+                font-size: 28px;
+            }
+
+            .form-options {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .forgot-link {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Left Panel - Brand -->
+        <div class="brand-panel">
+            <div class="logo">Air<span>vyb</span></div>
+            <p class="tagline">Strategic Youth Economic Platform</p>
+            <p class="quote">"Structure creates sustainability. Governance enables scaling."</p>
+        </div>
+
+        <!-- Right Panel - Login Form -->
+        <div class="form-panel">
+            <div class="form-header">
+                <h1>Welcome Back</h1>
+                <p>Sign in to your strategic account</p>
+            </div>
+
+            <form id="loginForm">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="username">Email or Phone Number</label>
+                    <input type="text" id="username" name="username" required 
+                           placeholder="you@example.com or 0712345678">
+                    <div class="error-message" id="username-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="••••••••">
+                    <div class="error-message" id="password-error"></div>
+                </div>
+
+                <div class="form-options">
+                    <div class="remember">
+                        <input type="checkbox" id="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    <a href="{% url 'password_reset_request' %}" class="forgot-link">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="submit-btn" id="loginBtn">
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>New to Airvyb? <a href="{% url 'register' %}">Create an account</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Toast function
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+                   style="color: ${type === 'success' ? '#2ed573' : type === 'error' ? '#ff4757' : '#1e90ff'}"></i>
+                <span>${message}</span>
+            `;
+            toast.style.borderLeftColor = type === 'success' ? '#2ed573' : type === 'error' ? '#ff4757' : '#1e90ff';
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+        
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('loginBtn');
+            const btnText = btn.querySelector('span');
+            const originalText = btnText.textContent;
+            
+            // Show loading
+            btnText.innerHTML = '<div class="spinner"></div>';
+            btn.disabled = true;
+            
+            // Clear previous errors
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            
+            // Get form data
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            };
+            
+            // Basic validation
+            if (!formData.username) {
+                showError('username-error', 'Email or phone number is required');
+                btnText.textContent = originalText;
+                btn.disabled = false;
+                return;
+            }
+            
+            if (!formData.password) {
+                showError('password-error', 'Password is required');
+                btnText.textContent = originalText;
+                btn.disabled = false;
+                return;
+            }
+            
+            try {
+                const response = await fetch('/ajax/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Welcome back!', 'success');
+                    
+                    setTimeout(() => {
+                        if (result.requires_verification) {
+                            window.location.href = `/verify-email/${result.user_id}/`;
+                        } else {
+                            window.location.href = result.redirect_url || '/dashboard/';
+                        }
+                    }, 1000);
+                } else {
+                    // Show error
+                    if (result.errors) {
+                        for (const [field, errors] of Object.entries(result.errors)) {
+                            const errorEl = document.getElementById(`${field}-error`);
+                            if (errorEl) {
+                                errorEl.textContent = Array.isArray(errors) ? errors.join(', ') : errors;
+                                errorEl.style.display = 'block';
+                            }
+                        }
+                    } else if (result.message) {
+                        showToast(result.message, 'error');
+                    }
+                    
+                    btnText.textContent = originalText;
+                    btn.disabled = false;
+                }
+                
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+                btnText.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+        
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+        }
+        
+        // Auto-focus username field
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>

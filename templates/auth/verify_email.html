@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | Airvyb</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #000000;
+            --secondary: #0a0a0a;
+            --accent: #ff006e;
+            --accent-light: #ff3385;
+            --text: #ffffff;
+            --text-light: #b0b0b0;
+            --card: #111111;
+            --radius: 12px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .verify-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .verify-card {
+            background: var(--card);
+            padding: 50px 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .verify-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 36px;
+        }
+
+        .verify-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #fff 30%, var(--accent) 70%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .verify-header p {
+            color: var(--text-light);
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .code-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .code-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.07);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text);
+            transition: all 0.3s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255, 0, 110, 0.05);
+            box-shadow: 0 0 0 3px rgba(255, 0, 110, 0.1);
+        }
+
+        .verify-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin: 20px 0;
+        }
+
+        .verify-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 0, 110, 0.3);
+        }
+
+        .verify-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .resend-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .resend-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+
+        .resend-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .timer {
+            display: inline-block;
+            margin-left: 10px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .error-message {
+            color: #ff4757;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--card);
+            padding: 16px 24px;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--accent);
+            box-shadow: var(--shadow);
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.show {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .verify-card {
+                padding: 30px 20px;
+            }
+
+            .code-inputs {
+                gap: 8px;
+            }
+
+            .code-input {
+                width: 40px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <div class="verify-card">
+            <div class="verify-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            
+            <div class="verify-header">
+                <h1>Verify Your Email</h1>
+                <p>Enter the 6-digit code sent to your email address</p>
+            </div>
+
+            <div class="code-inputs">
+                {% for i in "123456" %}
+                <input type="text" class="code-input" maxlength="1" data-index="{{ forloop.counter }}">
+                {% endfor %}
+            </div>
+
+            <div class="error-message" id="code-error"></div>
+
+            <button class="verify-btn" id="verifyBtn">
+                <span>Verify Email</span>
+            </button>
+
+            <div class="resend-section">
+                <p>
+                    Didn't receive the code? 
+                    <button class="resend-btn" id="resendBtn">Resend Code</button>
+                    <span class="timer" id="timer" style="display: none;">(60s)</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        const userId = '{{ user_id }}';
+        
+        // Toast function
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+                   style="color: ${type === 'success' ? '#2ed573' : type === 'error' ? '#ff4757' : '#1e90ff'}"></i>
+                <span>${message}</span>
+            `;
+            toast.style.borderLeftColor = type === 'success' ? '#2ed573' : type === 'error' ? '#ff4757' : '#1e90ff';
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+        
+        // Code input handling
+        const codeInputs = document.querySelectorAll('.code-input');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const resendBtn = document.getElementById('resendBtn');
+        const timerElement = document.getElementById('timer');
+        
+        // Auto-focus first input
+        codeInputs[0].focus();
+        
+        // Handle code input
+        codeInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                // Only allow digits
+                e.target.value = e.target.value.replace(/\D/g, '');
+                
+                // Move to next input if value entered
+                if (e.target.value && index < codeInputs.length - 1) {
+                    codeInputs[index + 1].focus();
+                }
+                
+                // Enable verify button if all inputs filled
+                const allFilled = Array.from(codeInputs).every(input => input.value);
+                verifyBtn.disabled = !allFilled;
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                // Move to previous input on backspace if empty
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    codeInputs[index - 1].focus();
+                }
+            });
+            
+            // Handle paste
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasteData = e.clipboardData.getData('text');
+                
+                if (/^\d{6}$/.test(pasteData)) {
+                    pasteData.split('').forEach((char, charIndex) => {
+                        if (codeInputs[charIndex]) {
+                            codeInputs[charIndex].value = char;
+                        }
+                    });
+                    
+                    // Focus last input
+                    codeInputs[5].focus();
+                    verifyBtn.disabled = false;
+                }
+            });
+        });
+        
+        // Get full code
+        function getFullCode() {
+            return Array.from(codeInputs).map(input => input.value).join('');
+        }
+        
+        // Verify button handler
+        verifyBtn.addEventListener('click', async function() {
+            const code = getFullCode();
+            
+            if (code.length !== 6) {
+                showError('code-error', 'Please enter the complete 6-digit code');
+                return;
+            }
+            
+            const btnText = this.querySelector('span');
+            const originalText = btnText.textContent;
+            
+            // Show loading
+            btnText.innerHTML = '<div class="spinner"></div>';
+            this.disabled = true;
+            
+            try {
+                const response = await fetch('/ajax/verify-email/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        code: code
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Email verified successfully!', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = result.redirect_url || '/dashboard/';
+                    }, 1500);
+                } else {
+                    showError('code-error', result.message || 'Invalid verification code');
+                    this.disabled = false;
+                    btnText.textContent = originalText;
+                }
+                
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+                this.disabled = false;
+                btnText.textContent = originalText;
+            }
+        });
+        
+        // Resend button handler
+        resendBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            timerElement.style.display = 'inline';
+            
+            // Start 60-second timer
+            let seconds = 60;
+            const timerInterval = setInterval(() => {
+                seconds--;
+                timerElement.textContent = `(${seconds}s)`;
+                
+                if (seconds === 0) {
+                    clearInterval(timerInterval);
+                    this.disabled = false;
+                    timerElement.style.display = 'none';
+                }
+            }, 1000);
+            
+            try {
+                const response = await fetch('/ajax/resend-verification/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        user_id: userId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('New verification code sent!', 'success');
+                    
+                    // Clear inputs and refocus
+                    codeInputs.forEach(input => input.value = '');
+                    codeInputs[0].focus();
+                    verifyBtn.disabled = true;
+                } else {
+                    showToast(result.message || 'Failed to resend code', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            }
+        });
+        
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

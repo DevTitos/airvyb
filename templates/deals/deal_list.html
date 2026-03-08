@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Investment Deals | Airvyb{% endblock %}
+
+{% block content %}
+<div class="deals-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>Investment Deals</h1>
+        <p>Opt in to specific deals managed by Airvyb Management Ltd (AML)</p>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-bar">
+        <form method="GET" class="filter-form">
+            <select name="category" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select name="status" onchange="this.form.submit()">
+                <option value="opt_in_open" {% if current_status == 'opt_in_open' %}selected{% endif %}>Opt-In Open</option>
+                <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active Deals</option>
+                <option value="setup" {% if current_status == 'setup' %}selected{% endif %}>In Setup</option>
+                <option value="closed" {% if current_status == 'closed' %}selected{% endif %}>Closed Deals</option>
+            </select>
+        </form>
+    </div>
+    
+    <!-- Deals Grid -->
+    <div class="deals-grid">
+        {% for deal in deals %}
+        <div class="deal-card">
+            {% if deal.cover_image %}
+            <img src="{{ deal.cover_image.url }}" alt="{{ deal.title }}" class="deal-image">
+            {% else %}
+            <div class="deal-image-placeholder">
+                <i class="fas fa-{{ deal.category.icon|default:'briefcase' }}"></i>
+            </div>
+            {% endif %}
+            
+            <div class="deal-content">
+                <span class="deal-category">{{ deal.category.name|default:'Uncategorized' }}</span>
+                <h3 class="deal-title">{{ deal.title }}</h3>
+                <p class="deal-objective">{{ deal.objective|truncatechars:100 }}</p>
+                
+                <div class="deal-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-tag"></i>
+                        <span>Opt-In: Ksh {{ deal.opt_in_amount|floatformat:0|intcomma }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ deal.duration_months }} months</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span class="risk-{{ deal.risk_level }}">{{ deal.get_risk_level_display }}</span>
+                    </div>
+                </div>
+                
+                {% if deal.is_opt_in_open %}
+                <div class="deal-progress">
+                    <div class="progress-header">
+                        <span>Opt-Ins: {{ deal.total_opted_in }}{% if deal.max_opt_in_members %} / {{ deal.max_opt_in_members }}{% endif %}</span>
+                        <span>{{ deal.progress_percentage|floatformat:0 }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ deal.progress_percentage|floatformat:0 }}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="deal-footer">
+                    <span class="deal-status status-{{ deal.status }}">
+                        {{ deal.get_status_display }}
+                    </span>
+                    
+                    <a href="{% url 'deals:detail' deal.slug %}" class="btn-view">
+                        View Deal <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                
+                {% if deal.id in user_opt_in_deal_ids %}
+<div class="opted-in-badge">
+    <i class="fas fa-check-circle"></i> You're opted in
+</div>
+{% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h3>No Deals Found</h3>
+            <p>Check back later for new investment opportunities.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.deals-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.filters-bar {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.filter-form select {
+    padding: 12px 20px;
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    margin: 0 5px;
+    cursor: pointer;
+}
+
+.deals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.deal-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    transition: var(--transition);
+    position: relative;
+}
+
+.deal-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-1);
+    box-shadow: var(--shadow-accent);
+}
+
+.deal-image, .deal-image-placeholder {
+    height: 200px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.deal-image-placeholder {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.deal-image-placeholder i {
+    font-size: 4rem;
+    color: var(--accent-1);
+    opacity: 0.7;
+}
+
+.deal-content {
+    padding: 25px;
+}
+
+.deal-category {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(255,0,110,0.1);
+    color: var(--accent-1);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+}
+
+.deal-title {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.deal-objective {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.deal-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.meta-item i {
+    color: var(--accent-1);
+}
+
+.risk-low { color: #00c853; }
+.risk-medium { color: var(--accent-5); }
+.risk-high { color: var(--accent-1); }
+
+.deal-progress {
+    margin: 20px 0;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-5));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.deal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.deal-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-opt_in_open {
+    background: rgba(0,200,83,0.1);
+    color: #00c853;
+}
+
+.status-active {
+    background: rgba(58,134,255,0.1);
+    color: var(--accent-3);
+}
+
+.status-setup {
+    background: rgba(255,190,11,0.1);
+    color: var(--accent-5);
+}
+
+.btn-view {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.btn-view:hover {
+    background: var(--accent-1);
+    color: white;
+}
+
+.opted-in-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0,200,83,0.9);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--accent-1);
+    opacity: 0.5;
+}
+</style>
+
+{% endblock %}

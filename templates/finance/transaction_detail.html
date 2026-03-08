@@ -1,0 +1,1527 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Transaction Details | Airvyb{% endblock %}
+{% block body_class %}transaction-detail-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Transaction Detail Container */
+.transaction-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .transaction-detail-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Transaction Header */
+.transaction-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+@media (min-width: 768px) {
+    .transaction-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+}
+
+.transaction-title h1 {
+    font-size: 1.75rem;
+    margin-bottom: 5px;
+    background: linear-gradient(to right, #fff 30%, var(--accent-1) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .transaction-title h1 {
+        font-size: 2.2rem;
+    }
+}
+
+.transaction-title p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.transaction-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Transaction Card */
+.transaction-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    margin-bottom: 25px;
+    position: relative;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .transaction-card {
+        padding: 35px;
+        margin-bottom: 30px;
+    }
+}
+
+.transaction-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-3), var(--accent-5));
+}
+
+/* Transaction Status Banner */
+.status-banner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    border-radius: var(--radius);
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.status-banner.completed {
+    background: rgba(0, 200, 83, 0.1);
+    border: 1px solid rgba(0, 200, 83, 0.2);
+}
+
+.status-banner.pending {
+    background: rgba(255, 190, 11, 0.1);
+    border: 1px solid rgba(255, 190, 11, 0.2);
+}
+
+.status-banner.processing {
+    background: rgba(58, 134, 255, 0.1);
+    border: 1px solid rgba(58, 134, 255, 0.2);
+}
+
+.status-banner.failed {
+    background: rgba(255, 0, 110, 0.1);
+    border: 1px solid rgba(255, 0, 110, 0.2);
+}
+
+.status-banner.cancelled {
+    background: rgba(108, 117, 125, 0.1);
+    border: 1px solid rgba(108, 117, 125, 0.2);
+}
+
+.status-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+}
+
+.status-banner.completed .status-icon {
+    background: rgba(0, 200, 83, 0.2);
+    color: #00c853;
+}
+
+.status-banner.pending .status-icon {
+    background: rgba(255, 190, 11, 0.2);
+    color: var(--accent-5);
+}
+
+.status-banner.processing .status-icon {
+    background: rgba(58, 134, 255, 0.2);
+    color: var(--accent-3);
+}
+
+.status-banner.failed .status-icon {
+    background: rgba(255, 0, 110, 0.2);
+    color: var(--accent-1);
+}
+
+.status-banner.cancelled .status-icon {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+}
+
+.status-info {
+    flex: 1;
+}
+
+.status-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.status-banner.completed .status-title {
+    color: #00c853;
+}
+
+.status-banner.pending .status-title {
+    color: var(--accent-5);
+}
+
+.status-banner.processing .status-title {
+    color: var(--accent-3);
+}
+
+.status-banner.failed .status-title {
+    color: var(--accent-1);
+}
+
+.status-banner.cancelled .status-title {
+    color: #6c757d;
+}
+
+.status-message {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.status-amount {
+    text-align: right;
+}
+
+.status-amount .label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.status-amount .value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.status-banner.completed .status-amount .value {
+    color: #00c853;
+}
+
+.status-banner.pending .status-amount .value {
+    color: var(--accent-5);
+}
+
+.status-banner.processing .status-amount .value {
+    color: var(--accent-3);
+}
+
+.status-banner.failed .status-amount .value {
+    color: var(--accent-1);
+}
+
+.status-banner.cancelled .status-amount .value {
+    color: #6c757d;
+}
+
+/* Transaction Grid */
+.transaction-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+}
+
+@media (min-width: 1024px) {
+    .transaction-grid {
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+}
+
+/* Transaction Details Section */
+.details-section {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: var(--text);
+}
+
+.section-title i {
+    color: var(--accent-1);
+    font-size: 1.3rem;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+@media (max-width: 639px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detail-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-label i {
+    color: var(--accent-1);
+    font-size: 0.85rem;
+    width: 16px;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+.detail-value.highlight {
+    color: var(--accent-1);
+    font-size: 1.1rem;
+}
+
+.detail-value.success {
+    color: #00c853;
+}
+
+.detail-value.warning {
+    color: var(--accent-5);
+}
+
+.detail-value.reference {
+    font-family: monospace;
+    background: rgba(255, 0, 110, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* Related Object Card */
+.related-object-card {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    text-decoration: none;
+    display: block;
+    color: inherit;
+}
+
+.related-object-card:hover {
+    border-color: var(--accent-1);
+    background: rgba(255, 0, 110, 0.05);
+    transform: translateY(-2px);
+}
+
+.related-object-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.related-object-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.related-object-icon.investment {
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+}
+
+.related-object-icon.loan {
+    background: rgba(147, 51, 234, 0.1);
+    color: #9333ea;
+}
+
+.related-object-icon.dividend {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.related-object-info {
+    flex: 1;
+}
+
+.related-object-title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.related-object-subtitle {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.related-object-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.related-object-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.related-detail-label {
+    color: var(--text-light);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.related-detail-value {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+/* Metadata Section */
+.metadata-section {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 25px;
+}
+
+.metadata-content {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.metadata-content pre {
+    margin: 0;
+    color: var(--text-light);
+    font-family: monospace;
+}
+
+/* Sidebar Cards */
+.sidebar-card {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.sidebar-card:last-child {
+    margin-bottom: 0;
+}
+
+.sidebar-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.sidebar-title i {
+    color: var(--accent-1);
+}
+
+/* Balance Timeline */
+.balance-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.balance-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.balance-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.balance-icon.before {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.balance-icon.after {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.balance-info {
+    flex: 1;
+}
+
+.balance-label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+.balance-value {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1.1rem;
+}
+
+.balance-arrow {
+    color: var(--text-light);
+    font-size: 1.2rem;
+}
+
+/* Receipt Styles */
+.receipt-card {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    padding: 25px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.receipt-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.receipt-header i {
+    font-size: 2.5rem;
+    color: var(--accent-1);
+    margin-bottom: 10px;
+}
+
+.receipt-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.receipt-header p {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.receipt-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-1), transparent);
+    margin: 20px 0;
+}
+
+.receipt-footer {
+    margin-top: 25px;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--gradient-1);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+.btn-outline {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-outline:hover {
+    background: rgba(255, 0, 110, 0.1);
+    border-color: var(--accent-1);
+    color: var(--accent-1);
+}
+
+.btn-success {
+    background: #00c853;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #00a84f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+}
+
+.btn-danger {
+    background: var(--accent-1);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #ff0055;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
+}
+
+/* Receipt Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+.modal-header {
+    padding: 25px;
+    background: linear-gradient(to right, rgba(255, 0, 110, 0.1), rgba(58, 134, 255, 0.1));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-modal:hover {
+    background: var(--accent-1);
+    color: white;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+/* Print Styles */
+@media print {
+    .transaction-actions,
+    .sidebar-card .btn-action,
+    .modal,
+    .close-modal {
+        display: none !important;
+    }
+    
+    .transaction-card {
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+    
+    .status-banner {
+        border: 1px solid #000;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .status-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .status-amount {
+        text-align: center;
+    }
+    
+    .transaction-actions {
+        width: 100%;
+    }
+    
+    .transaction-actions .btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 639px) {
+    .transaction-card {
+        padding: 20px;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="transaction-detail-container">
+    <!-- Transaction Header -->
+    <div class="transaction-header">
+        <div class="transaction-title">
+            <h1>Transaction Details</h1>
+            <p>View complete information about this transaction</p>
+        </div>
+        <div class="transaction-actions">
+            <a href="{% url 'finance:transactions' %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <button class="btn btn-outline" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Transaction Card -->
+    <div class="transaction-card">
+        <!-- Status Banner -->
+        <div class="status-banner {{ transaction.status }}">
+            <div class="status-icon">
+                <i class="fas fa-{% if transaction.status == 'completed' %}check-circle{% elif transaction.status == 'pending' %}clock{% elif transaction.status == 'processing' %}spinner{% elif transaction.status == 'failed' %}times-circle{% elif transaction.status == 'cancelled' %}ban{% endif %}"></i>
+            </div>
+            <div class="status-info">
+                <div class="status-title">
+                    {{ transaction.get_status_display|upper }}
+                </div>
+                <div class="status-message">
+                    {% if transaction.status == 'completed' %}
+                        This transaction has been completed successfully.
+                    {% elif transaction.status == 'pending' %}
+                        This transaction is pending and waiting to be processed.
+                    {% elif transaction.status == 'processing' %}
+                        This transaction is currently being processed.
+                    {% elif transaction.status == 'failed' %}
+                        This transaction failed. Please try again or contact support.
+                    {% elif transaction.status == 'cancelled' %}
+                        This transaction was cancelled.
+                    {% endif %}
+                </div>
+            </div>
+            <div class="status-amount">
+                <div class="label">Amount</div>
+                <div class="value">
+                    {% if transaction.transaction_type in 'deposit,dividend,loan,refund' %}+{% else %}-{% endif %}
+                    Ksh {{ transaction.amount|floatformat:0|intcomma }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Grid -->
+        <div class="transaction-grid">
+            <!-- Left Column - Details -->
+            <div class="transaction-details-column">
+                <!-- Transaction Details -->
+                <div class="details-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i> Transaction Information
+                    </h2>
+                    <div class="details-grid">
+                        <div class="detail-group">
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-hashtag"></i> Reference
+                                </span>
+                                <span class="detail-value reference">{{ transaction.reference }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-tag"></i> Type
+                                </span>
+                                <span class="detail-value">{{ transaction.get_transaction_type_display }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-credit-card"></i> Payment Method
+                                </span>
+                                <span class="detail-value">
+                                    {% if transaction.payment_method %}
+                                        {{ transaction.get_payment_method_display }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-mobile-alt"></i> Phone Number
+                                </span>
+                                <span class="detail-value">{{ transaction.phone_number|default:'—' }}</span>
+                            </div>
+                            {% if transaction.mpesa_code %}
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-code"></i> M-Pesa Code
+                                </span>
+                                <span class="detail-value reference">{{ transaction.mpesa_code }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="detail-group">
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-calendar-alt"></i> Initiated
+                                </span>
+                                <span class="detail-value">
+                                    {{ transaction.initiated_at|date:"F d, Y" }}<br>
+                                    <small style="color: var(--text-light);">{{ transaction.initiated_at|date:"H:i:s" }}</small>
+                                </span>
+                            </div>
+                            {% if transaction.processed_at %}
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-clock"></i> Processed
+                                </span>
+                                <span class="detail-value">
+                                    {{ transaction.processed_at|date:"F d, Y H:i:s" }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if transaction.completed_at %}
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-check-circle"></i> Completed
+                                </span>
+                                <span class="detail-value success">
+                                    {{ transaction.completed_at|date:"F d, Y H:i:s" }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            {% if transaction.failed_at %}
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-times-circle"></i> Failed
+                                </span>
+                                <span class="detail-value" style="color: var(--accent-1);">
+                                    {{ transaction.failed_at|date:"F d, Y H:i:s" }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-money-bill-wave"></i> Net Amount
+                                </span>
+                                <span class="detail-value highlight">
+                                    Ksh {{ transaction.net_amount|floatformat:0|intcomma }}
+                                </span>
+                            </div>
+                            {% if transaction.fee > 0 %}
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="fas fa-calculator"></i> Fee
+                                </span>
+                                <span class="detail-value" style="color: var(--accent-1);">
+                                    - Ksh {{ transaction.fee|floatformat:0|intcomma }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="details-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-align-left"></i> Description
+                    </h2>
+                    <div style="color: var(--text-light); line-height: 1.8; font-size: 1rem;">
+                        {{ transaction.description|linebreaks }}
+                    </div>
+                    {% if transaction.notes %}
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: var(--text);">
+                            <i class="fas fa-sticky-note" style="color: var(--accent-1); margin-right: 8px;"></i>
+                            Additional Notes
+                        </h3>
+                        <p style="color: var(--text-light);">{{ transaction.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Related Object (Investment/Loan) -->
+                {% if transaction.investment %}
+                <div class="details-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-link"></i> Related Investment
+                    </h2>
+                    <a href="{% url 'investment_detail' transaction.investment.id %}" class="related-object-card">
+                        <div class="related-object-header">
+                            <div class="related-object-icon investment">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="related-object-info">
+                                <div class="related-object-title">{{ transaction.investment.venture.name }}</div>
+                                <div class="related-object-subtitle">Investment #{{ transaction.investment.reference }}</div>
+                            </div>
+                        </div>
+                        <div class="related-object-details">
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Shares</span>
+                                <span class="related-detail-value">{{ transaction.investment.shares }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Amount</span>
+                                <span class="related-detail-value">Ksh {{ transaction.investment.amount_invested|floatformat:0|intcomma }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Status</span>
+                                <span class="related-detail-value">{{ transaction.investment.get_status_display }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Date</span>
+                                <span class="related-detail-value">{{ transaction.investment.invested_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if transaction.loan %}
+                <div class="details-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-link"></i> Related Loan
+                    </h2>
+                    <a href="{% url 'finance:loan_detail' transaction.loan.id %}" class="related-object-card">
+                        <div class="related-object-header">
+                            <div class="related-object-icon loan">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="related-object-info">
+                                <div class="related-object-title">Loan #{{ transaction.loan.reference }}</div>
+                                <div class="related-object-subtitle">{{ transaction.loan.get_purpose_display }}</div>
+                            </div>
+                        </div>
+                        <div class="related-object-details">
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Amount</span>
+                                <span class="related-detail-value">Ksh {{ transaction.loan.amount_approved|floatformat:0|intcomma }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Balance</span>
+                                <span class="related-detail-value">Ksh {{ transaction.loan.outstanding_balance|floatformat:0|intcomma }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Status</span>
+                                <span class="related-detail-value">{{ transaction.loan.get_status_display }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Interest</span>
+                                <span class="related-detail-value">{{ transaction.loan.interest_rate }}%</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if transaction.dividend %}
+                <div class="details-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-link"></i> Related Dividend
+                    </h2>
+                    <div class="related-object-card">
+                        <div class="related-object-header">
+                            <div class="related-object-icon dividend">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="related-object-info">
+                                <div class="related-object-title">Dividend Payment</div>
+                                <div class="related-object-subtitle">{{ transaction.dividend.reference }}</div>
+                            </div>
+                        </div>
+                        <div class="related-object-details">
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Period</span>
+                                <span class="related-detail-value">{{ transaction.dividend.period_start|date:"M d" }} - {{ transaction.dividend.period_end|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="related-object-detail">
+                                <span class="related-detail-label">Payment Date</span>
+                                <span class="related-detail-value">{{ transaction.dividend.payment_date|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Metadata -->
+                {% if transaction.metadata %}
+                <div class="metadata-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-database"></i> Metadata
+                    </h2>
+                    <div class="metadata-content">
+                        <pre>{{ transaction.metadata|pprint }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column - Sidebar -->
+            <div class="transaction-sidebar-column">
+                <!-- Balance Timeline -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">
+                        <i class="fas fa-wallet"></i> Balance Impact
+                    </h3>
+                    <div class="balance-timeline">
+                        <div class="balance-item">
+                            <div class="balance-icon before">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="balance-info">
+                                <div class="balance-label">Balance Before</div>
+                                <div class="balance-value">Ksh {{ transaction.balance_before|floatformat:0|intcomma }}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; color: var(--text-light);">
+                            <i class="fas fa-arrow-down" style="font-size: 1.2rem;"></i>
+                        </div>
+                        <div class="balance-item">
+                            <div class="balance-icon after">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="balance-info">
+                                <div class="balance-label">Balance After</div>
+                                <div class="balance-value">Ksh {{ transaction.balance_after|floatformat:0|intcomma }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="display: flex; justify-content: space-between; color: var(--text-light);">
+                            <span>Change:</span>
+                            <span style="font-weight: 700; color: {% if transaction.balance_after >= transaction.balance_before %}#00c853{% else %}var(--accent-1){% endif %};">
+                                {% if transaction.balance_after >= transaction.balance_before %}+{% else %}-{% endif %}
+                                Ksh {{ transaction.balance_after|add:transaction.balance_before|floatformat:0|intcomma }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Receipt Card -->
+                <div class="sidebar-card receipt-card">
+                    <div class="receipt-header">
+                        <i class="fas fa-receipt"></i>
+                        <h3>Transaction Receipt</h3>
+                        <p>{{ transaction.reference }}</p>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light);">Date:</span>
+                            <span style="color: var(--text);">{{ transaction.initiated_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light);">Type:</span>
+                            <span style="color: var(--text);">{{ transaction.get_transaction_type_display }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light);">Amount:</span>
+                            <span style="color: var(--accent-1); font-weight: 700; font-size: 1.2rem;">
+                                Ksh {{ transaction.amount|floatformat:0|intcomma }}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light);">Status:</span>
+                            <span style="color: {% if transaction.status == 'completed' %}#00c853{% elif transaction.status == 'pending' %}var(--accent-5){% elif transaction.status == 'processing' %}var(--accent-3){% elif transaction.status == 'failed' %}var(--accent-1){% else %}#6c757d{% endif %}; font-weight: 600;">
+                                {{ transaction.get_status_display|upper }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="receipt-divider"></div>
+                    <div class="receipt-footer">
+                        <p>Transaction ID: {{ transaction.reference }}</p>
+                        {% if transaction.mpesa_code %}
+                        <p>M-Pesa Code: {{ transaction.mpesa_code }}</p>
+                        {% endif %}
+                        <p style="margin-top: 15px;">Thank you for using Airvyb</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title">
+                        <i class="fas fa-bolt"></i> Actions
+                    </h3>
+                    <div class="action-buttons" style="flex-direction: column;">
+                        {% if transaction.status == 'pending' and transaction.transaction_type == 'deposit' %}
+                        <button class="btn-action btn-success" onclick="retryTransaction('{{ transaction.id }}')">
+                            <i class="fas fa-redo"></i> Retry Transaction
+                        </button>
+                        <button class="btn-action btn-danger" onclick="cancelTransaction('{{ transaction.id }}')">
+                            <i class="fas fa-ban"></i> Cancel Transaction
+                        </button>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'failed' and transaction.transaction_type == 'deposit' %}
+                        <button class="btn-action btn-primary" onclick="retryTransaction('{{ transaction.id }}')">
+                            <i class="fas fa-redo"></i> Retry Deposit
+                        </button>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'completed' %}
+                        <button class="btn-action btn-outline" onclick="downloadReceipt()">
+                            <i class="fas fa-download"></i> Download Receipt
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'finance:transactions' %}" class="btn-action btn-outline">
+                            <i class="fas fa-history"></i> View All Transactions
+                        </a>
+                        
+                        <a href="{% url 'finance:dashboard' %}" class="btn-action btn-outline">
+                            <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Support Card -->
+                <div class="sidebar-card" style="background: rgba(58, 134, 255, 0.05); border-color: rgba(58, 134, 255, 0.1);">
+                    <h3 class="sidebar-title" style="color: var(--accent-3);">
+                        <i class="fas fa-headset"></i> Need Help?
+                    </h3>
+                    <p style="color: var(--text-light); margin-bottom: 15px;">
+                        Having issues with this transaction? Our support team is here to help.
+                    </p>
+                    <a href="mailto:support@airvyb.com?subject=Transaction%20{{ transaction.reference }}" class="btn-action btn-outline" style="width: 100%;">
+                        <i class="fas fa-envelope"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-receipt"></i> Transaction Receipt</h3>
+            <button type="button" class="close-modal" onclick="closeReceiptModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <img src="{% static 'img/logo.png' %}" alt="Airvyb" style="height: 40px; margin-bottom: 15px;">
+                <h4 style="font-size: 1.3rem; margin-bottom: 5px;">Payment Receipt</h4>
+                <p style="color: var(--text-light);">Transaction #{{ transaction.reference }}</p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Date & Time:</span>
+                    <span style="color: var(--text); font-weight: 600;">{{ transaction.initiated_at|date:"F d, Y H:i:s" }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Transaction Type:</span>
+                    <span style="color: var(--text); font-weight: 600;">{{ transaction.get_transaction_type_display }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Amount:</span>
+                    <span style="color: var(--accent-1); font-weight: 800; font-size: 1.3rem;">
+                        Ksh {{ transaction.amount|floatformat:0|intcomma }}
+                    </span>
+                </div>
+                {% if transaction.fee > 0 %}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Transaction Fee:</span>
+                    <span style="color: var(--accent-1);">Ksh {{ transaction.fee|floatformat:0|intcomma }}</span>
+                </div>
+                {% endif %}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Payment Method:</span>
+                    <span style="color: var(--text); font-weight: 600;">
+                        {% if transaction.payment_method %}
+                            {{ transaction.get_payment_method_display }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </span>
+                </div>
+                {% if transaction.phone_number %}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Phone Number:</span>
+                    <span style="color: var(--text);">{{ transaction.phone_number }}</span>
+                </div>
+                {% endif %}
+                {% if transaction.mpesa_code %}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">M-Pesa Code:</span>
+                    <span style="color: var(--accent-1); font-family: monospace;">{{ transaction.mpesa_code }}</span>
+                </div>
+                {% endif %}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Status:</span>
+                    <span style="color: {% if transaction.status == 'completed' %}#00c853{% elif transaction.status == 'pending' %}var(--accent-5){% elif transaction.status == 'processing' %}var(--accent-3){% elif transaction.status == 'failed' %}var(--accent-1){% else %}#6c757d{% endif %}; font-weight: 600;">
+                        {{ transaction.get_status_display|upper }}
+                    </span>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <p style="color: var(--text-light); margin-bottom: 5px;">Thank you for using Airvyb</p>
+                <p style="color: var(--text-light); font-size: 0.85rem;">This is an electronically generated receipt</p>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button class="btn-action btn-primary" style="flex: 1;" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+                <button class="btn-action btn-outline" style="flex: 1;" onclick="downloadReceipt()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// TRANSACTION ACTIONS
+// ============================================
+function retryTransaction(transactionId) {
+    if (confirm('Are you sure you want to retry this transaction?')) {
+        showToast('Retrying transaction...', 'info');
+        
+        // Make API call to retry transaction
+        fetch(`/finance/transactions/${transactionId}/retry/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Transaction retry initiated', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                throw new Error(data.error || 'Failed to retry transaction');
+            }
+        })
+        .catch(error => {
+            console.error('Retry error:', error);
+            showToast(error.message, 'error');
+        });
+    }
+}
+
+function cancelTransaction(transactionId) {
+    if (confirm('Are you sure you want to cancel this transaction? This action cannot be undone.')) {
+        showToast('Cancelling transaction...', 'info');
+        
+        fetch(`/finance/transactions/${transactionId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Transaction cancelled', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                throw new Error(data.error || 'Failed to cancel transaction');
+            }
+        })
+        .catch(error => {
+            console.error('Cancel error:', error);
+            showToast(error.message, 'error');
+        });
+    }
+}
+
+// ============================================
+// RECEIPT FUNCTIONS
+// ============================================
+function showReceipt() {
+    document.getElementById('receiptModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeReceiptModal() {
+    document.getElementById('receiptModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function downloadReceipt() {
+    showToast('Preparing receipt for download...', 'info');
+    
+    // Create receipt content
+    const receiptContent = `
+Transaction Receipt
+===================
+Reference: {{ transaction.reference }}
+Date: {{ transaction.initiated_at|date:"F d, Y H:i:s" }}
+Type: {{ transaction.get_transaction_type_display }}
+Amount: Ksh {{ transaction.amount|floatformat:0|intcomma }}
+Status: {{ transaction.get_status_display }}
+{% if transaction.payment_method %}Payment Method: {{ transaction.get_payment_method_display }}{% endif %}
+{% if transaction.phone_number %}Phone: {{ transaction.phone_number }}{% endif %}
+{% if transaction.mpesa_code %}M-Pesa Code: {{ transaction.mpesa_code }}{% endif %}
+===================
+Thank you for using Airvyb
+    `;
+    
+    // Create blob and download
+    const blob = new Blob([receiptContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `receipt-{{ transaction.reference }}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showToast('Receipt downloaded', 'success');
+}
+
+// ============================================
+// TOAST NOTIFICATIONS
+// ============================================
+function showToast(message, type = 'info') {
+    const existingToasts = document.querySelectorAll('.toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-left: 4px solid ${type === 'success' ? '#00c853' : type === 'error' ? 'var(--accent-1)' : 'var(--accent-3)'};
+        border-radius: 12px;
+        padding: 15px 20px;
+        min-width: 300px;
+        max-width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" 
+               style="font-size: 1.2rem; color: ${type === 'success' ? '#00c853' : type === 'error' ? 'var(--accent-1)' : 'var(--accent-3)'};"></i>
+            <span style="flex: 1; font-size: 0.95rem; color: var(--text);">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ============================================
+// MODAL HANDLING
+// ============================================
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('receiptModal');
+    if (event.target === modal) {
+        closeReceiptModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('receiptModal');
+        if (modal.style.display === 'block') {
+            closeReceiptModal();
+        }
+    }
+});
+
+// ============================================
+// COPY TO CLIPBOARD
+// ============================================
+function copyReference(ref) {
+    navigator.clipboard.writeText(ref).then(() => {
+        showToast('Reference copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Failed to copy reference', 'error');
+    });
+}
+
+// Add click handlers to reference elements
+document.addEventListener('DOMContentLoaded', function() {
+    const refElements = document.querySelectorAll('.reference');
+    refElements.forEach(el => {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', function() {
+            copyReference(this.textContent.trim());
+        });
+    });
+});
+</script>
+{% endblock %}

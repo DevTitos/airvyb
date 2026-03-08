@@ -1,0 +1,669 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile | Airvyb{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.profile-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    margin-bottom: 30px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.3;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.profile-info {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.profile-name {
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+    font-weight: 800;
+}
+
+.profile-email {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.profile-status {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.profile-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+}
+
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-nav {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    color: var(--text-light);
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: var(--transition);
+    margin-bottom: 5px;
+}
+
+.nav-item:hover, .nav-item.active {
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--accent-1);
+}
+
+.profile-stats {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-card {
+    text-align: center;
+    padding: 15px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: 5px;
+}
+
+.profile-main {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.profile-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 2px rgba(255, 0, 110, 0.2);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+@media (max-width: 992px) {
+    .profile-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 30px 20px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 20px 15px;
+    }
+    
+    .profile-section {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+             alt="{{ user.get_full_name }}" class="profile-avatar" id="profileAvatar">
+        <div class="profile-info">
+            <h1 class="profile-name">{{ user.get_full_name|default:"Complete Your Profile" }}</h1>
+            <p class="profile-email">{{ user.email }}</p>
+            <div class="profile-status">
+                <div class="status-badge">
+                    {% if user.is_verified %}
+                    <i class="fas fa-badge-check" style="color: var(--accent-5);"></i>
+                    <span style="color: rgb(25, 231, 25);">Verified Youth</span>
+                    {% endif %}
+                </div>
+                <div class="status-badge">
+                    <i class="fas fa-shield-alt" style="color: var(--accent-3);"></i>
+                    <span>Strategic Member</span>
+                </div>
+                <div class="status-badge">
+                    <i class="fas fa-calendar-alt" style="color: var(--accent-1);"></i>
+                    <span>Joined {{ user.date_joined|date:"M Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Content -->
+    <div class="profile-content">
+        <!-- Sidebar -->
+        <div class="profile-sidebar">
+            <div class="profile-nav">
+                <a href="#personal" class="nav-item active" data-tab="personal">
+                    <i class="fas fa-user"></i>
+                    <span>Personal Information</span>
+                </a>
+                <a href="#security" class="nav-item" data-tab="security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security & Privacy</span>
+                </a>
+                <a href="#ventures" class="nav-item" data-tab="ventures">
+                    <i class="fas fa-briefcase"></i>
+                    <span>My Ventures</span>
+                </a>
+                <a href="#documents" class="nav-item" data-tab="documents">
+                    <i class="fas fa-file-contract"></i>
+                    <span>Documents</span>
+                </a>
+                <a href="#preferences" class="nav-item" data-tab="preferences">
+                    <i class="fas fa-cog"></i>
+                    <span>Preferences</span>
+                </a>
+                <a href="#sessions" class="nav-item" data-tab="sessions">
+                    <i class="fas fa-desktop"></i>
+                    <span>Active Sessions</span>
+                </a>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <div class="stat-number">{% if user.is_verified %}Verified{% else %}Pending{% endif %}</div>
+                    <div class="stat-label">Account Status</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ user.age_group|default:"N/A" }}</div>
+                    <div class="stat-label">Age Group</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">Active</div>
+                    <div class="stat-label">Strategic Status</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="profile-main">
+            <!-- Personal Information Tab -->
+            <div class="profile-section active" id="personal-tab">
+                <div class="section-header">
+                    <h2 class="section-title">Personal Information</h2>
+                    <button class="btn btn-outline" id="editPersonalBtn">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+                
+                <form id="personalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="profile_picture">Profile Picture</label>
+                        <div class="avatar-upload">
+                            <input type="file" id="profile_picture" name="profile_picture" 
+                                   accept="image/*" style="display: none;">
+                            <div class="avatar-preview">
+                                <img src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                     id="avatarPreview" alt="Avatar Preview">
+                                <button type="button" class="btn btn-sm" onclick="document.getElementById('profile_picture').click()">
+                                    <i class="fas fa-camera"></i> Change
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="first_name">First Name</label>
+                            <input type="text" id="first_name" name="first_name" 
+                                   value="{{ user.first_name }}" required readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="last_name">Last Name</label>
+                            <input type="text" id="last_name" name="last_name" 
+                                   value="{{ user.last_name }}" required readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" 
+                                   value="{{ user.email }}" required readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone_number">Phone Number</label>
+                            <input type="tel" id="phone_number" name="phone_number" 
+                                   value="{{ user.phone_number|default:'' }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_of_birth">Date of Birth</label>
+                            <input type="date" id="date_of_birth" name="date_of_birth" 
+                                   value="{{ user.date_of_birth|date:'Y-m-d' }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="country">Country</label>
+                            <select id="country" name="country" readonly>
+                                <option value="Kenya" selected>Kenya</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="county">County</label>
+                            <input type="text" id="county" name="county" 
+                                   value="{{ user.county|default:'' }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_number">ID Number (Optional)</label>
+                            <input type="text" id="id_number" name="id_number" 
+                                   value="{{ user.id_number|default:'' }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions" id="personalActions" style="display: none;">
+                        <button type="button" class="btn btn-secondary" id="cancelPersonalBtn">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="savePersonalBtn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Security Tab -->
+            <div class="profile-section" id="security-tab" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Security & Privacy</h2>
+                </div>
+                
+                <div class="security-items">
+                    <div class="security-item">
+                        <div class="security-info">
+                            <i class="fas fa-lock"></i>
+                            <div>
+                                <h4>Password</h4>
+                                <p>Last changed: {% now "F j, Y" %}</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" id="changePasswordBtn">
+                            Change Password
+                        </button>
+                    </div>
+                    
+                    <div class="security-item">
+                        <div class="security-info">
+                            <i class="fas fa-shield-alt"></i>
+                            <div>
+                                <h4>Two-Factor Authentication</h4>
+                                <p>Add an extra layer of security to your account</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" id="enable2faBtn">
+                            Enable
+                        </button>
+                    </div>
+                    
+                    <div class="security-item">
+                        <div class="security-info">
+                            <i class="fas fa-desktop"></i>
+                            <div>
+                                <h4>Active Sessions</h4>
+                                <p>Manage devices logged into your account</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" id="viewSessionsBtn">
+                            View All
+                        </button>
+                    </div>
+                    
+                    <div class="security-item">
+                        <div class="security-info">
+                            <i class="fas fa-bell"></i>
+                            <div>
+                                <h4>Login Notifications</h4>
+                                <p>Get alerted for new logins</p>
+                            </div>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="loginNotifications" checked>
+                            <label for="loginNotifications"></label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Change Password Modal (simplified) -->
+                <div class="change-password-form" id="changePasswordForm" style="display: none; margin-top: 30px;">
+                    <h4>Change Password</h4>
+                    <form id="passwordForm">
+                        <div class="form-group">
+                            <label for="current_password">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new_password">New Password</label>
+                            <input type="password" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_new_password">Confirm New Password</label>
+                            <input type="password" id="confirm_new_password" name="confirm_new_password" required>
+                        </div>
+                        <div class="profile-actions">
+                            <button type="button" class="btn btn-secondary" id="cancelPasswordBtn">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Add more tab content as needed -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    const tabs = document.querySelectorAll('.profile-section');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Update active nav item
+            navItems.forEach(i => i.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show corresponding tab
+            const tabId = this.getAttribute('data-tab');
+            tabs.forEach(tab => {
+                tab.style.display = 'none';
+                tab.classList.remove('active');
+            });
+            
+            const activeTab = document.getElementById(`${tabId}-tab`);
+            if (activeTab) {
+                activeTab.style.display = 'block';
+                activeTab.classList.add('active');
+            }
+        });
+    });
+    
+    // Personal info edit mode
+    const editPersonalBtn = document.getElementById('editPersonalBtn');
+    const personalActions = document.getElementById('personalActions');
+    const personalForm = document.getElementById('personalForm');
+    const cancelPersonalBtn = document.getElementById('cancelPersonalBtn');
+    
+    editPersonalBtn.addEventListener('click', function() {
+        // Make inputs editable
+        personalForm.querySelectorAll('input, select').forEach(input => {
+            input.readOnly = false;
+        });
+        
+        // Show save/cancel buttons
+        personalActions.style.display = 'flex';
+        editPersonalBtn.style.display = 'none';
+    });
+    
+    cancelPersonalBtn.addEventListener('click', function() {
+        // Reset form
+        personalForm.reset();
+        
+        // Make inputs readonly again
+        personalForm.querySelectorAll('input, select').forEach(input => {
+            input.readOnly = true;
+        });
+        
+        // Hide save/cancel buttons
+        personalActions.style.display = 'none';
+        editPersonalBtn.style.display = 'block';
+    });
+    
+    // Profile picture upload preview
+    const profilePictureInput = document.getElementById('profile_picture');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const profileAvatar = document.getElementById('profileAvatar');
+    
+    profilePictureInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                avatarPreview.src = e.target.result;
+                profileAvatar.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Save personal info
+    personalForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const saveBtn = document.getElementById('savePersonalBtn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch('/ajax/update-profile/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('Profile updated successfully!', 'success');
+                
+                // Update profile picture if changed
+                if (data.profile_picture) {
+                    avatarPreview.src = data.profile_picture;
+                    profileAvatar.src = data.profile_picture;
+                }
+                
+                // Reset edit mode
+                personalForm.querySelectorAll('input, select').forEach(input => {
+                    input.readOnly = true;
+                });
+                personalActions.style.display = 'none';
+                editPersonalBtn.style.display = 'block';
+            } else {
+                showToast(data.message || 'Failed to update profile', 'error');
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+    });
+    
+    // Change password
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+    const passwordForm = document.getElementById('passwordForm');
+    
+    changePasswordBtn.addEventListener('click', function() {
+        changePasswordForm.style.display = 'block';
+    });
+    
+    cancelPasswordBtn.addEventListener('click', function() {
+        changePasswordForm.style.display = 'none';
+        passwordForm.reset();
+    });
+    
+    passwordForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const currentPassword = document.getElementById('current_password').value;
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_new_password').value;
+        
+        if (newPassword !== confirmPassword) {
+            showToast('Passwords do not match', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/ajax/change-password/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('Password changed successfully!', 'success');
+                changePasswordForm.style.display = 'none';
+                passwordForm.reset();
+            } else {
+                showToast(data.message || 'Failed to change password', 'error');
+            }
+        } catch (error) {
+            showToast('Network error. Please try again.', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

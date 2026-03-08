@@ -1,0 +1,1434 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Portfolio | Airvyb{% endblock %}
+{% block body_class %}portfolio-page{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Portfolio Container */
+.portfolio-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+@media (min-width: 768px) {
+    .portfolio-container {
+        padding: 30px 20px;
+    }
+}
+
+/* Page Header */
+.portfolio-header {
+    margin-bottom: 30px;
+}
+
+@media (min-width: 768px) {
+    .portfolio-header {
+        margin-bottom: 40px;
+    }
+}
+
+.portfolio-title {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    background: linear-gradient(to right, #fff 30%, var(--accent-1) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .portfolio-title {
+        font-size: 2.5rem;
+    }
+}
+
+.portfolio-subtitle {
+    color: var(--text-light);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+    .portfolio-subtitle {
+        font-size: 1.1rem;
+    }
+}
+
+/* Portfolio Stats */
+.portfolio-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+@media (min-width: 640px) {
+    .portfolio-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .portfolio-stats {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+}
+
+.stat-card-large {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card-large::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--gradient-1);
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    background: var(--gradient-1);
+}
+
+.stat-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.stat-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.stat-action-btn:hover {
+    color: var(--accent-1);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+@media (min-width: 768px) {
+    .stat-value {
+        font-size: 2.5rem;
+    }
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.stat-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.change-positive {
+    background: rgba(0, 255, 0, 0.1);
+    color: #00ff00;
+}
+
+.change-negative {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff0000;
+}
+
+.change-neutral {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+/* Portfolio Layout */
+.portfolio-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 1024px) {
+    .portfolio-layout {
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+}
+
+.portfolio-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 1024px) {
+    .portfolio-main {
+        gap: 30px;
+    }
+}
+
+.portfolio-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Portfolio Card */
+.portfolio-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 768px) {
+    .portfolio-card {
+        padding: 30px;
+    }
+}
+
+.card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .card-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+}
+
+.card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .card-title {
+        font-size: 1.5rem;
+    }
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.card-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    .card-action {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+.card-action:hover {
+    background: var(--accent-1);
+    color: white;
+    border-color: var(--accent-1);
+    transform: translateY(-1px);
+}
+
+/* Investment List */
+.investment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+@media (min-width: 768px) {
+    .investment-list {
+        gap: 15px;
+    }
+}
+
+.investment-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .investment-item {
+        padding: 20px;
+        gap: 20px;
+    }
+}
+
+.investment-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 0, 110, 0.2);
+}
+
+.investment-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+    background: var(--gradient-1);
+}
+
+@media (max-width: 639px) {
+    .investment-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+
+.investment-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.investment-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+    line-height: 1.3;
+}
+
+@media (min-width: 768px) {
+    .investment-name {
+        font-size: 1rem;
+    }
+}
+
+.investment-meta {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.meta-item i {
+    color: var(--accent-1);
+    font-size: 0.8rem;
+}
+
+.investment-value {
+    text-align: right;
+    min-width: 100px;
+}
+
+.investment-amount {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent-5);
+    margin-bottom: 4px;
+}
+
+.investment-return {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.return-positive {
+    color: #00ff00;
+}
+
+.return-negative {
+    color: #ff0000;
+}
+
+/* Asset Allocation */
+.allocation-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.allocation-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.allocation-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.allocation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.allocation-category {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+
+.allocation-percentage {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.allocation-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--accent-1);
+}
+
+/* Performance Chart */
+.chart-container {
+    height: 300px;
+    position: relative;
+    margin-top: 20px;
+}
+
+@media (max-width: 767px) {
+    .chart-container {
+        height: 200px;
+    }
+}
+
+.chart-placeholder {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 5px;
+    height: 100%;
+    align-items: end;
+    padding: 20px 0;
+}
+
+@media (max-width: 767px) {
+    .chart-placeholder {
+        gap: 3px;
+    }
+}
+
+.chart-bar {
+    background: var(--gradient-1);
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: height 0.3s ease;
+    min-height: 10px;
+}
+
+.chart-bar:hover {
+    opacity: 0.8;
+}
+
+.chart-bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.chart-bar:hover::after {
+    opacity: 1;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Quick Actions */
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 639px) {
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    text-align: center;
+    text-decoration: none;
+    color: var(--text);
+    min-height: 100px;
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 0, 110, 0.1);
+    border-color: var(--accent-1);
+    transform: translateY(-3px);
+}
+
+.quick-action-btn i {
+    font-size: 1.75rem;
+    margin-bottom: 12px;
+    color: var(--accent-1);
+}
+
+.quick-action-btn span {
+    font-weight: 600;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+/* Recent Activity */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius);
+    gap: 12px;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(58, 134, 255, 0.1);
+    color: var(--accent-3);
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+.activity-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title {
+    font-weight: 600;
+    margin-bottom: 3px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.activity-time {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: var(--accent-1);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+/* Mobile Navigation */
+.portfolio-mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-dark);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    z-index: var(--z-sticky);
+}
+
+@media (max-width: 767px) {
+    .portfolio-mobile-nav {
+        display: flex;
+        justify-content: space-around;
+    }
+}
+
+.mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.75rem;
+    padding: 8px;
+    flex: 1;
+    border-radius: var(--radius);
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.mobile-nav-btn.active {
+    color: var(--accent-1);
+    background: rgba(255, 0, 110, 0.1);
+}
+
+.mobile-nav-btn i {
+    font-size: 1.25rem;
+}
+
+/* Loading States */
+.loading-skeleton {
+    animation: shimmer 1.5s infinite linear;
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.05) 25%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: var(--radius);
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: var(--radius-lg);
+}
+
+.skeleton-text {
+    height: 1em;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-text.medium {
+    width: 80%;
+}
+
+.skeleton-text.long {
+    width: 100%;
+}
+
+/* Export Options */
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.export-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent-1);
+}
+
+.export-btn i {
+    color: var(--accent-1);
+}
+
+.export-btn span {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.export-btn small {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="portfolio-container">
+    <!-- Portfolio Header -->
+    <div class="portfolio-header">
+        <h1 class="portfolio-title">My Investment Portfolio</h1>
+        <p class="portfolio-subtitle">Track your investments, monitor performance, and manage your strategic portfolio</p>
+    </div>
+    
+    <!-- Portfolio Stats -->
+    <div class="portfolio-stats">
+        <div class="stat-card-large">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-actions">
+                    <button class="stat-action-btn" title="Refresh" onclick="refreshPortfolioValue()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="portfolioTotal">Ksh {{ portfolio.total_value|default:"0" }}</div>
+                <div class="stat-label">Total Portfolio Value</div>
+                <div class="stat-change {% if portfolio.value_change >= 0 %}change-positive{% else %}change-negative{% endif %}" id="portfolioChange">
+                    {% if portfolio.value_change >= 0 %}
+                        <i class="fas fa-arrow-up"></i>
+                    {% else %}
+                        <i class="fas fa-arrow-down"></i>
+                    {% endif %}
+                    {{ portfolio.value_change|default:"0" }}%
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card-large">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="stat-actions">
+                    <button class="stat-action-btn" title="View All" onclick="window.location.href=''">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ portfolio.active_investments|default:"0" }}</div>
+                <div class="stat-label">Active Investments</div>
+                <div class="stat-change change-positive" id="investmentsChange">
+                    <i class="fas fa-plus"></i> {{ portfolio.investments_growth|default:"0" }} this month
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card-large">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-actions">
+                    <button class="stat-action-btn" title="View Returns" onclick="showReturnsBreakdown()">
+                        <i class="fas fa-chart-pie"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ portfolio.total_returns|default:"0" }}%</div>
+                <div class="stat-label">Total Returns</div>
+                <div class="stat-change change-positive" id="returnsChange">
+                    <i class="fas fa-arrow-up"></i> {{ portfolio.monthly_returns|default:"0" }}% this month
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card-large">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="stat-actions">
+                    <button class="stat-action-btn" title="View Details" onclick="showGovernanceDetails()">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ portfolio.governance_score|default:"0" }}%</div>
+                <div class="stat-label">Governance Score</div>
+                <div class="stat-change change-positive" id="governanceChange">
+                    <i class="fas fa-check-circle"></i> Excellent
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Portfolio Layout -->
+    <div class="portfolio-layout">
+        <!-- Main Content -->
+        <div class="portfolio-main">
+            <!-- Active Investments -->
+            <div class="portfolio-card">
+                <div class="card-header">
+                    <h2 class="card-title">Active Investments</h2>
+                    <div class="card-actions">
+                        <a href="" class="card-action">
+                            <i class="fas fa-eye"></i> View All
+                        </a>
+                        <a href="{% url 'venture_list' %}" class="card-action">
+                            <i class="fas fa-plus"></i> Add Investment
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="investment-list">
+                    {% if active_investments %}
+                        {% for investment in active_investments %}
+                        <div class="investment-item">
+                            <div class="investment-icon">
+                                <i class="fas fa-{% if investment.venture.category == 'agriculture' %}seedling{% elif investment.venture.category == 'technology' %}laptop-code{% elif investment.venture.category == 'real_estate' %}building{% elif investment.venture.category == 'renewable_energy' %}solar-panel{% else %}briefcase{% endif %}"></i>
+                            </div>
+                            <div class="investment-info">
+                                <div class="investment-name">{{ investment.venture.title }}</div>
+                                <div class="investment-meta">
+                                    <span class="meta-item">
+                                        <i class="fas fa-calendar"></i> {{ investment.invested_date|date:"M d, Y" }}
+                                    </span>
+                                    <span class="meta-item">
+                                        <i class="fas fa-clock"></i> {{ investment.venture.duration_months }} months
+                                    </span>
+                                    <span class="meta-item">
+                                        <i class="fas fa-chart-line"></i> {{ investment.venture.target_return }}% target
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="investment-value">
+                                <div class="investment-amount">Ksh {{ investment.amount }}</div>
+                                <div class="investment-return {% if investment.current_return >= 0 %}return-positive{% else %}return-negative{% endif %}">
+                                    {% if investment.current_return >= 0 %}+{% endif %}{{ investment.current_return|default:"0" }}%
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-briefcase"></i>
+                            <h3>No Active Investments</h3>
+                            <p>You don't have any active investments yet. Start building your portfolio by exploring available ventures.</p>
+                            <a href="{% url 'venture_list' %}" class="btn btn-primary">
+                                <i class="fas fa-rocket"></i> Explore Ventures
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Performance Overview -->
+            <div class="portfolio-card">
+                <div class="card-header">
+                    <h2 class="card-title">Performance Overview</h2>
+                    <div class="card-actions">
+                        <button class="card-action" onclick="exportPerformanceData()">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                        <button class="card-action" onclick="toggleChartPeriod()">
+                            <i class="fas fa-calendar-alt"></i> <span id="chartPeriod">1Y</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-placeholder" id="performanceChart">
+                        <!-- Chart bars will be generated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--accent-1);"></span>
+                        <span>Portfolio Value</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--accent-3);"></span>
+                        <span>Benchmark</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Asset Allocation -->
+            <div class="portfolio-card">
+                <div class="card-header">
+                    <h2 class="card-title">Asset Allocation</h2>
+                    <div class="card-actions">
+                        <button class="card-action" onclick="showAllocationDetails()">
+                            <i class="fas fa-info-circle"></i> Details
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="allocation-chart">
+                    {% if allocation_data %}
+                        {% for allocation in allocation_data %}
+                        <div class="allocation-item">
+                            <div class="allocation-color" style="background: var(--gradient-{{ forloop.counter }});"></div>
+                            <div class="allocation-info">
+                                <div class="allocation-category">{{ allocation.category }}</div>
+                                <div class="allocation-percentage">{{ allocation.percentage }}% of portfolio</div>
+                            </div>
+                            <div class="allocation-value">Ksh {{ allocation.value }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-pie-chart"></i>
+                            <h3>No Allocation Data</h3>
+                            <p>Asset allocation data will appear once you have multiple investments.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="portfolio-sidebar">
+            <!-- Quick Actions -->
+            <div class="portfolio-card">
+                <div class="card-header">
+                    <h2 class="card-title">Quick Actions</h2>
+                </div>
+                
+                <div class="quick-actions">
+                    <a href="{% url 'venture_list' %}" class="quick-action">
+                        <i class="fas fa-search"></i>
+                        <span>Explore Ventures</span>
+                    </a>
+                    <a href="{% url 'finance:deposit' %}" class="quick-action">
+                        <i class="fas fa-wallet"></i>
+                        <span>Add Funds</span>
+                    </a>
+                    <a href="{% url 'finance:withdrawal' %}" class="quick-action">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Withdraw</span>
+                    </a>
+
+                    <a href="{% url 'portfolio' %}" class="quick-action">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Portfolio</span>
+                    </a>
+                    <a href="{% url 'profile' %}" class="quick-action">
+                        <i class="fas fa-user-cog"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="{% url 'portfolio' %}#documents" class="quick-action">
+                        <i class="fas fa-file-contract"></i>
+                        <span>Documents</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="portfolio-card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Activity</h2>
+                    <div class="card-actions">
+                        <a href="" class="card-action">
+                            <i class="fas fa-history"></i> All
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="activity-list">
+                    {% if recent_transactions %}
+                        {% for transaction in recent_transactions|slice:":5" %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-{% if transaction.transaction_type == 'investment' %}hand-holding-usd{% elif transaction.transaction_type == 'dividend' %}money-bill-wave{% elif transaction.transaction_type == 'withdrawal' %}arrow-up{% else %}exchange-alt{% endif %}"></i>
+                            </div>
+                            <div class="activity-info">
+                                <div class="activity-title">{{ transaction.get_transaction_type_display }}</div>
+                                <div class="activity-time">{{ transaction.created_at|timesince }} ago</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <h3>No Recent Activity</h3>
+                            <p>Your activity history will appear here.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Export Options -->
+            <div class="portfolio-card">
+                <div class="card-header">
+                    <h2 class="card-title">Export Portfolio</h2>
+                </div>
+                
+                <div class="export-options">
+                    <a href="#" class="export-btn" onclick="exportPortfolio('pdf')">
+                        <div>
+                            <span>PDF Report</span>
+                            <small>Complete portfolio summary</small>
+                        </div>
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                    
+                    <a href="#" class="export-btn" onclick="exportPortfolio('excel')">
+                        <div>
+                            <span>Excel Data</span>
+                            <small>Detailed transaction data</small>
+                        </div>
+                        <i class="fas fa-file-excel"></i>
+                    </a>
+                    
+                    <a href="#" class="export-btn" onclick="exportPortfolio('csv')">
+                        <div>
+                            <span>CSV Format</span>
+                            <small>Raw data for analysis</small>
+                        </div>
+                        <i class="fas fa-file-csv"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Navigation -->
+    <div class="portfolio-mobile-nav">
+        <a href="{% url 'dashboard' %}" class="mobile-nav-btn">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'portfolio' %}" class="mobile-nav-btn active">
+            <i class="fas fa-chart-pie"></i>
+            <span>Portfolio</span>
+        </a>
+        <a href="" class="mobile-nav-btn">
+            <i class="fas fa-briefcase"></i>
+            <span>Investments</span>
+        </a>
+        <a href="" class="mobile-nav-btn">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format numbers with commas
+    function formatNumber(num) {
+        if (num === undefined || num === null) return '0';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    
+    // Apply number formatting
+    document.querySelectorAll('.stat-value, .investment-amount, .allocation-value').forEach(el => {
+        const text = el.textContent;
+        if (text.includes('Ksh')) {
+            const numberMatch = text.match(/Ksh\s*([\d\.]+)/);
+            if (numberMatch) {
+                const number = parseFloat(numberMatch[1]);
+                if (!isNaN(number)) {
+                    el.textContent = text.replace(numberMatch[0], `Ksh ${formatNumber(number.toFixed(0))}`);
+                }
+            }
+        }
+    });
+    
+    // Generate performance chart
+    function generatePerformanceChart(period = '1Y') {
+        const chart = document.getElementById('performanceChart');
+        chart.innerHTML = '';
+        
+        let dataPoints;
+        switch(period) {
+            case '1M':
+                dataPoints = 30;
+                break;
+            case '3M':
+                dataPoints = 12;
+                break;
+            case '6M':
+                dataPoints = 24;
+                break;
+            case '1Y':
+            default:
+                dataPoints = 12;
+                break;
+        }
+        
+        // Generate random data for demonstration
+        let currentValue = 100000;
+        const values = [];
+        
+        for (let i = 0; i < dataPoints; i++) {
+            const change = (Math.random() - 0.5) * 0.1; // ±5% change
+            currentValue *= (1 + change);
+            values.push(currentValue);
+        }
+        
+        const maxValue = Math.max(...values);
+        
+        // Create bars
+        values.forEach((value, index) => {
+            const height = (value / maxValue) * 80 + 10; // 10-90% height
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar';
+            bar.style.height = `${height}%`;
+            bar.setAttribute('data-value', `Ksh ${formatNumber(Math.round(value))}`);
+            chart.appendChild(bar);
+        });
+        
+        // Update period display
+        document.getElementById('chartPeriod').textContent = period;
+    }
+    
+    // Initialize chart
+    generatePerformanceChart('1Y');
+    
+    // Toggle chart period
+    window.toggleChartPeriod = function() {
+        const periods = ['1M', '3M', '6M', '1Y'];
+        const current = document.getElementById('chartPeriod').textContent;
+        const currentIndex = periods.indexOf(current);
+        const nextIndex = (currentIndex + 1) % periods.length;
+        generatePerformanceChart(periods[nextIndex]);
+    };
+    
+    // Refresh portfolio value
+    window.refreshPortfolioValue = async function() {
+        const button = event?.target?.closest('.stat-action-btn');
+        if (button) {
+            const icon = button.querySelector('i');
+            const originalClass = icon.className;
+            
+            // Show loading state
+            icon.className = 'fas fa-spinner fa-spin';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch('/ajax/refresh-portfolio/', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Update portfolio value
+                    const portfolioTotal = document.getElementById('portfolioTotal');
+                    if (portfolioTotal && data.total_value) {
+                        portfolioTotal.textContent = `Ksh ${formatNumber(data.total_value)}`;
+                    }
+                    
+                    // Update change percentage
+                    const portfolioChange = document.getElementById('portfolioChange');
+                    if (portfolioChange && data.value_change !== undefined) {
+                        const changeClass = data.value_change >= 0 ? 'change-positive' : 'change-negative';
+                        portfolioChange.className = `stat-change ${changeClass}`;
+                        
+                        const icon = portfolioChange.querySelector('i');
+                        icon.className = data.value_change >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down';
+                        portfolioChange.innerHTML = `${icon.outerHTML} ${Math.abs(data.value_change).toFixed(1)}%`;
+                    }
+                    
+                    showToast('Portfolio updated successfully', 'success');
+                }
+            } catch (error) {
+                console.error('Failed to refresh portfolio:', error);
+                showToast('Failed to refresh portfolio', 'error');
+            } finally {
+                // Restore button state
+                icon.className = originalClass;
+                button.disabled = false;
+            }
+        }
+    };
+    
+    // Export portfolio data
+    window.exportPortfolio = function(format) {
+        showToast(`Preparing ${format.toUpperCase()} export...`, 'info');
+        
+        // Simulate export process
+        setTimeout(() => {
+            showToast(`${format.toUpperCase()} export completed`, 'success');
+            
+            // In production, this would trigger a file download
+            if (format === 'pdf') {
+                window.open('/portfolio/export/pdf/', '_blank');
+            } else if (format === 'excel') {
+                window.open('/portfolio/export/excel/', '_blank');
+            } else if (format === 'csv') {
+                window.open('/portfolio/export/csv/', '_blank');
+            }
+        }, 1500);
+    };
+    
+    // Export performance data
+    window.exportPerformanceData = function() {
+        showToast('Exporting performance data...', 'info');
+        
+        // Simulate export process
+        setTimeout(() => {
+            showToast('Performance data exported successfully', 'success');
+        }, 1000);
+    };
+    
+    // Show returns breakdown
+    window.showReturnsBreakdown = function() {
+        showToast('Loading returns breakdown...', 'info');
+        
+        // In production, this would show a modal with detailed returns
+        setTimeout(() => {
+            // Simulate modal opening
+            const modalContent = `
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 15px; color: var(--accent-1);">Returns Breakdown</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Capital Gains:</span>
+                            <span style="color: #00ff00;">+{{ portfolio.capital_gains|default:"0" }}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Dividends:</span>
+                            <span style="color: #00ff00;">+{{ portfolio.dividends|default:"0" }}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Interest:</span>
+                            <span style="color: #00ff00;">+{{ portfolio.interest|default:"0" }}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Show a simple alert for demonstration
+            alert('Returns Breakdown:\n\n' +
+                  `Capital Gains: +{{ portfolio.capital_gains|default:"0" }}%\n` +
+                  `Dividends: +{{ portfolio.dividends|default:"0" }}%\n` +
+                  `Interest: +{{ portfolio.interest|default:"0" }}%`);
+        }, 500);
+    };
+    
+    // Show governance details
+    window.showGovernanceDetails = function() {
+        showToast('Loading governance details...', 'info');
+        
+        // In production, this would show a modal with governance details
+        setTimeout(() => {
+            alert('Governance Score Details:\n\n' +
+                  `Compliance: {{ portfolio.compliance_score|default:"95" }}%\n` +
+                  `Transparency: {{ portfolio.transparency_score|default:"92" }}%\n` +
+                  `Reporting: {{ portfolio.reporting_score|default:"90" }}%\n` +
+                  `Audit: {{ portfolio.audit_score|default:"88" }}%`);
+        }, 500);
+    };
+    
+    // Show allocation details
+    window.showAllocationDetails = function() {
+        showToast('Loading allocation details...', 'info');
+        
+        // In production, this would show a modal with allocation details
+        setTimeout(() => {
+            alert('Asset Allocation Details:\n\n' +
+                  'View detailed breakdown of your investment distribution across different asset classes.');
+        }, 500);
+    };
+    
+    // Update chart on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            generatePerformanceChart(document.getElementById('chartPeriod').textContent);
+        }, 250);
+    });
+    
+    // Initialize mobile nav visibility
+    const mobileNav = document.querySelector('.portfolio-mobile-nav');
+    if (window.innerWidth <= 767) {
+        mobileNav.style.display = 'flex';
+    } else {
+        mobileNav.style.display = 'none';
+    }
+    
+    // Handle window resize for mobile navigation
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (window.innerWidth <= 767) {
+                mobileNav.style.display = 'flex';
+            } else {
+                mobileNav.style.display = 'none';
+            }
+        }, 250);
+    });
+    
+    // Add hover effects to investment items
+    const investmentItems = document.querySelectorAll('.investment-item');
+    investmentItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(5px)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+        });
+    });
+    
+    // Add click handlers for investment items
+    investmentItems.forEach(item => {
+        item.addEventListener('click', function() {
+            // In production, this would navigate to investment details
+            const investmentName = this.querySelector('.investment-name').textContent;
+            showToast(`Opening ${investmentName} details...`, 'info');
+        });
+    });
+    
+    // Initialize tooltips for mobile
+    if (window.innerWidth <= 768) {
+        const statCards = document.querySelectorAll('.stat-card-large');
+        statCards.forEach(card => {
+            card.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                const label = this.querySelector('.stat-label').textContent;
+                const value = this.querySelector('.stat-value').textContent;
+                showToast(`${label}: ${value}`, 'info', 2000);
+            }, { passive: false });
+        });
+    }
+    
+    // Auto-refresh portfolio every 5 minutes
+    setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            refreshPortfolioValue();
+        }
+    }, 300000); // 5 minutes
+});
+</script>
+{% endblock %}

@@ -1,0 +1,607 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ deal.title }} | Airvyb{% endblock %}
+
+{% block content %}
+<div class="deal-detail-container">
+    <!-- Back Navigation -->
+    <div class="back-nav">
+        <a href="{% url 'deals:list' %}">
+            <i class="fas fa-arrow-left"></i> Back to Deals
+        </a>
+    </div>
+    
+    <!-- Deal Header -->
+    <div class="deal-header">
+        <div class="header-content">
+            <span class="deal-category">{{ deal.category.name|default:'Uncategorized' }}</span>
+            <h1>{{ deal.title }}</h1>
+            <div class="deal-meta-large">
+                <span class="meta-badge">
+                    <i class="fas fa-tag"></i> Opt-In: Ksh {{ deal.opt_in_amount|floatformat:0|intcomma }}
+                </span>
+                <span class="meta-badge">
+                    <i class="fas fa-clock"></i> {{ deal.duration_months }} months
+                </span>
+                <span class="meta-badge risk-{{ deal.risk_level }}">
+                    <i class="fas fa-shield-alt"></i> {{ deal.get_risk_level_display }}
+                </span>
+            </div>
+        </div>
+        <div class="deal-status-large status-{{ deal.status }}">
+            {{ deal.get_status_display }}
+        </div>
+    </div>
+    
+    <!-- Main Content Grid -->
+    <div class="deal-grid">
+        <!-- Left Column - Details -->
+        <div class="deal-details">
+            <!-- Objective -->
+            <section class="detail-section">
+                <h2><i class="fas fa-bullseye"></i> Deal Objective</h2>
+                <p>{{ deal.objective }}</p>
+            </section>
+            
+            <!-- Description -->
+            <section class="detail-section">
+                <h2><i class="fas fa-info-circle"></i> Description</h2>
+                <p>{{ deal.description|linebreaks }}</p>
+            </section>
+            
+            <!-- Expected Operations -->
+            <section class="detail-section">
+                <h2><i class="fas fa-cogs"></i> Expected Operations</h2>
+                <p>{{ deal.expected_operations|linebreaks }}</p>
+            </section>
+            
+            <!-- Timeline -->
+            <section class="detail-section">
+                <h2><i class="fas fa-calendar-alt"></i> Timeline</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if deal.disclosed_at %}completed{% endif %}"></div>
+                        <div class="timeline-content">
+                            <h4>Deal Disclosure</h4>
+                            <p>{{ deal.disclosed_at|date:"F d, Y"|default:"Pending" }}</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if deal.opt_in_start %}completed{% endif %}"></div>
+                        <div class="timeline-content">
+                            <h4>Opt-In Period</h4>
+                            <p>
+                                {% if deal.opt_in_start and deal.opt_in_end %}
+                                    {{ deal.opt_in_start|date:"M d" }} - {{ deal.opt_in_end|date:"M d, Y" }}
+                                {% else %}
+                                    To be announced
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if deal.launched_at %}completed{% endif %}"></div>
+                        <div class="timeline-content">
+                            <h4>Deal Launch</h4>
+                            <p>{{ deal.launched_at|date:"F d, Y"|default:"Pending" }}</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot {% if deal.expected_end_date %}completed{% endif %}"></div>
+                        <div class="timeline-content">
+                            <h4>Expected End</h4>
+                            <p>{{ deal.expected_end_date|date:"F d, Y"|default:"To be determined" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Recent Updates -->
+            {% if updates %}
+            <section class="detail-section">
+                <h2><i class="fas fa-bell"></i> Recent Updates</h2>
+                {% for update in updates %}
+                <div class="update-item {% if update.is_important %}important{% endif %}">
+                    <div class="update-icon">
+                        <i class="fas fa-{% if update.is_important %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                    </div>
+                    <div class="update-content">
+                        <h4>{{ update.title }}</h4>
+                        <p>{{ update.content|truncatechars:150 }}</p>
+                        <span class="update-date">{{ update.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+            
+            <!-- Reports -->
+            {% if reports %}
+            <section class="detail-section">
+                <h2><i class="fas fa-file-alt"></i> Reports</h2>
+                {% for report in reports %}
+                <a href="{% url 'deals:report' report.id %}" class="report-item">
+                    <div class="report-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="report-info">
+                        <h4>{{ report.title }}</h4>
+                        <p>{{ report.period|date:"F Y" }}</p>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endfor %}
+            </section>
+            {% endif %}
+        </div>
+        
+        <!-- Right Column - Opt-In Panel -->
+        <div class="opt-in-panel">
+            <div class="panel-card">
+                <h3>Opt-In Details</h3>
+                
+                <div class="opt-in-amount">
+                    <span class="label">Opt-In Amount</span>
+                    <span class="amount">Ksh {{ deal.opt_in_amount|floatformat:0|intcomma }}</span>
+                </div>
+                
+                <div class="opt-in-stats">
+                    <div class="stat">
+                        <span class="stat-label">Total Opted In</span>
+                        <span class="stat-value">{{ deal.total_opted_in }}</span>
+                    </div>
+                    {% if deal.max_opt_in_members %}
+                    <div class="stat">
+                        <span class="stat-label">Available Slots</span>
+                        <span class="stat-value">{{ deal.available_slots }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if deal.is_opt_in_open %}
+                <div class="opt-in-progress">
+                    <div class="progress-header">
+                        <span>Progress</span>
+                        <span>{{ deal.progress_percentage|floatformat:0 }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ deal.progress_percentage|floatformat:0 }}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if user_opt_in %}
+                    <div class="opted-in-message">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <h4>You've opted in!</h4>
+                            <p>Status: <strong>{{ user_opt_in.get_status_display }}</strong></p>
+                            <p>Opted in on: {{ user_opt_in.created_at|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <a href="{% url 'deals:my_deals' %}" class="btn-secondary">
+                        View My Deals
+                    </a>
+                    
+                {% elif can_opt_in %}
+                    <form method="POST" action="{% url 'deals:opt_in' deal.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-opt-in" {% if deal.available_slots == 0 %}disabled{% endif %}>
+                            <i class="fas fa-hand-pointer"></i>
+                            Opt In Now
+                        </button>
+                    </form>
+                    
+                    <p class="opt-in-disclaimer">
+                        By opting in, you agree to participate in this deal managed by Airvyb Management Ltd (AML).
+                        Capital risk is limited to the opt-in amount.
+                    </p>
+                    
+                {% elif not deal.is_opt_in_open %}
+                    <div class="opt-in-closed">
+                        <i class="fas fa-clock"></i>
+                        <p>Opt-in period is {{ deal.get_status_display|lower }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="deal-meta-info">
+                    <h4>Deal Information</h4>
+                    <div class="meta-row">
+                        <span>Reference:</span>
+                        <span>{{ deal.reference }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span>Min Members:</span>
+                        <span>{{ deal.min_opt_in_members }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <span>Management Fee:</span>
+                        <span>{{ deal.management_fee_percent }}%</span>
+                    </div>
+                    <div class="meta-row">
+                        <span>Performance Carry:</span>
+                        <span>{{ deal.performance_carry_percent }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.deal-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.back-nav {
+    margin-bottom: 30px;
+}
+
+.back-nav a {
+    color: var(--text-light);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.back-nav a:hover {
+    color: var(--accent-1);
+    transform: translateX(-5px);
+}
+
+.deal-header {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    margin: 10px 0 15px;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.deal-meta-large {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.meta-badge {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.deal-status-large {
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.deal-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.detail-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.detail-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.detail-section h2 i {
+    color: var(--accent-1);
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background: rgba(255,255,255,0.1);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -24px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid var(--accent-1);
+}
+
+.timeline-dot.completed {
+    background: var(--accent-1);
+}
+
+.timeline-content h4 {
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.timeline-content p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.update-item {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    margin-bottom: 15px;
+    border-left: 3px solid var(--accent-3);
+}
+
+.update-item.important {
+    border-left-color: var(--accent-1);
+    background: rgba(255,0,110,0.05);
+}
+
+.update-icon i {
+    font-size: 1.3rem;
+    color: var(--accent-3);
+}
+
+.update-item.important .update-icon i {
+    color: var(--accent-1);
+}
+
+.update-content h4 {
+    margin-bottom: 5px;
+}
+
+.update-date {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.report-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+}
+
+.report-item:hover {
+    background: rgba(255,0,110,0.05);
+}
+
+.report-icon i {
+    font-size: 2rem;
+    color: var(--accent-1);
+}
+
+.report-info {
+    flex: 1;
+}
+
+.report-info h4 {
+    margin-bottom: 3px;
+}
+
+.report-info p {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.opt-in-panel {
+    position: sticky;
+    top: 100px;
+}
+
+.panel-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+}
+
+.opt-in-amount {
+    text-align: center;
+    padding: 25px;
+    background: rgba(255,0,110,0.05);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+
+.opt-in-amount .label {
+    display: block;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.opt-in-amount .amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-1);
+}
+
+.opt-in-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+}
+
+.stat-label {
+    display: block;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.btn-opt-in {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent-1), #ff3366);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 15px;
+}
+
+.btn-opt-in:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+.btn-opt-in:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-align: center;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.btn-secondary:hover {
+    background: rgba(255,0,110,0.1);
+    border-color: var(--accent-1);
+}
+
+.opt-in-disclaimer {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    text-align: center;
+    margin: 15px 0;
+}
+
+.opted-in-message {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(0,200,83,0.1);
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+
+.opted-in-message i {
+    font-size: 2rem;
+    color: #00c853;
+}
+
+.opt-in-closed {
+    text-align: center;
+    padding: 30px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+}
+
+.opt-in-closed i {
+    font-size: 2rem;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.deal-meta-info {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.deal-meta-info h4 {
+    margin-bottom: 15px;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 1024px) {
+    .deal-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .opt-in-panel {
+        position: static;
+    }
+}
+</style>
+{% endblock %}
