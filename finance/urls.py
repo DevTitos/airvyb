@@ -16,6 +16,7 @@ urlpatterns = [
     path('deposit/initiate/', views.initiate_deposit, name='initiate_deposit'),
     path('finance/deposit/status/<int:transaction_id>/', views.check_deposit_status, name='check_deposit_status'),
     path('payment/mpesa/success/', views.deposit_success_simple, name='mpesa_callback'),
+    path('finance/deposit/callback/', views.deposit_callback, name='deposit_callback'),
     
     # Withdrawals
     path('withdrawal/', views.withdrawal, name='withdrawal'),

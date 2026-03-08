@@ -162,7 +162,7 @@ PAYHERO_ACTIVATION_CALLBACK_URL= 'https://airvyb.co.ke/activation/callback/'
 
 INTASEND_PUBLISHABLE_KEY = "ISPubKey_live_81635510-eb14-4760-8f38-fe2ca6535a5c"
 INTASEND_TOKEN='ISSecretKey_live_a2333b99-4a12-470c-9c22-228a8dde982a'
-
+INTASEND_CALLBACK_URL = 'https://airvyb.co.ke/finance/deposit/callback/'
 
 
 WEBPUSH_SETTINGS = {

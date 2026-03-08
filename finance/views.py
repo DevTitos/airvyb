@@ -24,6 +24,15 @@ from core.models import Notification, AuditLog
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+from intasend import APIService
+
+# Initialize IntaSend service
+intasend_service = APIService(
+    token=settings.INTASEND_TOKEN,
+    publishable_key=settings.INTASEND_PUBLISHABLE_KEY
+)
+
 from .models import (
     Wallet, Transaction, Loan, LoanRepayment, 
     PaymentMethod, FinanceSummary, User
@@ -247,11 +256,12 @@ def deposit(request):
     
     return render(request, 'finance/deposit.html', context)
 
+
 @login_required
 @require_POST
 def initiate_deposit(request):
     """
-    Initiate M-Pesa STK Push via PayHero API
+    Initiate M-Pesa STK Push via IntaSend
     Supports both AJAX (JSON) and form submissions
     """
     user = request.user
@@ -288,6 +298,14 @@ def initiate_deposit(request):
             else:
                 messages.error(request, error_msg)
                 return redirect('finance:deposit')
+        
+        # Format phone for IntaSend (ensure it's integer without leading zero)
+        if phone.startswith('0'):
+            intasend_phone = int(f"254{phone[1:]}")
+        elif phone.startswith('254'):
+            intasend_phone = int(phone)
+        else:
+            intasend_phone = int(f"254{phone}")
         
         # ============================================
         # 3. VALIDATE AMOUNT
@@ -379,8 +397,7 @@ def initiate_deposit(request):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             initiated_at=timezone.now(),
             metadata={
-                'payment_gateway': 'payhero',
-                'channel_id': settings.PAYHERO_CHANNEL_ID,
+                'payment_gateway': 'intasend',
                 'provider': 'm-pesa',
                 'external_reference': reference,
                 'initiation_source': 'web'
@@ -388,191 +405,157 @@ def initiate_deposit(request):
         )
         
         # ============================================
-        # 8. PREPARE PAYHERO API REQUEST
-        # ============================================
-        api_data = {
-            "amount": int(amount),
-            "phone_number": f"{phone}",
-            "channel_id": settings.PAYHERO_CHANNEL_ID,
-            "provider": "m-pesa",
-            "external_reference": reference,
-            "callback_url": settings.PAYHERO_CALLBACK_URL
-        }
-        
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': settings.PAYHERO_AUTH_TOKEN
-        }
-        
-        # ============================================
-        # 9. CALL PAYHERO API
+        # 8. CALL INTASEND API
         # ============================================
         try:
-            # Set timeout from settings or default to 30 seconds
-            api_timeout = getattr(settings, 'PAYHERO_API_TIMEOUT', 30)
+            # Ensure user has an email
+            user_email = user.email
+            if not user_email:
+                # If user doesn't have email, use a fallback or generate one
+                # This shouldn't happen in your system, but just in case
+                user_email = f"user_{user.id}@airvyb.co.ke"
             
-            res = requests.post(
-                url=settings.PAYHERO_API_URL,
-                json=api_data,
-                headers=headers,
-                timeout=api_timeout
+            # Log the request for debugging
+            logger.info(f"Initiating IntaSend STK Push for user {user.id}: Phone={intasend_phone}, Amount={amount}, Email={user_email}")
+            
+            # Initiate STK Push with IntaSend
+            response = intasend_service.collect.mpesa_stk_push(
+                phone_number=intasend_phone,
+                email=user_email,  # Email is required - use user's email
+                amount=int(amount),  # Amount must be integer
+                narrative=f"Wallet Deposit - {user.get_full_name() or user.username}"
             )
             
-            # Log the response for debugging (consider using proper logging)
-            if settings.DEBUG:
-                print(f"PayHero API Response [{res.status_code}]: {res.text[:500]}")
+            # Log the response for debugging
+            logger.info(f"IntaSend API Response: {response}")
             
             # ============================================
-            # 10. HANDLE API RESPONSE
+            # 9. HANDLE API RESPONSE
             # ============================================
-            #if res.status_code == 200:
-            try:
-                js = res.json()
-            except json.JSONDecodeError:
-                js = {'success': False, 'message': 'Invalid API response'}
-            
-            if js.get('success') == True:
-                # Update transaction - successfully initiated
-                transaction.status = 'processing'
-                transaction.processed_at = timezone.now()
-                transaction.metadata['api_response'] = js
-                transaction.metadata['api_request_id'] = js.get('data', {}).get('request_id', '')
-                transaction.save()
+            # Check if response has the expected structure
+            if response and isinstance(response, dict):
+                # Check for error in response
+                if 'error' in response:
+                    error_message = response.get('error', 'Unknown error')
+                    error_detail = response.get('detail', '')
+                    
+                    if error_detail:
+                        error_message = f"{error_message}: {error_detail}"
+                    
+                    transaction.status = 'failed'
+                    transaction.failed_at = timezone.now()
+                    transaction.metadata['api_error'] = response
+                    transaction.save()
+                    
+                    logger.error(f"IntaSend STK Push failed: {error_message}")
+                    
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': False,
+                            'error': error_message
+                        }, status=400)
+                    else:
+                        messages.error(request, error_message)
+                        return redirect('finance:deposit')
                 
-                # Return success response
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'STK push initiated successfully! Check your phone to complete payment.',
-                        'transaction': {
-                            'id': transaction.id,
-                            'reference': transaction.reference,
-                            'amount': float(transaction.amount),
-                            'phone': transaction.phone_number,
-                            'status': transaction.status,
-                            'initiated_at': transaction.initiated_at
-                        }
+                # Check for success response with id and invoice_id
+                if response.get('id') and response.get('invoice'):
+                    # Extract IntaSend specific IDs
+                    payment_id = response.get('id')
+                    invoice_data = response.get('invoice', {})
+                    invoice_id = invoice_data.get('invoice_id')
+                    
+                    if not invoice_id:
+                        # Try alternative path
+                        invoice_id = response.get('invoice_id')
+                    
+                    # Update transaction - successfully initiated
+                    transaction.status = 'processing'
+                    transaction.processed_at = timezone.now()
+                    transaction.metadata.update({
+                        'intasend_payment_id': payment_id,
+                        'intasend_invoice_id': invoice_id,
+                        'api_response': response
                     })
+                    transaction.save()
+                    
+                    logger.info(f"STK Push initiated successfully for transaction {transaction.id}: Invoice ID {invoice_id}")
+                    
+                    # Return success response
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': True,
+                            'message': 'STK push initiated successfully! Check your phone to complete payment.',
+                            'transaction': {
+                                'id': transaction.id,
+                                'reference': transaction.reference,
+                                'amount': float(transaction.amount),
+                                'phone': transaction.phone_number,
+                                'status': transaction.status,
+                                'initiated_at': transaction.initiated_at,
+                                'invoice_id': invoice_id  # Return for frontend polling
+                            }
+                        })
+                    else:
+                        messages.success(request, 
+                            f"STK push initiated successfully! Check your phone to complete payment of KES {amount:,.0f}."
+                        )
+                        return redirect('finance:deposit')
                 else:
-                    messages.success(request, 
-                        f"STK push initiated successfully! Check your phone to complete payment of KES {amount:,.0f}."
-                    )
-                    return redirect('finance:deposit')
-
-        
-            elif res.status_code == 400:
-                # Bad request - validation error from PayHero
-                try:
-                    js = res.json()
-                    error_msg = js.get('message', js.get('error', 'Invalid request to payment service.'))
-                except:
-                    error_msg = 'Invalid payment request. Please check your details and try again.'
+                    # Unexpected response structure
+                    error_message = 'Unexpected response from payment service'
+                    
+                    transaction.status = 'failed'
+                    transaction.failed_at = timezone.now()
+                    transaction.metadata['api_error'] = response
+                    transaction.save()
+                    
+                    logger.error(f"IntaSend unexpected response: {response}")
+                    
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({
+                            'success': False,
+                            'error': error_message
+                        }, status=400)
+                    else:
+                        messages.error(request, error_message)
+                        return redirect('finance:deposit')
+            else:
+                # Empty or invalid response
+                error_message = 'Invalid response from payment service'
                 
                 transaction.status = 'failed'
                 transaction.failed_at = timezone.now()
-                transaction.metadata['api_error'] = {'status_code': 400, 'response': res.text[:500]}
+                transaction.metadata['api_error'] = response
                 transaction.save()
+                
+                logger.error(f"IntaSend invalid response: {response}")
                 
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
                         'success': False,
-                        'error': error_msg
+                        'error': error_message
                     }, status=400)
                 else:
-                    messages.error(request, error_msg)
-                    return redirect('finance:deposit')
-            
-            elif res.status_code == 401 or res.status_code == 403:
-                # Authentication error
-                error_msg = 'Payment service authentication failed. Please contact support.'
-                
-                transaction.status = 'failed'
-                transaction.failed_at = timezone.now()
-                transaction.metadata['api_error'] = {'status_code': res.status_code, 'response': res.text[:500]}
-                transaction.save()
-                
-                # Log this urgently
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"PayHero API authentication failed: {res.status_code}")
-                
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'error': error_msg
-                    }, status=502)
-                else:
-                    messages.error(request, error_msg)
-                    return redirect('finance:deposit')
-            
-            else:
-                # Other HTTP errors
-                error_msg = 'Payment service temporarily unavailable. Please try again later.'
-                
-                transaction.status = 'failed'
-                transaction.failed_at = timezone.now()
-                transaction.metadata['api_error'] = {'status_code': res.status_code, 'response': res.text[:500]}
-                transaction.save()
-                
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'error': error_msg
-                    }, status=502)
-                else:
-                    messages.error(request, error_msg)
+                    messages.error(request, error_message)
                     return redirect('finance:deposit')
         
-        except requests.exceptions.Timeout:
-            # API timeout
-            error_msg = 'Payment request timed out. Please try again.'
-            
-            transaction.status = 'failed'
-            transaction.failed_at = timezone.now()
-            transaction.metadata['error'] = 'API timeout'
-            transaction.save()
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': error_msg
-                }, status=504)
-            else:
-                messages.error(request, error_msg)
-                return redirect('finance:deposit')
-        
-        except requests.exceptions.ConnectionError:
-            # Connection error
-            error_msg = 'Could not connect to payment service. Please check your internet connection.'
-            
-            transaction.status = 'failed'
-            transaction.failed_at = timezone.now()
-            transaction.metadata['error'] = 'Connection error'
-            transaction.save()
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': error_msg
-                }, status=503)
-            else:
-                messages.error(request, error_msg)
-                return redirect('finance:deposit')
-        
-        except requests.exceptions.RequestException as e:
-            # Other requests library exceptions
-            error_msg = 'An error occurred while connecting to payment service.'
+        except Exception as e:
+            # IntaSend API exception
+            error_msg = 'Payment service temporarily unavailable. Please try again later.'
             
             transaction.status = 'failed'
             transaction.failed_at = timezone.now()
             transaction.metadata['error'] = str(e)
             transaction.save()
             
+            logger.error(f"IntaSend API error for user {user.id}: {str(e)}", exc_info=True)
+            
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': False,
                     'error': error_msg
-                }, status=500)
+                }, status=502)
             else:
                 messages.error(request, error_msg)
                 return redirect('finance:deposit')
@@ -591,8 +574,6 @@ def initiate_deposit(request):
     
     except Exception as e:
         # Global exception handler
-        import logging
-        logger = logging.getLogger(__name__)
         logger.error(f"Deposit initiation error for user {user.id}: {str(e)}", exc_info=True)
         
         error_msg = 'An error occurred while processing your request. Please try again.'
@@ -606,11 +587,10 @@ def initiate_deposit(request):
             messages.error(request, error_msg)
             return redirect('finance:dashboard')
 
-
 @login_required
 @require_GET
 def check_deposit_status(request, transaction_id):
-    """Check deposit transaction status"""
+    """Check deposit transaction status - supports both local and IntaSend status"""
     transaction = get_object_or_404(
         Transaction,
         id=transaction_id,
@@ -618,14 +598,187 @@ def check_deposit_status(request, transaction_id):
         transaction_type='deposit'
     )
     
+    # If transaction has IntaSend invoice_id and is still processing, check with IntaSend
+    if transaction.status in ['pending', 'processing'] and transaction.metadata.get('intasend_invoice_id'):
+        try:
+            invoice_id = transaction.metadata['intasend_invoice_id']
+            
+            # Check status with IntaSend
+            status_response = intasend_service.collect.status(invoice_id=invoice_id)
+            
+            if status_response and 'invoice' in status_response:
+                invoice = status_response['invoice']
+                state = invoice.get('state')
+                failed_reason = invoice.get('failed_reason')
+                
+                # Map IntaSend states to your statuses
+                status_mapping = {
+                    'PENDING': 'pending',
+                    'PROCESSING': 'processing',
+                    'COMPLETE': 'completed',
+                    'FAILED': 'failed'
+                }
+                
+                new_status = status_mapping.get(state, transaction.status)
+                
+                # Update transaction if status changed
+                if new_status != transaction.status:
+                    with db_transaction.atomic():
+                        transaction.status = new_status
+                        
+                        if state == 'COMPLETE':
+                            transaction.completed_at = timezone.now()
+                            transaction.mpesa_code = invoice.get('mpesa_receipt_number')
+                            
+                            # Update wallet balance
+                            wallet = Wallet.objects.get(user=request.user)
+                            wallet.balance += transaction.amount
+                            wallet.save()
+                            
+                            transaction.balance_after = wallet.balance
+                            
+                        elif state == 'FAILED':
+                            transaction.failed_at = timezone.now()
+                            transaction.metadata['failed_reason'] = failed_reason
+                        
+                        transaction.metadata['last_status_check'] = {
+                            'timestamp': timezone.now().isoformat(),
+                            'state': state,
+                            'failed_reason': failed_reason
+                        }
+                        transaction.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'status': transaction.status,
+                    'intasend_state': state,
+                    'mpesa_code': transaction.mpesa_code,
+                    'failed_reason': failed_reason,
+                    'completed_at': transaction.completed_at,
+                    'balance_after': float(transaction.balance_after) if transaction.balance_after else None
+                })
+                
+        except Exception as e:
+            logger.error(f"IntaSend status check error: {str(e)}", exc_info=True)
+            # Fall back to local status
+    
+    # Return local status if IntaSend check not needed or failed
     return JsonResponse({
         'success': True,
         'status': transaction.status,
         'mpesa_code': transaction.mpesa_code,
-        'completed_at': transaction.completed_at
+        'completed_at': transaction.completed_at,
+        'balance_after': float(transaction.balance_after) if transaction.balance_after else None
     })
 
 
+@csrf_exempt
+@require_POST
+def deposit_callback(request):
+    """
+    Handle IntaSend payment callback for deposits
+    """
+    try:
+        # Parse callback data
+        payload = json.loads(request.body)
+        
+        # Extract IntaSend specific fields
+        invoice_id = payload.get('invoice_id')
+        state = payload.get('state')
+        failed_reason = payload.get('failed_reason')
+        mpesa_receipt = payload.get('mpesa_receipt_number')
+        
+        if not invoice_id:
+            logger.error("Missing invoice_id in callback")
+            return JsonResponse({'error': 'Missing invoice_id'}, status=400)
+        
+        # Find transaction by invoice_id in metadata
+        try:
+            transaction = Transaction.objects.get(
+                metadata__intasend_invoice_id=invoice_id,
+                transaction_type='deposit'
+            )
+        except Transaction.DoesNotExist:
+            # Try to find by searching in metadata JSON
+            transactions = Transaction.objects.filter(
+                transaction_type='deposit',
+                metadata__has_key='intasend_invoice_id'
+            )
+            transaction = None
+            for t in transactions:
+                if t.metadata.get('intasend_invoice_id') == invoice_id:
+                    transaction = t
+                    break
+            
+            if not transaction:
+                logger.error(f"Transaction not found for invoice_id: {invoice_id}")
+                return JsonResponse({'error': 'Transaction not found'}, status=404)
+        
+        # Process based on state
+        with db_transaction.atomic():
+            # Get user's wallet
+            wallet = Wallet.objects.get(user=transaction.user)
+            
+            # Map IntaSend states to your statuses
+            if state == 'COMPLETE':
+                # Update transaction
+                transaction.status = 'completed'
+                transaction.completed_at = timezone.now()
+                transaction.mpesa_code = mpesa_receipt
+                
+                # Update wallet balance
+                wallet.balance += transaction.amount
+                wallet.save()
+                
+                transaction.balance_after = wallet.balance
+                transaction.metadata['callback_data'] = payload
+                transaction.save()
+                
+                logger.info(f"Deposit completed for user {transaction.user.id}: KES {transaction.amount}")
+                
+                # Send success notification (optional)
+                # send_deposit_success_notification(transaction)
+                
+                return JsonResponse({'success': True, 'status': 'completed'})
+            
+            elif state == 'FAILED':
+                transaction.status = 'failed'
+                transaction.failed_at = timezone.now()
+                transaction.metadata['failed_reason'] = failed_reason
+                transaction.metadata['callback_data'] = payload
+                transaction.save()
+                
+                logger.info(f"Deposit failed for user {transaction.user.id}: {failed_reason}")
+                
+                # Send failure notification (optional)
+                # send_deposit_failed_notification(transaction, failed_reason)
+                
+                return JsonResponse({'success': True, 'status': 'failed'})
+            
+            elif state == 'PENDING':
+                transaction.status = 'pending'
+                transaction.metadata['callback_data'] = payload
+                transaction.save()
+                
+                return JsonResponse({'success': True, 'status': 'pending'})
+            
+            else:
+                # Other states (PROCESSING, etc.)
+                transaction.metadata['callback_data'] = payload
+                transaction.save()
+                return JsonResponse({'success': True, 'status': state.lower()})
+    
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON in callback")
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    except Wallet.DoesNotExist:
+        logger.error(f"Wallet not found for transaction {invoice_id}")
+        return JsonResponse({'error': 'Wallet not found'}, status=404)
+    
+    except Exception as e:
+        logger.error(f"Deposit callback error: {str(e)}", exc_info=True)
+        return JsonResponse({'error': 'Internal server error'}, status=500)
 # ============================================
 # WITHDRAWALS
 # ============================================

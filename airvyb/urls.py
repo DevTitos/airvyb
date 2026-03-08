@@ -14,7 +14,7 @@ urlpatterns = [
     path('activation/', include('activation.urls')),
     path('deals/', include('deals.urls')),
     path("webpush/", include("webpush.urls")),
-    path('/notifications/subscribe/', subscribe, name='subscribe'),
+    path('notifications/subscribe/', subscribe, name='subscribe'),
 ]
 
 if settings.DEBUG:

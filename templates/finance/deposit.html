@@ -1146,15 +1146,15 @@
     <!-- Deposit Header -->
     <div class="deposit-header">
         <div class="deposit-title">
-            <h1>Monthly Contribution</h1>
-            <p>Make your monthly contribution payment via M-Pesa (Minimum Ksh 500)</p>
+            <h1>Deposit Funds</h1>
+            <p>Add money to your wallet via M-Pesa (Minimum Ksh 100)</p>
         </div>
         <div class="deposit-actions">
             <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i> Back to Finance
             </a>
             <a href="{% url 'finance:transactions' %}" class="btn btn-outline">
-                <i class="fas fa-history"></i> Contribution History
+                <i class="fas fa-history"></i> Transaction History
             </a>
         </div>
     </div>
@@ -1167,13 +1167,13 @@
             </div>
             <div class="wallet-details">
                 <h3>Your Wallet Balance</h3>
-                <p>Available for contributions and withdrawals</p>
+                <p>Available for investments and withdrawals</p>
             </div>
         </div>
         <div class="wallet-balance">
             <div class="label">Current Balance</div>
             <div class="value">Ksh {{ wallet.balance|floatformat:0|intcomma }}</div>
-            <div class="sub">Monthly contribution limit: Ksh {{ wallet.monthly_contribution_limit|floatformat:0|intcomma }}</div>
+            <div class="sub">Daily deposit limit: Ksh {{ wallet.remaining_daily_deposit|floatformat:0|intcomma }} remaining</div>
         </div>
     </div>
     
@@ -1188,7 +1188,7 @@
                         <div class="step-icon">
                             <i class="fas fa-edit"></i>
                         </div>
-                        <div class="step-label">Select Month</div>
+                        <div class="step-label">Enter Details</div>
                     </div>
                     <div class="step" id="step2">
                         <div class="step-icon">
@@ -1208,60 +1208,11 @@
                 <div id="step1Form" class="form-step" style="display: block;">
                     <div class="card-header">
                         <h2 class="card-title">
-                            <i class="fas fa-calendar-alt"></i> Monthly Contribution
+                            <i class="fas fa-money-bill-wave"></i> Deposit to Wallet
                         </h2>
                         <p class="card-subtitle">
-                            Select your contribution month and amount. Minimum contribution is Ksh 500.
+                            Enter your M-Pesa details to deposit funds into your wallet.
                         </p>
-                    </div>
-                    
-                    <!-- Contribution Month Selection -->
-                    <div class="contribution-plans">
-                        <span class="plan-label">Select Contribution Month</span>
-                        <div class="plan-options">
-                            <div class="plan-option">
-                                <input type="radio" name="contribution_month" id="month_current" value="current" checked>
-                                <label for="month_current" class="plan-card">
-                                    <div class="plan-icon">
-                                        <i class="fas fa-calendar-check"></i>
-                                    </div>
-                                    <div class="plan-name">Current Month</div>
-                                    <div class="plan-period">{{ current_month_name }} {{ current_year }}</div>
-                                    <span class="plan-badge">Due Now</span>
-                                </label>
-                            </div>
-                            <div class="plan-option">
-                                <input type="radio" name="contribution_month" id="month_next" value="next">
-                                <label for="month_next" class="plan-card">
-                                    <div class="plan-icon">
-                                        <i class="fas fa-calendar-plus"></i>
-                                    </div>
-                                    <div class="plan-name">Next Month</div>
-                                    <div class="plan-period">{{ next_month_name }} {{ next_year }}</div>
-                                    <span class="plan-badge">Early Payment</span>
-                                </label>
-                            </div>
-                            <div class="plan-option">
-                                <input type="radio" name="contribution_month" id="month_custom" value="custom">
-                                <label for="month_custom" class="plan-card">
-                                    <div class="plan-icon">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div class="plan-name">Custom Month</div>
-                                    <div class="plan-period">Select below</div>
-                                    <span class="plan-badge">Flexible</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Custom Month Selection (hidden by default) -->
-                        <div id="customMonthSelector" style="display: none; margin-top: 15px;">
-                            <select class="phone-input" id="custom_month" style="width: 100%;">
-                                {% for month in available_months %}
-                                <option value="{{ month.value }}">{{ month.name }} {{ month.year }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
                     </div>
                     
                     <!-- Saved Payment Methods -->
@@ -1313,7 +1264,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="amount">Contribution Amount (Min: Ksh 500)</label>
+                            <label for="amount">Amount (Min: Ksh 100)</label>
                             <div class="amount-input-wrapper">
                                 <i class="fas fa-money-bill-wave"></i>
                                 <input type="number" 
@@ -1321,20 +1272,21 @@
                                        name="amount" 
                                        class="amount-input" 
                                        placeholder="0" 
-                                       min="500" 
-                                       max="{{ max_deposit }}"
+                                       min="{{ min_deposit|default:100 }}" 
+                                       max="{{ max_deposit|default:150000 }}"
                                        step="100"
                                        required>
                                 <span class="currency-symbol">KES</span>
                             </div>
                             <div class="amount-hint">
-                                <span><i class="fas fa-arrow-up"></i> Min: Ksh 500</span>
-                                <span><i class="fas fa-arrow-down"></i> Max: Ksh {{ max_deposit|intcomma }}</span>
+                                <span><i class="fas fa-arrow-up"></i> Min: Ksh {{ min_deposit|default:100 }}</span>
+                                <span><i class="fas fa-arrow-down"></i> Max: Ksh {{ max_deposit|default:150000|intcomma }}</span>
                             </div>
                         </div>
                         
-                        <!-- Quick Amount Buttons (Updated to min 500) -->
+                        <!-- Quick Amount Buttons -->
                         <div class="quick-amounts">
+                            <button type="button" class="quick-amount-btn" onclick="setAmount(100)">100</button>
                             <button type="button" class="quick-amount-btn" onclick="setAmount(500)">500</button>
                             <button type="button" class="quick-amount-btn" onclick="setAmount(1000)">1,000</button>
                             <button type="button" class="quick-amount-btn" onclick="setAmount(2000)">2,000</button>
@@ -1342,15 +1294,14 @@
                             <button type="button" class="quick-amount-btn" onclick="setAmount(10000)">10,000</button>
                             <button type="button" class="quick-amount-btn" onclick="setAmount(20000)">20,000</button>
                             <button type="button" class="quick-amount-btn" onclick="setAmount(50000)">50,000</button>
-                            <button type="button" class="quick-amount-btn" onclick="setAmount(100000)">100,000</button>
                         </div>
                         
                         <!-- Info Box -->
                         <div class="info-box">
                             <i class="fas fa-info-circle"></i>
                             <div class="info-content">
-                                <strong>Contribution Instructions:</strong> You will receive an STK push prompt on your phone. 
-                                Enter your M-Pesa PIN to complete your monthly contribution. Funds will be credited within 2 minutes.
+                                <strong>Deposit Instructions:</strong> You will receive an STK push prompt on your phone. 
+                                Enter your M-Pesa PIN to complete the transaction. Funds will be credited instantly.
                             </div>
                         </div>
                         
@@ -1360,7 +1311,7 @@
                                 Cancel
                             </button>
                             <button type="submit" class="btn-action btn-proceed" id="proceedButton">
-                                <i class="fas fa-paper-plane"></i> Submit Contribution
+                                <i class="fas fa-paper-plane"></i> Deposit Now
                             </button>
                         </div>
                     </form>
@@ -1377,21 +1328,21 @@
                         
                         <p class="success-message">
                             An M-Pesa prompt has been sent to <strong id="confirmationPhone">07XXXXXXXX</strong><br>
-                            for your <strong id="confirmationMonth">current month</strong> contribution.
+                            for your deposit of <strong id="confirmationAmount">KES 0</strong>.
                         </p>
                         
                         <div class="confirmation-details">
                             <div class="detail-row">
-                                <span class="detail-label">Contribution Month:</span>
-                                <span class="detail-value" id="confirmationMonthDetail">{{ current_month_name }} {{ current_year }}</span>
-                            </div>
-                            <div class="detail-row">
                                 <span class="detail-label">Amount:</span>
-                                <span class="detail-value highlight" id="confirmationAmount">KES 0</span>
+                                <span class="detail-value highlight" id="confirmationAmountDetail">KES 0</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Reference:</span>
-                                <span class="detail-value reference" id="confirmationReference">CON-XXXXXX</span>
+                                <span class="detail-value reference" id="confirmationReference">DEP-XXXXXX</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Invoice ID:</span>
+                                <span class="detail-value reference" id="confirmationInvoiceId">INV-XXXXXX</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Status:</span>
@@ -1415,7 +1366,7 @@
                                 1. Dial *334# on your phone<br>
                                 2. Select "Lipa na M-Pesa"<br>
                                 3. Enter Business Number: 247247<br>
-                                4. Enter Account Number: 0706889399<br>
+                                4. Enter Account Number: Your Phone Number<br>
                                 5. Enter Amount and PIN
                             </div>
                         </div>
@@ -1439,17 +1390,16 @@
                             <i class="fas fa-check"></i>
                         </div>
                         
-                        <h3 class="success-title">Contribution Successful!</h3>
+                        <h3 class="success-title">Deposit Successful!</h3>
                         
                         <p class="success-message">
-                            Your contribution of <strong id="successAmount">KES 0</strong> for 
-                            <strong id="successMonth">{{ current_month_name }} {{ current_year }}</strong> has been processed successfully.
+                            Your deposit of <strong id="successAmount">KES 0</strong> has been processed successfully.
                         </p>
                         
                         <div class="confirmation-details">
                             <div class="detail-row">
                                 <span class="detail-label">Transaction ID:</span>
-                                <span class="detail-value reference" id="successReference">CON-XXXXXX</span>
+                                <span class="detail-value reference" id="successReference">DEP-XXXXXX</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">M-Pesa Code:</span>
@@ -1479,7 +1429,7 @@
                 <!-- Loading Overlay -->
                 <div id="depositLoading" class="loading-overlay" style="display: none;">
                     <div class="loading-spinner"></div>
-                    <div class="loading-text" id="loadingText">Processing contribution...</div>
+                    <div class="loading-text" id="loadingText">Processing deposit...</div>
                 </div>
             </div>
         </div>
@@ -1489,7 +1439,7 @@
             <!-- Fee Information -->
             <div class="sidebar-card">
                 <h3 class="sidebar-title">
-                    <i class="fas fa-coins"></i> Contribution Details
+                    <i class="fas fa-coins"></i> Deposit Details
                 </h3>
                 <div class="fee-table">
                     <div class="fee-row">
@@ -1501,40 +1451,40 @@
                         <span class="fee-value">Instant</span>
                     </div>
                     <div class="fee-row">
-                        <span class="fee-label">Minimum Contribution</span>
-                        <span class="fee-value">Ksh 500</span>
+                        <span class="fee-label">Minimum Deposit</span>
+                        <span class="fee-value">Ksh {{ min_deposit|default:100 }}</span>
                     </div>
                     <div class="fee-row">
-                        <span class="fee-label">Maximum Contribution</span>
-                        <span class="fee-value">Ksh {{ max_deposit|intcomma }}</span>
+                        <span class="fee-label">Maximum Deposit</span>
+                        <span class="fee-value">Ksh {{ max_deposit|default:150000|intcomma }}</span>
                     </div>
                 </div>
             </div>
             
-            <!-- Monthly Limits -->
+            <!-- Daily Limits -->
             <div class="sidebar-card">
                 <h3 class="sidebar-title">
-                    <i class="fas fa-chart-line"></i> Monthly Progress
+                    <i class="fas fa-chart-line"></i> Daily Limits
                 </h3>
                 <div class="limit-item">
-                    <span class="limit-label">Monthly Target</span>
-                    <span class="limit-value">Ksh {{ monthly_target|floatformat:0|intcomma }}</span>
+                    <span class="limit-label">Daily Limit</span>
+                    <span class="limit-value">Ksh {{ wallet.daily_deposit_limit|default:150000|intcomma }}</span>
                 </div>
                 <div class="limit-item">
-                    <span class="limit-label">Contributed This Month</span>
-                    <span class="limit-value">Ksh {{ monthly_contributed|floatformat:0|intcomma }}</span>
+                    <span class="limit-label">Used Today</span>
+                    <span class="limit-value">Ksh {{ wallet.today_deposits|default:0|floatformat:0|intcomma }}</span>
                 </div>
                 <div class="limit-item">
                     <span class="limit-label">Remaining</span>
-                    <span class="limit-value" style="color: #00c853;">Ksh {{ monthly_remaining|floatformat:0|intcomma }}</span>
+                    <span class="limit-value" style="color: #00c853;">Ksh {{ wallet.remaining_daily_deposit|floatformat:0|intcomma }}</span>
                 </div>
                 
                 <div class="limit-progress">
                     <div class="progress-header">
-                        <span>Monthly Progress</span>
-                        <span id="monthlyProgressPercentage">
-                            {% if monthly_target > 0 %}
-                                {% widthratio monthly_contributed monthly_target 100 %}%
+                        <span>Daily Progress</span>
+                        <span id="dailyProgressPercentage">
+                            {% if wallet.daily_deposit_limit > 0 %}
+                                {% widthratio wallet.today_deposits|default:0 wallet.daily_deposit_limit 100 %}%
                             {% else %}
                                 0%
                             {% endif %}
@@ -1542,29 +1492,29 @@
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" 
-                             style="width: {% if monthly_target > 0 %}{% widthratio monthly_contributed monthly_target 100 %}{% else %}0{% endif %}%;">
+                             style="width: {% if wallet.daily_deposit_limit > 0 %}{% widthratio wallet.today_deposits|default:0 wallet.daily_deposit_limit 100 %}{% else %}0{% endif %}%;">
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Recent Contributions -->
+            <!-- Recent Deposits -->
             <div class="sidebar-card">
                 <h3 class="sidebar-title">
-                    <i class="fas fa-clock"></i> Recent Contributions
+                    <i class="fas fa-clock"></i> Recent Deposits
                 </h3>
                 {% if recent_transactions %}
                     {% for transaction in recent_transactions|slice:":5" %}
                         {% if transaction.transaction_type == 'deposit' %}
                         <div class="contribution-summary-item">
                             <div class="contribution-summary-icon">
-                                <i class="fas fa-calendar-check"></i>
+                                <i class="fas fa-arrow-down"></i>
                             </div>
                             <div class="contribution-summary-info">
-                                <div class="contribution-summary-month">{{ transaction.month_name|default:"Current Month" }} {{ transaction.year|default:"" }}</div>
-                                <div class="contribution-summary-amount">Ksh {{ transaction.amount|floatformat:0|intcomma }}</div>
+                                <div class="contribution-summary-month">Ksh {{ transaction.amount|floatformat:0|intcomma }}</div>
+                                <div class="contribution-summary-amount">{{ transaction.created_at|date:"M d, Y H:i" }}</div>
                             </div>
-                            <span class="contribution-summary-status status-{{ transaction.status }}">
+                            <span class="contribution-summary-status status-{{ transaction.status|lower }}">
                                 {{ transaction.get_status_display|upper }}
                             </span>
                         </div>
@@ -1573,41 +1523,15 @@
                 {% else %}
                     <div style="text-align: center; padding: 30px 0; color: var(--text-light);">
                         <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
-                        <p>No recent contributions</p>
+                        <p>No recent deposits</p>
                     </div>
                 {% endif %}
                 
                 <div style="margin-top: 20px; text-align: center;">
                     <a href="{% url 'finance:transactions' %}" class="btn btn-outline btn-sm">
-                        View All Contributions
+                        View All Transactions
                     </a>
                 </div>
-            </div>
-            
-            <!-- Upcoming Months -->
-            <div class="sidebar-card">
-                <h3 class="sidebar-title">
-                    <i class="fas fa-calendar-alt"></i> Upcoming Months
-                </h3>
-                {% if upcoming_months %}
-                    {% for month in upcoming_months|slice:":3" %}
-                        <div class="contribution-summary-item">
-                            <div class="contribution-summary-icon">
-                                <i class="fas fa-calendar"></i>
-                            </div>
-                            <div class="contribution-summary-info">
-                                <div class="contribution-summary-month">{{ month.name }} {{ month.year }}</div>
-                                <div class="contribution-summary-amount">Target: Ksh {{ month.target|floatformat:0|intcomma }}</div>
-                            </div>
-                            <span class="contribution-summary-status status-upcoming">UPCOMING</span>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <div style="text-align: center; padding: 30px 0; color: var(--text-light);">
-                        <i class="fas fa-calendar-alt" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
-                        <p>No upcoming months</p>
-                    </div>
-                {% endif %}
             </div>
             
             <!-- Need Help? -->
@@ -1636,14 +1560,14 @@
 
 <script>
 // ============================================
-// CONTRIBUTION STATE MANAGEMENT
+// DEPOSIT STATE MANAGEMENT
 // ============================================
-let contributionState = {
+let depositState = {
     amount: 0,
     phone: '',
-    month: 'current',
-    customMonth: '',
     reference: '',
+    invoiceId: '',
+    transactionId: null,
     status: 'pending',
     timer: null,
     timeLeft: 120,
@@ -1687,21 +1611,6 @@ function showStep(stepNumber) {
 }
 
 // ============================================
-// MONTH SELECTION
-// ============================================
-document.querySelectorAll('input[name="contribution_month"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const customSelector = document.getElementById('customMonthSelector');
-        if (this.value === 'custom') {
-            customSelector.style.display = 'block';
-        } else {
-            customSelector.style.display = 'none';
-        }
-        contributionState.month = this.value;
-    });
-});
-
-// ============================================
 // AMOUNT SETTING
 // ============================================
 function setAmount(amount) {
@@ -1733,34 +1642,19 @@ function selectSavedMethod(phone) {
 }
 
 // ============================================
-// CONTRIBUTION SUBMISSION
+// DEPOSIT SUBMISSION
 // ============================================
 document.getElementById('depositForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     // Prevent double submission
-    if (contributionState.isProcessing) return;
+    if (depositState.isProcessing) return;
     
     const phoneInput = document.getElementById('phone');
     const amountInput = document.getElementById('amount');
     const proceedButton = document.getElementById('proceedButton');
     const loadingElement = document.getElementById('depositLoading');
     const loadingText = document.getElementById('loadingText');
-    
-    // Get selected month
-    let selectedMonth = document.querySelector('input[name="contribution_month"]:checked')?.value || 'current';
-    let monthDisplay = '';
-    
-    if (selectedMonth === 'current') {
-        monthDisplay = '{{ current_month_name }} {{ current_year }}';
-    } else if (selectedMonth === 'next') {
-        monthDisplay = '{{ next_month_name }} {{ next_year }}';
-    } else if (selectedMonth === 'custom') {
-        const customSelect = document.getElementById('custom_month');
-        if (customSelect) {
-            monthDisplay = customSelect.options[customSelect.selectedIndex]?.text || 'Custom';
-        }
-    }
     
     // Validate phone number
     const phoneRegex = /^[0-9]{10}$/;
@@ -1770,30 +1664,27 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
         return;
     }
     
-    // Validate amount (minimum 500)
+    // Validate amount (minimum 100)
     const amount = parseFloat(amountInput.value);
-    const minAmount = 500;
-    const maxAmount = parseFloat('{{ max_deposit }}');
+    const minAmount = 100;
+    const maxAmount = parseFloat('{{ max_deposit|default:150000 }}');
     
     if (!amount || amount < minAmount) {
-        showToast(`Minimum contribution amount is Ksh 500`, 'error');
+        showToast(`Minimum deposit amount is Ksh ${minAmount}`, 'error');
         amountInput?.focus();
         return;
     }
     
     if (amount > maxAmount) {
-        showToast(`Maximum contribution amount is Ksh ${maxAmount.toLocaleString()}`, 'error');
+        showToast(`Maximum deposit amount is Ksh ${maxAmount.toLocaleString()}`, 'error');
         amountInput?.focus();
         return;
     }
     
-    // Store contribution details
-    contributionState.amount = amount;
-    contributionState.phone = phoneInput.value;
-    contributionState.month = selectedMonth;
-    contributionState.customMonth = selectedMonth === 'custom' ? document.getElementById('custom_month')?.value : '';
-    contributionState.reference = 'CON-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    contributionState.isProcessing = true;
+    // Store deposit details
+    depositState.amount = amount;
+    depositState.phone = phoneInput.value;
+    depositState.isProcessing = true;
     
     // Disable proceed button
     if (proceedButton) {
@@ -1804,7 +1695,7 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
     // Show loading
     if (loadingElement) {
         loadingElement.style.display = 'flex';
-        loadingText.textContent = 'Initiating contribution payment...';
+        loadingText.textContent = 'Initiating M-Pesa payment...';
     }
     
     try {
@@ -1812,13 +1703,9 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
         const formData = new FormData();
         formData.append('phone', phoneInput.value);
         formData.append('amount', amount);
-        formData.append('month', selectedMonth);
-        if (selectedMonth === 'custom') {
-            formData.append('custom_month', document.getElementById('custom_month')?.value || '');
-        }
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
         
-        // Make API request (keeping original URL)
+        // Make API request
         const response = await fetch("{% url 'finance:initiate_deposit' %}", {
             method: 'POST',
             body: formData,
@@ -1833,12 +1720,17 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
             // Hide loading
             if (loadingElement) loadingElement.style.display = 'none';
             
+            // Store transaction details
+            depositState.reference = data.transaction.reference;
+            depositState.transactionId = data.transaction.id;
+            depositState.invoiceId = data.transaction.invoice_id;
+            
             // Update confirmation details
             document.getElementById('confirmationPhone').textContent = phoneInput.value;
-            document.getElementById('confirmationMonth').textContent = monthDisplay;
-            document.getElementById('confirmationMonthDetail').textContent = monthDisplay;
             document.getElementById('confirmationAmount').textContent = 'KES ' + amount.toLocaleString();
-            document.getElementById('confirmationReference').textContent = data.transaction.reference || contributionState.reference;
+            document.getElementById('confirmationAmountDetail').textContent = 'KES ' + amount.toLocaleString();
+            document.getElementById('confirmationReference').textContent = data.transaction.reference;
+            document.getElementById('confirmationInvoiceId').textContent = data.transaction.invoice_id || 'Processing...';
             
             // Show step 2
             showStep(2);
@@ -1847,20 +1739,20 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
             startPaymentTimer();
             
             // Show success toast
-            showToast('Contribution initiated! Check your phone for M-Pesa prompt.', 'success');
+            showToast('STK push sent! Check your phone for M-Pesa prompt.', 'success');
             
             // Show manual instructions after 10 seconds
             setTimeout(() => {
                 document.getElementById('manualInstructions').style.display = 'block';
             }, 10000);
             
-            // Check payment status periodically
+            // Start checking payment status
             if (data.transaction && data.transaction.id) {
                 checkPaymentStatus(data.transaction.id);
             }
             
         } else {
-            throw new Error(data.error || 'Contribution initiation failed');
+            throw new Error(data.error || 'Deposit initiation failed');
         }
         
     } catch (error) {
@@ -1868,13 +1760,13 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
         if (loadingElement) loadingElement.style.display = 'none';
         
         // Re-enable button
-        contributionState.isProcessing = false;
+        depositState.isProcessing = false;
         if (proceedButton) {
             proceedButton.disabled = false;
-            proceedButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Contribution';
+            proceedButton.innerHTML = '<i class="fas fa-paper-plane"></i> Deposit Now';
         }
         
-        showToast(error.message || 'Failed to initiate contribution', 'error');
+        showToast(error.message || 'Failed to initiate deposit', 'error');
     }
 });
 
@@ -1882,18 +1774,18 @@ document.getElementById('depositForm')?.addEventListener('submit', async functio
 // PAYMENT TIMER
 // ============================================
 function startPaymentTimer() {
-    if (contributionState.timer) clearInterval(contributionState.timer);
+    if (depositState.timer) clearInterval(depositState.timer);
     
-    contributionState.timeLeft = 120;
+    depositState.timeLeft = 120;
     const timerElement = document.getElementById('paymentTimer');
     const statusElement = document.getElementById('paymentStatus');
     const retryButton = document.getElementById('retryButton');
     
-    contributionState.timer = setInterval(() => {
-        contributionState.timeLeft--;
+    depositState.timer = setInterval(() => {
+        depositState.timeLeft--;
         
-        if (contributionState.timeLeft <= 0) {
-            clearInterval(contributionState.timer);
+        if (depositState.timeLeft <= 0) {
+            clearInterval(depositState.timer);
             
             if (timerElement) timerElement.textContent = '00:00';
             
@@ -1905,19 +1797,19 @@ function startPaymentTimer() {
             if (retryButton) retryButton.style.display = 'block';
             document.getElementById('manualInstructions').style.display = 'block';
             
-            contributionState.isProcessing = false;
+            depositState.isProcessing = false;
             return;
         }
         
         // Update timer display
-        const minutes = Math.floor(contributionState.timeLeft / 60);
-        const seconds = contributionState.timeLeft % 60;
+        const minutes = Math.floor(depositState.timeLeft / 60);
+        const seconds = depositState.timeLeft % 60;
         if (timerElement) {
             timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
         // Add animation when time is low
-        if (contributionState.timeLeft <= 30 && timerElement) {
+        if (depositState.timeLeft <= 30 && timerElement) {
             timerElement.classList.add('countdown-active');
         }
     }, 1000);
@@ -1930,10 +1822,9 @@ async function checkPaymentStatus(transactionId) {
     const statusElement = document.getElementById('paymentStatus');
     const retryButton = document.getElementById('retryButton');
     
-    // Poll for status every 5 seconds
+    // Poll for status every 3 seconds
     const checkInterval = setInterval(async () => {
         try {
-            // Keeping original URL
             const response = await fetch(`/finance/deposit/status/${transactionId}/`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -1944,7 +1835,7 @@ async function checkPaymentStatus(transactionId) {
             
             if (data.status === 'completed') {
                 clearInterval(checkInterval);
-                clearInterval(contributionState.timer);
+                clearInterval(depositState.timer);
                 
                 // Update status
                 if (statusElement) {
@@ -1956,21 +1847,9 @@ async function checkPaymentStatus(transactionId) {
                 if (retryButton) retryButton.style.display = 'none';
                 
                 // Update success details
-                document.getElementById('successAmount').textContent = 'KES ' + contributionState.amount.toLocaleString();
-                document.getElementById('successReference').textContent = data.mpesa_code || contributionState.reference;
+                document.getElementById('successAmount').textContent = 'KES ' + depositState.amount.toLocaleString();
+                document.getElementById('successReference').textContent = data.mpesa_code || depositState.reference;
                 document.getElementById('successMpesaCode').textContent = data.mpesa_code || 'MPESA' + Date.now();
-                
-                // Set month in success message
-                let monthDisplay = '';
-                if (contributionState.month === 'current') {
-                    monthDisplay = '{{ current_month_name }} {{ current_year }}';
-                } else if (contributionState.month === 'next') {
-                    monthDisplay = '{{ next_month_name }} {{ next_year }}';
-                } else if (contributionState.month === 'custom') {
-                    const customSelect = document.getElementById('custom_month');
-                    monthDisplay = customSelect?.options[customSelect.selectedIndex]?.text || 'Custom';
-                }
-                document.getElementById('successMonth').textContent = monthDisplay;
                 
                 const now = new Date();
                 document.getElementById('successDateTime').textContent = now.toLocaleString('en-KE', {
@@ -1982,38 +1861,58 @@ async function checkPaymentStatus(transactionId) {
                 });
                 
                 // Update balance
-                const currentBalance = parseFloat('{{ wallet.balance }}');
-                document.getElementById('successBalance').textContent = 'Ksh ' + (currentBalance + contributionState.amount).toLocaleString();
+                const currentBalance = parseFloat('{{ wallet.balance }}') || 0;
+                const newBalance = data.balance_after || (currentBalance + depositState.amount);
+                document.getElementById('successBalance').textContent = 'Ksh ' + newBalance.toLocaleString();
                 
                 // Show success step
                 showStep(3);
                 
                 // Show success toast
-                showToast('Contribution completed successfully!', 'success');
+                showToast('Deposit completed successfully!', 'success');
                 
-                contributionState.isProcessing = false;
+                depositState.isProcessing = false;
+            }
+            
+            if (data.status === 'failed') {
+                clearInterval(checkInterval);
+                
+                if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Payment Failed';
+                    statusElement.className = 'status-badge expired';
+                }
+                
+                if (retryButton) retryButton.style.display = 'block';
+                document.getElementById('manualInstructions').style.display = 'block';
+                
+                depositState.isProcessing = false;
             }
         } catch (error) {
             console.error('Error checking payment status:', error);
         }
-    }, 5000);
+    }, 3000);
+    
+    // Stop checking after 2 minutes
+    setTimeout(() => {
+        clearInterval(checkInterval);
+    }, 120000);
 }
 
 // ============================================
 // PAYMENT CANCELLATION & RETRY
 // ============================================
 function cancelPayment() {
-    if (contributionState.timer) {
-        clearInterval(contributionState.timer);
+    if (depositState.timer) {
+        clearInterval(depositState.timer);
     }
     showStep(1);
-    resetContributionForm();
+    resetDepositForm();
 }
 
 function retryPayment() {
     // Reset payment state
-    contributionState.status = 'pending';
-    contributionState.isProcessing = false;
+    depositState.status = 'pending';
+    depositState.isProcessing = false;
     
     // Show step 1
     showStep(1);
@@ -2026,18 +1925,18 @@ function retryPayment() {
     const proceedButton = document.getElementById('proceedButton');
     if (proceedButton) {
         proceedButton.disabled = false;
-        proceedButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Contribution';
+        proceedButton.innerHTML = '<i class="fas fa-paper-plane"></i> Deposit Now';
     }
 }
 
-function resetContributionForm() {
+function resetDepositForm() {
     // Reset payment state
-    contributionState.isProcessing = false;
-    contributionState.status = 'pending';
+    depositState.isProcessing = false;
+    depositState.status = 'pending';
     
-    if (contributionState.timer) {
-        clearInterval(contributionState.timer);
-        contributionState.timer = null;
+    if (depositState.timer) {
+        clearInterval(depositState.timer);
+        depositState.timer = null;
     }
     
     // Reset form
@@ -2049,10 +1948,6 @@ function resetContributionForm() {
         btn.classList.remove('active');
     });
     
-    // Reset month selection to current
-    document.getElementById('month_current').checked = true;
-    document.getElementById('customMonthSelector').style.display = 'none';
-    
     // Hide loading
     document.getElementById('depositLoading').style.display = 'none';
     
@@ -2060,7 +1955,7 @@ function resetContributionForm() {
     const proceedButton = document.getElementById('proceedButton');
     if (proceedButton) {
         proceedButton.disabled = false;
-        proceedButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Contribution';
+        proceedButton.innerHTML = '<i class="fas fa-paper-plane"></i> Deposit Now';
     }
 }
 
@@ -2126,12 +2021,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Amount input validation (min 500)
+    // Amount input validation
     const amountInput = document.getElementById('amount');
     if (amountInput) {
         amountInput.addEventListener('input', function(e) {
             let value = parseFloat(e.target.value);
-            const min = 500;
+            const min = 100;
             const max = parseFloat(e.target.max);
             
             if (!isNaN(value)) {
