@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -128,7 +130,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'officialbotproffesor@gmail.com'
-EMAIL_HOST_PASSWORD = 'qijo qlev rczo yhah'
+EMAIL_HOST_PASSWORD=os.getenv('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
@@ -154,14 +156,14 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # PayHero API Configuration (move credentials to settings)
 PAYHERO_API_URL = 'https://backend.payhero.co.ke/api/v2/payments'
-PAYHERO_AUTH_TOKEN = 'Basic WDFkN3VBYVYzTUxsYjI1VmNhS2U6UHBEMlFnVkMxUXJOalNWTWU4bHhXejd6RFVNNWwzcldnQlcwZkR6cQ=='
+PAYHERO_AUTH_TOKEN=os.getenv('PAYHERO_AUTH_TOKEN')
 PAYHERO_CHANNEL_ID = 947
 PAYHERO_CALLBACK_URL = 'https://airvyb.co.ke/payment/mpesa/success/'  # Update with your domain
 
 PAYHERO_ACTIVATION_CALLBACK_URL= 'https://airvyb.co.ke/activation/callback/'
 
-INTASEND_PUBLISHABLE_KEY = "ISPubKey_live_81635510-eb14-4760-8f38-fe2ca6535a5c"
-INTASEND_TOKEN='ISSecretKey_live_a2333b99-4a12-470c-9c22-228a8dde982a'
+INTASEND_PUBLISHABLE_KEY=os.getenv('INTASEND_PUBLISHABLE_KEY')
+INTASEND_TOKEN=os.getenv('INTASEND_TOKEN')
 INTASEND_CALLBACK_URL = 'https://airvyb.co.ke/finance/deposit/callback/'
 
 
@@ -170,3 +172,9 @@ WEBPUSH_SETTINGS = {
     "VAPID_PRIVATE_KEY": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3BNz3ROUlzA5Bd5h8l5ZL8iCUBNdDlG4NfhEA7Nwzs2hRANCAARjJ+6tWKlhHS2/ndC4lFDMxKwP85A8u6cSo76A9/jfRboINXcYHzDl9wk8bLeOJiRlyScyChLGxxpTlviCFejg",
     "VAPID_ADMIN_EMAIL": "admin@airvyb.co.ke"
 }
+
+
+# Hedera Configuration
+HEDERA_NETWORK = 'testnet'  # or 'mainnet', 'previewnet'
+HEDERA_ENCRYPTION_KEY = os.getenv('SECRET_KEY')
+AUTO_CREATE_HEDERA_ACCOUNTS = True  # Auto-create accounts after login

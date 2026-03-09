@@ -207,6 +207,88 @@
     margin-top: 30px;
 }
 
+/* Hedera Wallet Card */
+.wallet-card {
+    background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
+    border: 1px solid #2a3a4a;
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.wallet-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 255, 163, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00ffa3;
+    font-size: 1.5rem;
+}
+
+.wallet-details h4 {
+    color: #00ffa3;
+    margin-bottom: 5px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.wallet-id {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    color: #00ffa3;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1rem;
+}
+
+.copy-btn:hover {
+    opacity: 0.8;
+}
+
+.explorer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(0, 255, 163, 0.1);
+    border: 1px solid #00ffa3;
+    color: #00ffa3;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.explorer-btn:hover {
+    background: #00ffa3;
+    color: #0f1a24;
+}
+
 @media (max-width: 992px) {
     .profile-content {
         grid-template-columns: 1fr;
@@ -231,6 +313,16 @@
     .profile-section {
         padding: 20px;
     }
+    
+    .wallet-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .wallet-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 </style>
 {% endblock %}
@@ -247,13 +339,9 @@
             <div class="profile-status">
                 <div class="status-badge">
                     {% if user.is_verified %}
-                    <i class="fas fa-badge-check" style="color: var(--accent-5);"></i>
+                    <i class="fas fa-badge-check" style="color: rgb(25, 231, 25);"></i>
                     <span style="color: rgb(25, 231, 25);">Verified Youth</span>
                     {% endif %}
-                </div>
-                <div class="status-badge">
-                    <i class="fas fa-shield-alt" style="color: var(--accent-3);"></i>
-                    <span>Strategic Member</span>
                 </div>
                 <div class="status-badge">
                     <i class="fas fa-calendar-alt" style="color: var(--accent-1);"></i>
@@ -262,6 +350,33 @@
             </div>
         </div>
     </div>
+    
+    <!-- Hedera Wallet Card (only shown if user has wallet) -->
+    {% if user.hedera_account_id %}
+    <div class="wallet-card">
+        <div class="wallet-info">
+            <div class="wallet-icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="wallet-details">
+                <h4>Hedera Wallet</h4>
+                <div class="wallet-id">
+                    <span id="walletAccountId">{{ user.hedera_account_id }}</span>
+                    <button class="copy-btn" onclick="copyWalletId()" title="Copy Account ID">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+                <small style="color: rgba(255,255,255,0.5);">Your digital identity on Hedera</small>
+            </div>
+        </div>
+        <a href="https://hashscan.io/testnet/account/{{ user.hedera_account_id }}" 
+           target="_blank" 
+           class="explorer-btn">
+            <i class="fas fa-external-link-alt"></i>
+            View on HashScan
+        </a>
+    </div>
+    {% endif %}
     
     <!-- Profile Content -->
     <div class="profile-content">
@@ -276,13 +391,9 @@
                     <i class="fas fa-shield-alt"></i>
                     <span>Security & Privacy</span>
                 </a>
-                <a href="#ventures" class="nav-item" data-tab="ventures">
-                    <i class="fas fa-briefcase"></i>
-                    <span>My Ventures</span>
-                </a>
-                <a href="#documents" class="nav-item" data-tab="documents">
-                    <i class="fas fa-file-contract"></i>
-                    <span>Documents</span>
+                <a href="#hedera" class="nav-item" data-tab="hedera">
+                    <i class="fas fa-link"></i>
+                    <span>Hedera Wallet</span>
                 </a>
                 <a href="#preferences" class="nav-item" data-tab="preferences">
                     <i class="fas fa-cog"></i>
@@ -304,8 +415,8 @@
                     <div class="stat-label">Age Group</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">Active</div>
-                    <div class="stat-label">Strategic Status</div>
+                    <div class="stat-number">{% if user.hedera_account_id %}Active{% else %}Pending{% endif %}</div>
+                    <div class="stat-label">Wallet Status</div>
                 </div>
             </div>
         </div>
@@ -404,24 +515,11 @@
                             <i class="fas fa-lock"></i>
                             <div>
                                 <h4>Password</h4>
-                                <p>Last changed: {% now "F j, Y" %}</p>
+                                <p>Change your account password</p>
                             </div>
                         </div>
                         <button class="btn btn-outline" id="changePasswordBtn">
                             Change Password
-                        </button>
-                    </div>
-                    
-                    <div class="security-item">
-                        <div class="security-info">
-                            <i class="fas fa-shield-alt"></i>
-                            <div>
-                                <h4>Two-Factor Authentication</h4>
-                                <p>Add an extra layer of security to your account</p>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline" id="enable2faBtn">
-                            Enable
                         </button>
                     </div>
                     
@@ -437,23 +535,9 @@
                             View All
                         </button>
                     </div>
-                    
-                    <div class="security-item">
-                        <div class="security-info">
-                            <i class="fas fa-bell"></i>
-                            <div>
-                                <h4>Login Notifications</h4>
-                                <p>Get alerted for new logins</p>
-                            </div>
-                        </div>
-                        <div class="toggle-switch">
-                            <input type="checkbox" id="loginNotifications" checked>
-                            <label for="loginNotifications"></label>
-                        </div>
-                    </div>
                 </div>
                 
-                <!-- Change Password Modal (simplified) -->
+                <!-- Change Password Form -->
                 <div class="change-password-form" id="changePasswordForm" style="display: none; margin-top: 30px;">
                     <h4>Change Password</h4>
                     <form id="passwordForm">
@@ -481,12 +565,92 @@
                 </div>
             </div>
             
-            <!-- Add more tab content as needed -->
+            <!-- Hedera Wallet Tab -->
+            <div class="profile-section" id="hedera-tab" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Hedera Wallet</h2>
+                </div>
+                
+                {% if user.hedera_account_id %}
+                <div style="margin-bottom: 30px;">
+                    <div class="info-card" style="background: rgba(0, 255, 163, 0.05); border: 1px solid rgba(0, 255, 163, 0.2);">
+                        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                            <div>
+                                <h4 style="color: #00ffa3; margin-bottom: 10px;">Account ID</h4>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <code style="background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: var(--radius); font-size: 1.1rem;">
+                                        {{ user.hedera_account_id }}
+                                    </code>
+                                    <button class="btn btn-sm" onclick="copyWalletId()">
+                                        <i class="far fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 style="color: #00ffa3; margin-bottom: 10px;">Public Key</h4>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <code style="background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: var(--radius); font-size: 0.9rem; max-width: 300px; overflow: auto;">
+                                        {{ user.hedera_public_key|truncatechars:50 }}
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <h4 style="margin-bottom: 15px;">Network Information</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div>
+                                <span style="color: var(--text-light);">Network:</span>
+                                <span style="color: #00ffa3; font-weight: 600;">Testnet</span>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-light);">Created:</span>
+                                <span>{{ user.date_joined|date:"F j, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <a href="https://hashscan.io/testnet/account/{{ user.hedera_account_id }}" 
+                           target="_blank" 
+                           class="btn btn-primary">
+                            <i class="fas fa-external-link-alt"></i> View Full Details on HashScan
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="info-card" style="text-align: center; padding: 50px;">
+                    <i class="fas fa-wallet" style="font-size: 3rem; color: var(--text-light); margin-bottom: 20px;"></i>
+                    <h3>No Hedera Wallet Yet</h3>
+                    <p style="color: var(--text-light); margin-top: 10px;">Your Hedera wallet will be automatically created when you verify your email.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Preferences Tab -->
+            <div class="profile-section" id="preferences-tab" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Preferences</h2>
+                </div>
+                <p style="color: var(--text-light);">Preferences settings coming soon...</p>
+            </div>
+            
+            <!-- Sessions Tab -->
+            <div class="profile-section" id="sessions-tab" style="display: none;">
+                <div class="section-header">
+                    <h2 class="section-title">Active Sessions</h2>
+                </div>
+                <p style="color: var(--text-light);">Session management coming soon...</p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+// Get CSRF token
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Tab navigation
     const navItems = document.querySelectorAll('.nav-item');
@@ -521,95 +685,103 @@ document.addEventListener('DOMContentLoaded', function() {
     const personalForm = document.getElementById('personalForm');
     const cancelPersonalBtn = document.getElementById('cancelPersonalBtn');
     
-    editPersonalBtn.addEventListener('click', function() {
-        // Make inputs editable
-        personalForm.querySelectorAll('input, select').forEach(input => {
-            input.readOnly = false;
+    if (editPersonalBtn) {
+        editPersonalBtn.addEventListener('click', function() {
+            // Make inputs editable
+            personalForm.querySelectorAll('input, select').forEach(input => {
+                input.readOnly = false;
+            });
+            
+            // Show save/cancel buttons
+            personalActions.style.display = 'flex';
+            editPersonalBtn.style.display = 'none';
         });
-        
-        // Show save/cancel buttons
-        personalActions.style.display = 'flex';
-        editPersonalBtn.style.display = 'none';
-    });
+    }
     
-    cancelPersonalBtn.addEventListener('click', function() {
-        // Reset form
-        personalForm.reset();
-        
-        // Make inputs readonly again
-        personalForm.querySelectorAll('input, select').forEach(input => {
-            input.readOnly = true;
+    if (cancelPersonalBtn) {
+        cancelPersonalBtn.addEventListener('click', function() {
+            // Reset form
+            personalForm.reset();
+            
+            // Make inputs readonly again
+            personalForm.querySelectorAll('input, select').forEach(input => {
+                input.readOnly = true;
+            });
+            
+            // Hide save/cancel buttons
+            personalActions.style.display = 'none';
+            editPersonalBtn.style.display = 'block';
         });
-        
-        // Hide save/cancel buttons
-        personalActions.style.display = 'none';
-        editPersonalBtn.style.display = 'block';
-    });
+    }
     
     // Profile picture upload preview
     const profilePictureInput = document.getElementById('profile_picture');
     const avatarPreview = document.getElementById('avatarPreview');
     const profileAvatar = document.getElementById('profileAvatar');
     
-    profilePictureInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                avatarPreview.src = e.target.result;
-                profileAvatar.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.src = e.target.result;
+                    profileAvatar.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
     
     // Save personal info
-    personalForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const saveBtn = document.getElementById('savePersonalBtn');
-        const originalText = saveBtn.innerHTML;
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        
-        const formData = new FormData(this);
-        
-        try {
-            const response = await fetch('/ajax/update-profile/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                body: formData
-            });
+    if (personalForm) {
+        personalForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            const data = await response.json();
+            const saveBtn = document.getElementById('savePersonalBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             
-            if (data.success) {
-                showToast('Profile updated successfully!', 'success');
-                
-                // Update profile picture if changed
-                if (data.profile_picture) {
-                    avatarPreview.src = data.profile_picture;
-                    profileAvatar.src = data.profile_picture;
-                }
-                
-                // Reset edit mode
-                personalForm.querySelectorAll('input, select').forEach(input => {
-                    input.readOnly = true;
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('/ajax/profile/update/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
                 });
-                personalActions.style.display = 'none';
-                editPersonalBtn.style.display = 'block';
-            } else {
-                showToast(data.message || 'Failed to update profile', 'error');
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Profile updated successfully!', 'success');
+                    
+                    // Update profile picture if changed
+                    if (data.profile_picture) {
+                        avatarPreview.src = data.profile_picture;
+                        profileAvatar.src = data.profile_picture;
+                    }
+                    
+                    // Reset edit mode
+                    personalForm.querySelectorAll('input, select').forEach(input => {
+                        input.readOnly = true;
+                    });
+                    personalActions.style.display = 'none';
+                    editPersonalBtn.style.display = 'block';
+                } else {
+                    showToast(data.message || 'Failed to update profile', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
             }
-        } catch (error) {
-            showToast('Network error. Please try again.', 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalText;
-        }
-    });
+        });
+    }
     
     // Change password
     const changePasswordBtn = document.getElementById('changePasswordBtn');
@@ -617,53 +789,77 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
     const passwordForm = document.getElementById('passwordForm');
     
-    changePasswordBtn.addEventListener('click', function() {
-        changePasswordForm.style.display = 'block';
-    });
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', function() {
+            changePasswordForm.style.display = 'block';
+        });
+    }
     
-    cancelPasswordBtn.addEventListener('click', function() {
-        changePasswordForm.style.display = 'none';
-        passwordForm.reset();
-    });
+    if (cancelPasswordBtn) {
+        cancelPasswordBtn.addEventListener('click', function() {
+            changePasswordForm.style.display = 'none';
+            passwordForm.reset();
+        });
+    }
     
-    passwordForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const currentPassword = document.getElementById('current_password').value;
-        const newPassword = document.getElementById('new_password').value;
-        const confirmPassword = document.getElementById('confirm_new_password').value;
-        
-        if (newPassword !== confirmPassword) {
-            showToast('Passwords do not match', 'error');
-            return;
-        }
-        
-        try {
-            const response = await fetch('/ajax/change-password/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword
-                })
-            });
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            const data = await response.json();
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_new_password').value;
             
-            if (data.success) {
-                showToast('Password changed successfully!', 'success');
-                changePasswordForm.style.display = 'none';
-                passwordForm.reset();
-            } else {
-                showToast(data.message || 'Failed to change password', 'error');
+            if (newPassword !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
             }
-        } catch (error) {
-            showToast('Network error. Please try again.', 'error');
-        }
-    });
+            
+            try {
+                const response = await fetch('/ajax/change-password/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Password changed successfully!', 'success');
+                    changePasswordForm.style.display = 'none';
+                    passwordForm.reset();
+                } else {
+                    showToast(data.message || 'Failed to change password', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            }
+        });
+    }
 });
+
+// Copy wallet ID to clipboard
+function copyWalletId() {
+    const walletId = document.getElementById('walletAccountId')?.textContent;
+    if (walletId) {
+        navigator.clipboard.writeText(walletId).then(() => {
+            showToast('Account ID copied to clipboard!', 'success');
+        }).catch(() => {
+            showToast('Failed to copy', 'error');
+        });
+    }
+}
+
+// Toast notification (simplified - implement with your preferred toast library)
+function showToast(message, type = 'info') {
+    // Implement your toast notification here
+    alert(message); // Replace with proper toast
+}
 </script>
 {% endblock %}

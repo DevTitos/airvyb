@@ -1,646 +1,537 @@
+# views.py
+import json
+import random
+import string
+from datetime import timedelta
+from decimal import Decimal
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.conf import settings
 from django.db import transaction
-import json
-from datetime import timedelta
-import random
-import string
 from django.core.mail import send_mail
-from .models import User, OTP, UserSession, AuditLog
-from .forms import (
-    UserRegistrationForm, UserLoginForm, EmailVerificationForm,
-    PasswordResetRequestForm, PasswordResetForm, ProfileUpdateForm
-)
-from .utils import send_verification_email, send_sms_verification, log_user_activity
-from activation.models import MemberActivation
+from django.conf import settings
+
+from .models import User, OTP, UserSession, AuditLog, HederaTransaction, TokenBalance
+from .forms import UserRegistrationForm, ProfileUpdateForm
+from .utils import send_verification_email, send_sms_verification
+from .hedera import HederaService  # Updated Hedera service
+
+#===============================================================================
+# CONSTANTS
+#===============================================================================
+
+OTP_EXPIRY_MINUTES = 10
+PASSWORD_RESET_EXPIRY_MINUTES = 15
+OTP_LENGTH = 6
+
+#===============================================================================
+# DECORATORS
+#===============================================================================
+
+def ajax_error_handler(view_func):
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    return wrapper
+
+#===============================================================================
+# UTILITY FUNCTIONS
+#===============================================================================
+
+def get_client_ip(request):
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    return x_forwarded.split(',')[0] if x_forwarded else request.META.get('REMOTE_ADDR')
+
+def generate_otp():
+    return ''.join(random.choices(string.digits, k=OTP_LENGTH))
+
+def create_otp(user, purpose):
+    code = generate_otp()
+    expires = timezone.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+    OTP.objects.filter(user=user, purpose=purpose).delete()
+    return OTP.objects.create(user=user, code=code, purpose=purpose, expires_at=expires)
+
+def verify_otp(user, code, purpose):
+    return OTP.objects.filter(
+        user=user, code=code, purpose=purpose, 
+        is_used=False, expires_at__gt=timezone.now()
+    ).first()
+
+def get_user_by_identifier(identifier):
+    if '@' in identifier:
+        return User.objects.filter(email=identifier).first()
+    return User.objects.filter(phone_number=identifier).first()
+
+#===============================================================================
+# HEDERA VIEWS
+#===============================================================================
+
+@login_required
+@require_http_methods(["GET"])
+def hedera_account_status(request):
+    """Get Hedera account status and balance"""
+    user = request.user
+    
+    # Update balance if stale (older than 5 minutes)
+    if user.has_hedera_account and (not user.hedera_balance_updated_at or 
+       (timezone.now() - user.hedera_balance_updated_at) > timedelta(minutes=5)):
+        try:
+            balance = HederaService.get_account_balance(user.hedera_account_id)
+            user.hedera_balance = balance
+            user.hedera_balance_updated_at = timezone.now()
+            user.save(update_fields=['hedera_balance', 'hedera_balance_updated_at'])
+        except Exception:
+            pass  # Use cached balance if update fails
+    
+    return JsonResponse({
+        'success': True,
+        'has_account': user.has_hedera_account,
+        'account_id': user.hedera_account_id,
+        'status': user.hedera_account_status,
+        'balance': str(user.hedera_balance),
+        'balance_display': f"{user.hedera_balance:.8f} ℏ".rstrip('0').rstrip('.') + ' ℏ',
+        'explorer_url': f"https://hashscan.io/testnet/account/{user.hedera_account_id}" if user.hedera_account_id else None
+    })
+
+@login_required
+@require_http_methods(["POST"])
+@ajax_error_handler
+def hedera_create_account(request):
+    """Create Hedera account for user"""
+    user = request.user
+    
+    if user.has_hedera_account:
+        return JsonResponse({
+            'success': False,
+            'message': 'Hedera account already exists'
+        }, status=400)
+    
+    with transaction.atomic():
+        # Create Hedera account using hiero_sdk_python
+        account_data = HederaService.create_account(user.full_name or user.email)
+        
+        if not account_data:
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to create Hedera account'
+            }, status=500)
+        
+        # Update user with Hedera account info
+        user.hedera_account_id = account_data['account_id']
+        user.hedera_public_key = account_data['public_key']
+        user.hedera_private_key_encrypted = HederaService.encrypt_private_key(account_data['private_key'])
+        user.hedera_account_status = 'active'
+        user.hedera_balance = Decimal('1')  # Initial balance from account creation
+        user.hedera_balance_updated_at = timezone.now()
+        user.save()
+        
+        # Log activity
+        AuditLog.objects.create(
+            user=user,
+            action='hedera_account_created',
+            details={'account_id': account_data['account_id']},
+            ip_address=get_client_ip(request)
+        )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Hedera account created successfully',
+        'account_id': user.hedera_account_id,
+        'balance': str(user.hedera_balance)
+    })
+
+
+#===============================================================================
+# AUTH VIEWS
+#===============================================================================
+
 @csrf_exempt
 @require_http_methods(["POST"])
+@ajax_error_handler
 def ajax_register(request):
-    """AJAX endpoint for user registration"""
-    try:
-        data = json.loads(request.body)
-        form = UserRegistrationForm(data)
+    data = json.loads(request.body)
+    form = UserRegistrationForm(data)
+    
+    if not form.is_valid():
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    
+    with transaction.atomic():
+        user = form.save(commit=False)
+        user.set_password(form.cleaned_data['password'])
+        user.save()
         
-        if form.is_valid():
-            with transaction.atomic():
-                user = form.save(commit=False)
-                user.set_password(form.cleaned_data['password'])
-                user.is_active = True
+        # Create OTP
+        create_otp(user, 'verification')
+        
+        # Send verification
+        send_verification_email(user.email, user.otps.first().code)
+        
+        if user.phone_number:
+            send_sms_verification(user.phone_number, user.otps.first().code)
+        
+        # Log
+        AuditLog.objects.create(
+            user=user,
+            action='registration',
+            details={'email': user.email},
+            ip_address=get_client_ip(request)
+        )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Registration successful! Check email for verification.',
+        'user_id': user.id,
+        'requires_verification': True
+    })
+
+# views.py - Updated streamlined flow
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@ajax_error_handler
+def ajax_verify_email(request):
+    data = json.loads(request.body)
+    user = get_object_or_404(User, id=data.get('user_id'))
+    
+    otp = verify_otp(user, data.get('code'), 'verification')
+    
+    if not otp:
+        return JsonResponse({'success': False, 'message': 'Invalid or expired code'}, status=400)
+    
+    otp.is_used = True
+    otp.save()
+    
+    user.is_verified = True
+    user.save()
+    
+    # Auto-create Hedera wallet in background if needed
+    if not user.has_hedera_account:
+        try:
+            account_data = HederaService.create_account(user.email)
+            if account_data:
+                user.hedera_account_id = account_data['account_id']
+                user.hedera_public_key = account_data['public_key']
+                user.hedera_private_key_encrypted = HederaService.encrypt_private_key(account_data['private_key'])
+                user.hedera_account_status = 'active'
                 user.save()
                 
-                # Generate and send verification code
-                code = ''.join(random.choices(string.digits, k=6))
-                expires = timezone.now() + timedelta(minutes=10)
-                
-                OTP.objects.create(
+                AuditLog.objects.create(
                     user=user,
-                    code=code,
-                    purpose='verification',
-                    expires_at=expires
+                    action='hedera_wallet_created',
+                    details={'account_id': account_data['account_id']},
+                    ip_address=get_client_ip(request)
                 )
-                
-                # Send verification email
-                send_verification_email(user.email, code)
-                
-                # If phone number provided, also send SMS
-                if user.phone_number:
-                    send_sms_verification(user.phone_number, code)
-                
-                # Log activity
-                log_user_activity(
-                    user=user,
-                    action='registration_initiated',
-                    ip_address=get_client_ip(request),
-                    details={'email': user.email}
-                )
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Registration successful! Please check your email for verification code.',
-                    'user_id': user.id,
-                    'requires_verification': True
-                })
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            }, status=400)
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Registration failed: {str(e)}'
-        }, status=500)
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def ajax_verify_email(request):
-    """AJAX endpoint for email verification"""
-    try:
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        code = data.get('code')
-        
-        user = get_object_or_404(User, id=user_id)
-        
-        # Find valid OTP
-        otp = OTP.objects.filter(
-            user=user,
-            code=code,
-            purpose='verification',
-            is_used=False,
-            expires_at__gt=timezone.now()
-        ).first()
-        
-        if otp:
-            otp.is_used = True
-            otp.save()
-            
-            user.is_verified = True
-            user.save()
-            
-            # Log activity
-            log_user_activity(
+        except Exception as e:
+            # Log error but don't block user
+            AuditLog.objects.create(
                 user=user,
-                action='email_verified',
-                ip_address=get_client_ip(request),
-                details={'method': 'code_verification'}
-            )
-            
-            # Auto-login after verification
-            login(request, user)
-
-            try:
-                activation = MemberActivation.objects.get(user=user)
-                
-                # Check if membership is active
-                if activation.is_active:
-                    messages.success(request, f'Welcome back, {user.username}!')
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Login successful!',
-                        'redirect_url': '/dashboard/'
-                    })
-                #else:
-                #    # Has record but not active - send to activation
-                #    messages.info(request, 'Please activate your membership to continue.')
-                #    return redirect('activation:page')
-                    
-            except MemberActivation.DoesNotExist:
-                # No activation record - create pending record and send to activation
-                MemberActivation.objects.create(
-                    user=user,
-                    status='pending'
-                )
-                #messages.info(
-                #    request, 
-                #    'Welcome! You are Enjoying freemium membership.'
-                #)
-                #return redirect('activation:page')
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Email verified successfully!',
-                'redirect_url': '/dashboard/'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid or expired verification code.'
-            }, status=400)
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Verification failed: {str(e)}'
-        }, status=500)
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def ajax_login(request):
-    """AJAX endpoint for user login"""
-    try:
-        data = json.loads(request.body)
-        identifier = data.get('username')
-        password = data.get('password')
-        
-        # Determine if identifier is email or phone
-        if '@' in identifier:
-            try:
-                user = User.objects.get(email=identifier)
-            except User.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid credentials'
-                }, status=400)
-        else:
-            # Assume it's a phone number
-            try:
-                user = User.objects.get(phone_number=identifier)
-            except User.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid credentials'
-                }, status=400)
-        
-        # Authenticate user
-        user = authenticate(request, username=user.email, password=password)
-        
-        if user is not None:
-            if not user.is_verified:
-                # Send new verification code
-                code = ''.join(random.choices(string.digits, k=6))
-                expires = timezone.now() + timedelta(minutes=10)
-                
-                OTP.objects.filter(user=user, purpose='verification').delete()
-                OTP.objects.create(
-                    user=user,
-                    code=code,
-                    purpose='verification',
-                    expires_at=expires
-                )
-                
-                send_verification_email(user.email, code)
-                
-                return JsonResponse({
-                    'success': True,
-                    'requires_verification': True,
-                    'user_id': user.id,
-                    'message': 'Please verify your email first. New code sent.'
-                })
-            
-            # Login successful
-            login(request, user)
-
-            # Track session
-            UserSession.objects.create(
-                user=user,
-                session_key=request.session.session_key,
-                device_info=get_device_info(request),
+                action='hedera_wallet_creation_failed',
+                details={'error': str(e)},
                 ip_address=get_client_ip(request)
             )
-            
-            # Log activity
-            log_user_activity(
-                user=user,
-                action='login',
-                ip_address=get_client_ip(request),
-                details={'method': 'password'}
-            )
-            
-            
-            try:
-                activation = MemberActivation.objects.get(user=user)
-                
-                # Check if membership is active
-                if activation.is_active:
-                    messages.success(request, f'Welcome back, {user.username}!')
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Login successful!',
-                        'redirect_url': '/dashboard/'
-                    })
-                else:
-                    # Has record but not active - send to activation
-                    messages.info(request, 'Please activate your membership to continue.')
-                    return redirect('activation:page')
-                    
-            except MemberActivation.DoesNotExist:
-                # No activation record - create pending record and send to activation
-                MemberActivation.objects.create(
-                    user=user,
-                    status='pending'
-                )
-                messages.info(
-                    request, 
-                    'Welcome! Please activate your membership with a one-time fee of KSH 100.'
-                )
-                return redirect('activation:page')
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid credentials'
-            }, status=400)
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Login failed: {str(e)}'
-        }, status=500)
+    
+    # Auto-login after verification
+    login(request, user)
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Email verified successfully!',
+        'redirect_url': '/dashboard/'
+    })
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def ajax_resend_verification(request):
-    """AJAX endpoint to resend verification code"""
-    try:
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        
-        user = get_object_or_404(User, id=user_id)
-        
-        # Generate new code
-        code = ''.join(random.choices(string.digits, k=6))
-        expires = timezone.now() + timedelta(minutes=10)
-        
-        # Delete old OTPs
-        OTP.objects.filter(user=user, purpose='verification').delete()
-        
-        # Create new OTP
-        OTP.objects.create(
-            user=user,
-            code=code,
-            purpose='verification',
-            expires_at=expires
-        )
-        
-        # Send verification email
-        send_verification_email(user.email, code)
-        
-        # If phone number provided, also send SMS
-        if user.phone_number:
-            send_sms_verification(user.phone_number, code)
-        
+@ajax_error_handler
+def ajax_login(request):
+    data = json.loads(request.body)
+    identifier = data.get('username')
+    password = data.get('password')
+    
+    user = get_user_by_identifier(identifier)
+    if not user:
+        return JsonResponse({'success': False, 'message': 'Invalid credentials'}, status=400)
+    
+    user = authenticate(request, username=user.email, password=password)
+    if not user:
+        return JsonResponse({'success': False, 'message': 'Invalid credentials'}, status=400)
+    
+    if not user.is_verified:
+        create_otp(user, 'verification')
+        send_verification_email(user.email, user.otps.first().code)
         return JsonResponse({
             'success': True,
-            'message': 'New verification code sent successfully!'
+            'requires_verification': True,
+            'user_id': user.id,
+            'message': 'Please verify your email first. New code sent.'
         })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Failed to resend code: {str(e)}'
-        }, status=500)
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def ajax_password_reset_request(request):
-    """AJAX endpoint to request password reset"""
-    try:
-        data = json.loads(request.body)
-        identifier = data.get('email_or_phone')
-        
-        # Find user by email or phone
-        if '@' in identifier:
-            user = User.objects.filter(email=identifier).first()
-        else:
-            user = User.objects.filter(phone_number=identifier).first()
-        
-        if user:
-            # Generate reset code
-            code = ''.join(random.choices(string.digits, k=6))
-            expires = timezone.now() + timedelta(minutes=15)
-            
-            OTP.objects.filter(user=user, purpose='password_reset').delete()
-            OTP.objects.create(
+    
+    # Auto-create Hedera wallet in background if needed
+    if not user.has_hedera_account:
+        try:
+            account_data = HederaService.create_account(user.email)
+            if account_data:
+                user.hedera_account_id = account_data['account_id']
+                user.hedera_public_key = account_data['public_key']
+                user.hedera_private_key_encrypted = HederaService.encrypt_private_key(account_data['private_key'])
+                user.hedera_account_status = 'active'
+                user.save()
+                
+                AuditLog.objects.create(
+                    user=user,
+                    action='hedera_wallet_created',
+                    details={'account_id': account_data['account_id']},
+                    ip_address=get_client_ip(request)
+                )
+        except Exception as e:
+            # Log error but don't block login
+            AuditLog.objects.create(
                 user=user,
-                code=code,
-                purpose='password_reset',
-                expires_at=expires
+                action='hedera_wallet_creation_failed',
+                details={'error': str(e)},
+                ip_address=get_client_ip(request)
             )
-            
-            # Send reset email
-            subject = "Airvyb Password Reset"
-            message = f"Your password reset code is: {code}\n\nThis code will expire in 15 minutes."
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
-            )
-            
-            # Log activity
-            log_user_activity(
-                user=user,
-                action='password_reset_requested',
-                ip_address=get_client_ip(request),
-                details={'method': 'email'}
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Password reset code sent to your email.',
-                'user_id': user.id
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'No account found with that email or phone number.'
-            }, status=404)
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Failed to process request: {str(e)}'
-        }, status=500)
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def ajax_password_reset_confirm(request):
-    """AJAX endpoint to confirm password reset with code"""
-    try:
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        code = data.get('code')
-        new_password = data.get('new_password')
-        
-        user = get_object_or_404(User, id=user_id)
-        
-        # Verify OTP
-        otp = OTP.objects.filter(
-            user=user,
-            code=code,
-            purpose='password_reset',
-            is_used=False,
-            expires_at__gt=timezone.now()
-        ).first()
-        
-        if otp:
-            otp.is_used = True
-            otp.save()
-            
-            # Update password
-            user.set_password(new_password)
-            user.save()
-            
-            # Log activity
-            log_user_activity(
-                user=user,
-                action='password_reset_completed',
-                ip_address=get_client_ip(request),
-                details={'method': 'code_verification'}
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Password reset successful! You can now login.',
-                'redirect_url': '/login/'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'Invalid or expired reset code.'
-            }, status=400)
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Password reset failed: {str(e)}'
-        }, status=500)
+    
+    # Complete login
+    login(request, user)
+    
+    # Track session
+    UserSession.objects.create(
+        user=user,
+        session_key=request.session.session_key,
+        ip_address=get_client_ip(request)
+    )
+    
+    AuditLog.objects.create(
+        user=user,
+        action='login',
+        details={},
+        ip_address=get_client_ip(request)
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Login successful',
+        'redirect_url': '/dashboard/'
+    })
 
 @login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def ajax_logout(request):
-    """AJAX endpoint for logout"""
-    try:
-        # Log activity
-        log_user_activity(
-            user=request.user,
-            action='logout',
-            ip_address=get_client_ip(request),
-            details={'method': 'manual'}
-        )
-        
-        logout(request)
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Logged out successfully',
-            'redirect_url': '/'
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Logout failed: {str(e)}'
-        }, status=500)
+    AuditLog.objects.create(
+        user=request.user,
+        action='logout',
+        details={},
+        ip_address=get_client_ip(request)
+    )
+    logout(request)
+    return JsonResponse({'success': True, 'message': 'Logged out', 'redirect_url': '/'})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@ajax_error_handler
+def ajax_password_reset_request(request):
+    data = json.loads(request.body)
+    user = get_user_by_identifier(data.get('email_or_phone'))
+    
+    if not user:
+        return JsonResponse({'success': False, 'message': 'No account found'}, status=404)
+    
+    create_otp(user, 'password_reset')
+    send_mail(
+        "Password Reset",
+        f"Your reset code is: {user.otps.first().code}\n\nValid for 15 minutes.",
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+    )
+    
+    AuditLog.objects.create(
+        user=user,
+        action='password_reset_requested',
+        details={},
+        ip_address=get_client_ip(request)
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Reset code sent to your email',
+        'user_id': user.id
+    })
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@ajax_error_handler
+def ajax_password_reset_confirm(request):
+    data = json.loads(request.body)
+    user = get_object_or_404(User, id=data.get('user_id'))
+    
+    otp = verify_otp(user, data.get('code'), 'password_reset')
+    if not otp:
+        return JsonResponse({'success': False, 'message': 'Invalid or expired code'}, status=400)
+    
+    otp.is_used = True
+    otp.save()
+    
+    user.set_password(data.get('new_password'))
+    user.save()
+    
+    AuditLog.objects.create(
+        user=user,
+        action='password_reset_completed',
+        details={},
+        ip_address=get_client_ip(request)
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Password reset successful',
+        'redirect_url': '/login/'
+    })
+
+#===============================================================================
+# PROFILE VIEWS
+#===============================================================================
 
 @login_required
-@csrf_exempt
 @require_http_methods(["GET"])
 def ajax_get_profile(request):
-    """AJAX endpoint to get user profile"""
-    try:
-        user = request.user
-        profile_data = {
+    user = request.user
+    return JsonResponse({
+        'success': True,
+        'profile': {
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
+            'full_name': user.full_name,
             'phone_number': user.phone_number,
             'date_of_birth': user.date_of_birth.isoformat() if user.date_of_birth else None,
             'country': user.country,
             'county': user.county,
             'is_verified': user.is_verified,
-            'is_youth': user.is_youth,
-            'age_group': user.age_group,
             'profile_picture': user.profile_picture.url if user.profile_picture else None,
-            'date_joined': user.date_joined.isoformat(),
         }
-        
-        return JsonResponse({
-            'success': True,
-            'profile': profile_data
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Failed to get profile: {str(e)}'
-        }, status=500)
+    })
 
 @login_required
 @csrf_exempt
 @require_http_methods(["POST"])
+@ajax_error_handler
 def ajax_update_profile(request):
-    """AJAX endpoint to update user profile"""
-    try:
-        data = request.POST.copy()
-        files = request.FILES
-        
-        form = ProfileUpdateForm(data, files, instance=request.user)
-        
-        if form.is_valid():
-            user = form.save()
-            
-            # Log activity
-            log_user_activity(
-                user=user,
-                action='profile_updated',
-                ip_address=get_client_ip(request),
-                details={'fields_updated': list(form.changed_data)}
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Profile updated successfully!',
-                'profile_picture': user.profile_picture.url if user.profile_picture else None
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            }, status=400)
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Failed to update profile: {str(e)}'
-        }, status=500)
+    form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
+    
+    if not form.is_valid():
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    
+    user = form.save()
+    
+    AuditLog.objects.create(
+        user=user,
+        action='profile_updated',
+        details={'fields': list(form.changed_data)},
+        ip_address=get_client_ip(request)
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Profile updated successfully'
+    })
 
 @login_required
 @csrf_exempt
 @require_http_methods(["POST"])
+@ajax_error_handler
 def ajax_change_password(request):
-    """AJAX endpoint to change password"""
-    try:
-        data = json.loads(request.body)
-        current_password = data.get('current_password')
-        new_password = data.get('new_password')
-        
-        user = request.user
-        
-        # Verify current password
-        if not user.check_password(current_password):
-            return JsonResponse({
-                'success': False,
-                'message': 'Current password is incorrect.'
-            }, status=400)
-        
-        # Validate new password
-        if len(new_password) < 8:
-            return JsonResponse({
-                'success': False,
-                'message': 'Password must be at least 8 characters long.'
-            }, status=400)
-        
-        # Update password
-        user.set_password(new_password)
-        user.save()
-        
-        # Update session to prevent logout
-        update_session_auth_hash(request, user)
-        
-        # Log activity
-        log_user_activity(
-            user=user,
-            action='password_changed',
-            ip_address=get_client_ip(request),
-            details={'method': 'manual'}
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Password changed successfully!'
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Failed to change password: {str(e)}'
-        }, status=500)
+    data = json.loads(request.body)
+    user = request.user
+    
+    if not user.check_password(data.get('current_password')):
+        return JsonResponse({'success': False, 'message': 'Current password incorrect'}, status=400)
+    
+    new_password = data.get('new_password')
+    if len(new_password) < 8:
+        return JsonResponse({'success': False, 'message': 'Password must be at least 8 characters'}, status=400)
+    
+    user.set_password(new_password)
+    user.save()
+    update_session_auth_hash(request, user)
+    
+    AuditLog.objects.create(
+        user=user,
+        action='password_changed',
+        details={},
+        ip_address=get_client_ip(request)
+    )
+    
+    return JsonResponse({'success': True, 'message': 'Password changed successfully'})
 
-# Template Views for Authentication Pages
+
+# Add this to your views.py in the AUTH VIEWS section (after ajax_verify_email)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@ajax_error_handler
+def ajax_resend_verification(request):
+    """Resend verification code"""
+    data = json.loads(request.body)
+    user = get_object_or_404(User, id=data.get('user_id'))
+    
+    # Create new OTP
+    otp = create_otp(user, 'verification')
+    
+    # Send verification email
+    send_verification_email(user.email, otp.code)
+    
+    if user.phone_number:
+        send_sms_verification(user.phone_number, otp.code)
+    
+    # Log
+    AuditLog.objects.create(
+        user=user,
+        action='verification_resent',
+        details={},
+        ip_address=get_client_ip(request)
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Verification code resent successfully'
+    })
+
+#===============================================================================
+# TEMPLATE VIEWS
+#===============================================================================
 
 def register_view(request):
-    """Render registration page"""
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'auth/register.html')
 
 def login_view(request):
-    """Render login page"""
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'auth/login.html')
 
 def verify_email_view(request, user_id=None):
-    """Render email verification page"""
     return render(request, 'auth/verify_email.html', {'user_id': user_id})
 
 def password_reset_request_view(request):
-    """Render password reset request page"""
     return render(request, 'auth/password_reset_request.html')
 
 def password_reset_confirm_view(request, user_id=None):
-    """Render password reset confirmation page"""
     return render(request, 'auth/password_reset_confirm.html', {'user_id': user_id})
 
 @login_required
 def profile_view(request):
-    """Render profile page"""
     return render(request, 'auth/profile.html')
-
-@login_required
-def dashboard_view(request):
-    """Render dashboard page"""
-    return render(request, 'dashboard.html')
-
-# Utility functions
-
-def get_client_ip(request):
-    """Get client IP address"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
-def get_device_info(request):
-    """Extract device information from request"""
-    user_agent = request.META.get('HTTP_USER_AGENT', '')
-    # Simple parsing - in production, use a proper user agent parser
-    return {
-        'user_agent': user_agent,
-        'browser': 'Unknown',  # Parse from user_agent in production
-        'platform': 'Unknown',  # Parse from user_agent in production
-    }

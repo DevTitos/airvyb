@@ -10,7 +10,6 @@ urlpatterns = [
     path('password-reset/', views.password_reset_request_view, name='password_reset_request'),
     path('password-reset-confirm/<int:user_id>/', views.password_reset_confirm_view, name='password_reset_confirm'),
     path('profile/', views.profile_view, name='profile'),
-    #path('dashboard/', views.dashboard_view, name='dashboard'),
     
     # AJAX endpoints
     path('ajax/register/', views.ajax_register, name='ajax_register'),
@@ -23,4 +22,7 @@ urlpatterns = [
     path('ajax/get-profile/', views.ajax_get_profile, name='ajax_get_profile'),
     path('ajax/update-profile/', views.ajax_update_profile, name='ajax_update_profile'),
     path('ajax/change-password/', views.ajax_change_password, name='ajax_change_password'),
+
+    path('api/hedera/status/', views.hedera_account_status, name='api_hedera_status'),
+    path('api/hedera/create/', views.hedera_create_account, name='api_hedera_create'),
 ]

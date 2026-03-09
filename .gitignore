@@ -53,6 +53,7 @@ cover/
 myenv/
 *.zip
 
+
 # Translations
 *.mo
 *.pot
@@ -62,6 +63,7 @@ myenv/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+build.py
 
 # Flask stuff:
 instance/
