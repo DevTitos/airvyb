@@ -342,6 +342,74 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.detail-value.reference:hover {
+    background: rgba(255, 0, 110, 0.2);
+}
+
+/* Hedera Section */
+.hedera-section {
+    background: rgba(0, 200, 83, 0.05);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid rgba(0, 200, 83, 0.1);
+}
+
+.hedera-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.hedera-item {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius);
+    padding: 15px;
+}
+
+.hedera-label {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hedera-value {
+    font-family: monospace;
+    color: #00c853;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.hedera-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(0, 200, 83, 0.1);
+    border: 1px solid rgba(0, 200, 83, 0.2);
+    border-radius: 20px;
+    color: #00c853;
+    font-size: 0.9rem;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    transition: var(--transition);
+}
+
+.hedera-badge i {
+    font-size: 1rem;
+}
+
+.hedera-badge:hover {
+    background: #00c853;
+    color: white;
+    border-color: #00c853;
+    cursor: pointer;
 }
 
 /* Related Object Card */
@@ -545,7 +613,7 @@
     font-size: 1.2rem;
 }
 
-/* Receipt Styles */
+/* Receipt Card */
 .receipt-card {
     background: rgba(255, 255, 255, 0.02);
     border-radius: var(--radius);
@@ -656,6 +724,19 @@
     box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
 }
 
+/* Hedera Verify Button */
+.btn-hedera {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+    border: 1px solid rgba(0, 200, 83, 0.3);
+}
+
+.btn-hedera:hover {
+    background: #00c853;
+    color: white;
+    border-color: #00c853;
+}
+
 /* Receipt Modal */
 .modal {
     display: none;
@@ -738,7 +819,8 @@
     .transaction-actions,
     .sidebar-card .btn-action,
     .modal,
-    .close-modal {
+    .close-modal,
+    .hedera-badge {
         display: none !important;
     }
     
@@ -792,6 +874,10 @@
     .transaction-actions .btn {
         flex: 1;
     }
+    
+    .hedera-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 639px) {
@@ -817,22 +903,19 @@
 {% block content %}
 <div class="transaction-detail-container">
     <!-- Transaction Header -->
-    <div class="transaction-header">
-        <div class="transaction-title">
-            <h1>Transaction Details</h1>
-            <p>View complete information about this transaction</p>
-        </div>
-        <div class="transaction-actions">
-            <a href="{% url 'finance:transactions' %}" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Back to History
-            </a>
-            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
-            <button class="btn btn-outline" onclick="window.print()">
-                <i class="fas fa-print"></i> Print
-            </button>
-        </div>
+    <div class="transaction-actions">
+        <a href="{% url 'finance:transactions' %}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to History
+        </a>
+        <a href="{% url 'finance:dashboard' %}" class="btn btn-outline">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <button class="btn btn-outline" onclick="refreshTransactionStatus()">
+            <i class="fas fa-sync-alt"></i> Refresh Status
+        </button>
+        <button class="btn btn-outline" onclick="window.print()">
+            <i class="fas fa-print"></i> Print
+        </button>
     </div>
 
     <!-- Transaction Card -->
@@ -884,7 +967,7 @@
                                 <span class="detail-label">
                                     <i class="fas fa-hashtag"></i> Reference
                                 </span>
-                                <span class="detail-value reference">{{ transaction.reference }}</span>
+                                <span class="detail-value reference" onclick="copyReference('{{ transaction.reference }}')">{{ transaction.reference }}</span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">
@@ -915,7 +998,7 @@
                                 <span class="detail-label">
                                     <i class="fas fa-code"></i> M-Pesa Code
                                 </span>
-                                <span class="detail-value reference">{{ transaction.mpesa_code }}</span>
+                                <span class="detail-value reference" onclick="copyReference('{{ transaction.mpesa_code }}')">{{ transaction.mpesa_code }}</span>
                             </div>
                             {% endif %}
                         </div>
@@ -981,6 +1064,58 @@
                     </div>
                 </div>
 
+                <!-- Hedera Consensus Service Section -->
+                <div class="hedera-section">
+                    <h2 class="section-title" style="margin-bottom: 20px;">
+                        <i class="fas fa-link"></i> Hedera Consensus Service
+                    </h2>
+                    
+                    {% if transaction.hedera_submitted %}
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                            <span class="hedera-badge" onclick="window.open('{{ transaction.hedera_explorer_url }}', '_blank')">
+                                <i class="fas fa-check-circle"></i> Verified on Hedera
+                            </span>
+                            <span class="hedera-badge" onclick="copyReference('{{ transaction.hedera_message_id }}')">
+                                <i class="fas fa-copy"></i> Copy Message ID
+                            </span>
+                        </div>
+                        
+                        <div class="hedera-grid">
+                            <div class="hedera-item">
+                                <div class="hedera-label">Topic ID</div>
+                                <div class="hedera-value">{{ transaction.hedera_topic_id|default:'N/A' }}</div>
+                            </div>
+                            <div class="hedera-item">
+                                <div class="hedera-label">Message ID</div>
+                                <div class="hedera-value">{{ transaction.hedera_message_id|default:'N/A'|truncatechars:30 }}</div>
+                            </div>
+                            <div class="hedera-item">
+                                <div class="hedera-label">Sequence Number</div>
+                                <div class="hedera-value">{{ transaction.hedera_sequence_number|default:'N/A' }}</div>
+                            </div>
+                            <div class="hedera-item">
+                                <div class="hedera-label">Consensus Timestamp</div>
+                                <div class="hedera-value">{{ transaction.hedera_consensus_timestamp|default:'N/A' }}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; text-align: center;">
+                            <a href="{{ transaction.hedera_explorer_url }}" target="_blank" class="btn-action btn-hedera">
+                                <i class="fas fa-external-link-alt"></i> View on HashScan
+                            </a>
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 30px;">
+                            <i class="fas fa-clock" style="font-size: 3rem; color: var(--text-light); margin-bottom: 15px;"></i>
+                            <h3 style="margin-bottom: 10px;">Pending Hedera Verification</h3>
+                            <p style="color: var(--text-light); margin-bottom: 20px;">This transaction will be submitted to the Hedera network shortly for immutable record keeping.</p>
+                            <button class="btn-action btn-outline" onclick="checkHederaStatus('{{ transaction.id }}')">
+                                <i class="fas fa-sync-alt"></i> Check Status
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+
                 <!-- Description -->
                 <div class="details-section">
                     <h2 class="section-title">
@@ -999,110 +1134,6 @@
                     </div>
                     {% endif %}
                 </div>
-
-                <!-- Related Object (Investment/Loan) -->
-                {% if transaction.investment %}
-                <div class="details-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-link"></i> Related Investment
-                    </h2>
-                    <a href="{% url 'investment_detail' transaction.investment.id %}" class="related-object-card">
-                        <div class="related-object-header">
-                            <div class="related-object-icon investment">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="related-object-info">
-                                <div class="related-object-title">{{ transaction.investment.venture.name }}</div>
-                                <div class="related-object-subtitle">Investment #{{ transaction.investment.reference }}</div>
-                            </div>
-                        </div>
-                        <div class="related-object-details">
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Shares</span>
-                                <span class="related-detail-value">{{ transaction.investment.shares }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Amount</span>
-                                <span class="related-detail-value">Ksh {{ transaction.investment.amount_invested|floatformat:0|intcomma }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Status</span>
-                                <span class="related-detail-value">{{ transaction.investment.get_status_display }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Date</span>
-                                <span class="related-detail-value">{{ transaction.investment.invested_at|date:"M d, Y" }}</span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if transaction.loan %}
-                <div class="details-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-link"></i> Related Loan
-                    </h2>
-                    <a href="{% url 'finance:loan_detail' transaction.loan.id %}" class="related-object-card">
-                        <div class="related-object-header">
-                            <div class="related-object-icon loan">
-                                <i class="fas fa-hand-holding-usd"></i>
-                            </div>
-                            <div class="related-object-info">
-                                <div class="related-object-title">Loan #{{ transaction.loan.reference }}</div>
-                                <div class="related-object-subtitle">{{ transaction.loan.get_purpose_display }}</div>
-                            </div>
-                        </div>
-                        <div class="related-object-details">
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Amount</span>
-                                <span class="related-detail-value">Ksh {{ transaction.loan.amount_approved|floatformat:0|intcomma }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Balance</span>
-                                <span class="related-detail-value">Ksh {{ transaction.loan.outstanding_balance|floatformat:0|intcomma }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Status</span>
-                                <span class="related-detail-value">{{ transaction.loan.get_status_display }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Interest</span>
-                                <span class="related-detail-value">{{ transaction.loan.interest_rate }}%</span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if transaction.dividend %}
-                <div class="details-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-link"></i> Related Dividend
-                    </h2>
-                    <div class="related-object-card">
-                        <div class="related-object-header">
-                            <div class="related-object-icon dividend">
-                                <i class="fas fa-coins"></i>
-                            </div>
-                            <div class="related-object-info">
-                                <div class="related-object-title">Dividend Payment</div>
-                                <div class="related-object-subtitle">{{ transaction.dividend.reference }}</div>
-                            </div>
-                        </div>
-                        <div class="related-object-details">
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Period</span>
-                                <span class="related-detail-value">{{ transaction.dividend.period_start|date:"M d" }} - {{ transaction.dividend.period_end|date:"M d, Y" }}</span>
-                            </div>
-                            <div class="related-object-detail">
-                                <span class="related-detail-label">Payment Date</span>
-                                <span class="related-detail-value">{{ transaction.dividend.payment_date|date:"M d, Y" }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
 
                 <!-- Metadata -->
                 {% if transaction.metadata %}
@@ -1187,6 +1218,14 @@
                                 {{ transaction.get_status_display|upper }}
                             </span>
                         </div>
+                        {% if transaction.hedera_submitted %}
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light);">Hedera Verified:</span>
+                            <span style="color: #00c853;">
+                                <i class="fas fa-check-circle"></i> Yes
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="receipt-divider"></div>
                     <div class="receipt-footer">
@@ -1222,6 +1261,12 @@
                         {% if transaction.status == 'completed' %}
                         <button class="btn-action btn-outline" onclick="downloadReceipt()">
                             <i class="fas fa-download"></i> Download Receipt
+                        </button>
+                        {% endif %}
+                        
+                        {% if transaction.hedera_submitted %}
+                        <button class="btn-action btn-hedera" onclick="window.open('{{ transaction.hedera_explorer_url }}', '_blank')">
+                            <i class="fas fa-external-link-alt"></i> Verify on Hedera
                         </button>
                         {% endif %}
                         
@@ -1311,6 +1356,14 @@
                     <span style="color: var(--accent-1); font-family: monospace;">{{ transaction.mpesa_code }}</span>
                 </div>
                 {% endif %}
+                {% if transaction.hedera_submitted %}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="color: var(--text-light);">Hedera Verified:</span>
+                    <span style="color: #00c853;">
+                        <i class="fas fa-check-circle"></i> Yes
+                    </span>
+                </div>
+                {% endif %}
                 <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                     <span style="color: var(--text-light);">Status:</span>
                     <span style="color: {% if transaction.status == 'completed' %}#00c853{% elif transaction.status == 'pending' %}var(--accent-5){% elif transaction.status == 'processing' %}var(--accent-3){% elif transaction.status == 'failed' %}var(--accent-1){% else %}#6c757d{% endif %}; font-weight: 600;">
@@ -1395,6 +1448,29 @@ function cancelTransaction(transactionId) {
     }
 }
 
+function checkHederaStatus(transactionId) {
+    showToast('Checking Hedera status...', 'info');
+    
+    fetch(`/finance/api/transaction/${transactionId}/verify/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.transaction.hedera.submitted) {
+                    showToast('Transaction verified on Hedera!', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('Transaction not yet on Hedera', 'info');
+                }
+            } else {
+                showToast('Verification failed', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Verification error:', error);
+            showToast('Verification failed', 'error');
+        });
+}
+
 // ============================================
 // RECEIPT FUNCTIONS
 // ============================================
@@ -1412,9 +1488,8 @@ function downloadReceipt() {
     showToast('Preparing receipt for download...', 'info');
     
     // Create receipt content
-    const receiptContent = `
-Transaction Receipt
-===================
+    const receiptContent = `AIRVYB TRANSACTION RECEIPT
+================================
 Reference: {{ transaction.reference }}
 Date: {{ transaction.initiated_at|date:"F d, Y H:i:s" }}
 Type: {{ transaction.get_transaction_type_display }}
@@ -1423,9 +1498,14 @@ Status: {{ transaction.get_status_display }}
 {% if transaction.payment_method %}Payment Method: {{ transaction.get_payment_method_display }}{% endif %}
 {% if transaction.phone_number %}Phone: {{ transaction.phone_number }}{% endif %}
 {% if transaction.mpesa_code %}M-Pesa Code: {{ transaction.mpesa_code }}{% endif %}
-===================
+{% if transaction.hedera_submitted %}
+Hedera Verification: YES
+Hedera Message ID: {{ transaction.hedera_message_id }}
+Hedera Explorer: {{ transaction.hedera_explorer_url }}
+{% endif %}
+================================
 Thank you for using Airvyb
-    `;
+This is an electronically generated receipt`;
     
     // Create blob and download
     const blob = new Blob([receiptContent], { type: 'text/plain' });
@@ -1439,6 +1519,17 @@ Thank you for using Airvyb
     window.URL.revokeObjectURL(url);
     
     showToast('Receipt downloaded', 'success');
+}
+
+// ============================================
+// COPY TO CLIPBOARD
+// ============================================
+function copyReference(ref) {
+    navigator.clipboard.writeText(ref).then(() => {
+        showToast('Copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Failed to copy', 'error');
+    });
 }
 
 // ============================================
@@ -1502,26 +1593,82 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// ============================================
-// COPY TO CLIPBOARD
-// ============================================
-function copyReference(ref) {
-    navigator.clipboard.writeText(ref).then(() => {
-        showToast('Reference copied to clipboard', 'success');
-    }).catch(() => {
-        showToast('Failed to copy reference', 'error');
-    });
-}
-
 // Add click handlers to reference elements
 document.addEventListener('DOMContentLoaded', function() {
     const refElements = document.querySelectorAll('.reference');
     refElements.forEach(el => {
-        el.style.cursor = 'pointer';
         el.addEventListener('click', function() {
             copyReference(this.textContent.trim());
         });
     });
 });
+</script>
+<!-- Update the refreshTransactionStatus function in transaction_detail.html -->
+<script>
+function refreshTransactionStatus() {
+    showToast('Checking transaction status...', 'info');
+    
+    // Use the correct URL from your urls.py
+    fetch(`/finance/deposit/status/{{ transaction.id }}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if (data.status !== '{{ transaction.status }}') {
+                    showToast('Transaction status updated! Refreshing page...', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('Status: ' + data.status, 'info');
+                    if (data.balance_after) {
+                        // Update the displayed balance if available
+                        const balanceElements = document.querySelectorAll('.balance-value');
+                        balanceElements.forEach(el => {
+                            // You might want to update specific balance elements here
+                            console.log('New balance:', data.balance_after);
+                        });
+                    }
+                }
+            } else {
+                showToast('Failed to check status: ' + (data.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Status check error:', error);
+            showToast('Failed to check status: ' + error.message, 'error');
+        });
+}
+
+function checkHederaStatus(transactionId) {
+    showToast('Checking Hedera status...', 'info');
+    
+    // You need to add this URL pattern to your urls.py first
+    fetch(`/finance/transactions/${transactionId}/verify/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if (data.transaction.hedera.submitted) {
+                    showToast('Transaction verified on Hedera!', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('Transaction not yet on Hedera', 'info');
+                }
+            } else {
+                showToast('Verification failed', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Verification error:', error);
+            showToast('Verification failed: ' + error.message, 'error');
+        });
+}
 </script>
 {% endblock %}

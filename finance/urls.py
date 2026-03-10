@@ -1,3 +1,4 @@
+# finance/urls.py
 from django.urls import path
 from . import views
 
@@ -15,8 +16,8 @@ urlpatterns = [
     path('deposit/', views.deposit, name='deposit'),
     path('deposit/initiate/', views.initiate_deposit, name='initiate_deposit'),
     path('finance/deposit/status/<int:transaction_id>/', views.check_deposit_status, name='check_deposit_status'),
-    path('payment/mpesa/success/', views.deposit_success_simple, name='mpesa_callback'),
-    path('finance/deposit/callback/', views.deposit_callback, name='deposit_callback'),
+    path('deposit/callback/', views.deposit_callback, name='deposit_callback'),
+    path('deposit/success/', views.deposit_success_simple, name='deposit_success'),
     
     # Withdrawals
     path('withdrawal/', views.withdrawal, name='withdrawal'),
@@ -38,4 +39,11 @@ urlpatterns = [
     
     # API Endpoints
     path('api/wallet-balance/', views.get_wallet_balance, name='wallet_balance'),
+    
+    # NEW: Transaction verification endpoints
+    path('finance/transactions/<int:transaction_id>/verify/', views.verify_transaction, name='verify_transaction'),
+    path('finance/transaction/<int:transaction_id>/check-status/', views.check_transaction_status, name='check_transaction_status'),
+    
+    # Manual update (staff only - for debugging) - REMOVE IN PRODUCTION
+    #path('api/transaction/<int:transaction_id>/manual-update/', views.manual_update_transaction, name='manual_update_transaction'),
 ]

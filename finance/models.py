@@ -5,6 +5,7 @@ from django.utils import timezone
 import uuid
 from decimal import Decimal
 from core.models import Investment, Dividend
+import datetime
 
 User = get_user_model()
 
@@ -135,8 +136,9 @@ class Loan(models.Model):
             return self.total_repayable / self.tenure_months
         return 0
 
+
 class Transaction(models.Model):
-    """All financial transactions"""
+    """All financial transactions - stored on Hedera Consensus Service"""
     TRANSACTION_TYPES = [
         ('deposit', 'Deposit'),
         ('withdrawal', 'Withdrawal'),
@@ -167,19 +169,12 @@ class Transaction(models.Model):
     user = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        related_name='transactions'  # Use plural for consistency
+        related_name='transactions'
     )
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='mpesa', blank=True)
     reference = models.CharField(max_length=50, unique=True, default=generate_uuid)
-    
-    # Financial Details
-    amount = models.DecimalField(max_digits=14, decimal_places=2)
-    fee = models.DecimalField(max_digits=14, decimal_places=2, default=0)
-    net_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
-    balance_before = models.DecimalField(max_digits=14, decimal_places=2)
-    balance_after = models.DecimalField(max_digits=14, decimal_places=2)
-    
+
     # Related Objects
     investment = models.ForeignKey(
         Investment, 
@@ -203,14 +198,26 @@ class Transaction(models.Model):
         related_name='transactions'
     )
     
+    # Financial Details
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    fee = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    balance_before = models.DecimalField(max_digits=14, decimal_places=2)
+    balance_after = models.DecimalField(max_digits=14, decimal_places=2)
+    
     # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     # Payment Details
     phone_number = models.CharField(max_length=15, blank=True)
     mpesa_code = models.CharField(max_length=50, blank=True)
-    bank_account = models.CharField(max_length=100, blank=True)
-    card_last4 = models.CharField(max_length=4, blank=True)
+    
+    # Hedera Consensus Service Fields
+    hedera_topic_id = models.CharField(max_length=50, null=True, blank=True)
+    hedera_message_id = models.CharField(max_length=100, null=True, blank=True)
+    hedera_sequence_number = models.IntegerField(null=True, blank=True)
+    hedera_consensus_timestamp = models.CharField(max_length=50, null=True, blank=True)
+    hedera_submitted = models.BooleanField(default=False)
     
     # Metadata
     description = models.TextField()
@@ -221,10 +228,10 @@ class Transaction(models.Model):
     
     # Dates
     initiated_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     failed_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)  # Kept for backward compatibility
     
     class Meta:
         ordering = ['-initiated_at']
@@ -232,8 +239,7 @@ class Transaction(models.Model):
             models.Index(fields=['user', 'status']),
             models.Index(fields=['transaction_type', 'initiated_at']),
             models.Index(fields=['reference']),
-            models.Index(fields=['mpesa_code']),
-            models.Index(fields=['created_at']),  # Additional index for backward compatibility
+            models.Index(fields=['hedera_message_id']),
         ]
     
     def __str__(self):
@@ -243,37 +249,31 @@ class Transaction(models.Model):
         # Auto-calculate net_amount if not set
         if not self.net_amount and self.amount is not None:
             self.net_amount = self.amount - (self.fee or 0)
-        
-        # Ensure created_at is set for backward compatibility
-        if not self.created_at and self.initiated_at:
-            self.created_at = self.initiated_at
-            
         super().save(*args, **kwargs)
     
     @property
     def is_debit(self):
-        """Check if transaction is a debit (money out)"""
         return self.transaction_type in ['withdrawal', 'investment', 'fee', 'loan_repayment']
     
     @property
     def is_credit(self):
-        """Check if transaction is a credit (money in)"""
         return self.transaction_type in ['deposit', 'dividend', 'loan', 'refund']
     
     @property
     def display_amount(self):
-        """Display amount with sign"""
         if self.is_debit:
             return f"- Ksh {self.amount:,.0f}"
         else:
             return f"+ Ksh {self.amount:,.0f}"
     
     @property
-    def age(self):
-        """Time since transaction was initiated"""
-        from django.utils import timezone
-        delta = timezone.now() - self.initiated_at
-        return delta
+    def hedera_explorer_url(self):
+        if self.hedera_message_id:
+            return f"https://hashscan.io/testnet/transaction/{self.hedera_message_id}"
+        return None
+
+
+
 
 class LoanRepayment(models.Model):
     """Individual loan repayments"""

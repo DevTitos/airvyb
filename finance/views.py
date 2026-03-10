@@ -1,3 +1,4 @@
+# finance/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -19,13 +20,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction as db_transaction
 from django.core.cache import cache
 
-from .models import Transaction, Wallet, FinanceSummary
+from .models import Transaction, Wallet, FinanceSummary, Loan, LoanRepayment, PaymentMethod
 from core.models import Notification, AuditLog
+from intasend import APIService
+from .hedera_consensus import hedera_consensus
 
 # Configure logger
 logger = logging.getLogger(__name__)
-
-from intasend import APIService
 
 # Initialize IntaSend service
 intasend_service = APIService(
@@ -33,14 +34,9 @@ intasend_service = APIService(
     publishable_key=settings.INTASEND_PUBLISHABLE_KEY
 )
 
-from .models import (
-    Wallet, Transaction, Loan, LoanRepayment, 
-    PaymentMethod, FinanceSummary, User
-)
-
 
 # ============================================
-# MAIN FINANCE DASHBOARD
+# UTILITY FUNCTIONS
 # ============================================
 
 def id_generator(size=12, chars=string.ascii_uppercase + string.digits):
@@ -71,8 +67,15 @@ def clean_phone_number(phone):
     # Validate format
     if len(phone) == 10 and phone.startswith('07'):
         return phone
+    elif len(phone) == 12 and phone.startswith('254'):
+        return f"0{phone[3:]}"
     
     return None
+
+
+# ============================================
+# MAIN FINANCE DASHBOARD
+# ============================================
 
 @login_required
 @require_GET
@@ -87,10 +90,11 @@ def finance_dashboard(request):
     summary, created = FinanceSummary.objects.get_or_create(user=user)
     summary.calculate_summary()
     
-    # Get recent transactions
+    # Get recent transactions - FIX: Remove select_related for non-existent fields
     recent_transactions = Transaction.objects.filter(
         user=user
-    ).select_related('investment', 'loan').order_by('-initiated_at')[:10]
+    ).select_related('user').order_by('-initiated_at')[:10]
+    # Only user is a valid ForeignKey, investment and loan don't exist on Transaction model
     
     # Get active loans
     active_loans = Loan.objects.filter(
@@ -130,6 +134,12 @@ def finance_dashboard(request):
     )
     wallet.save()
     
+    # Calculate verified transactions count
+    verified_transactions_count = Transaction.objects.filter(
+        user=user,
+        hedera_submitted=True
+    ).count()
+    
     context = {
         'wallet': wallet,
         'summary': summary,
@@ -138,10 +148,11 @@ def finance_dashboard(request):
         'payment_methods': payment_methods,
         'today_deposits': today_deposits,
         'today_withdrawals': today_withdrawals,
+        'verified_transactions_count': verified_transactions_count,
+        'hedera_topic_id': getattr(settings, 'HEDERA_TRANSACTION_TOPIC_ID', '0.0.48764329'),
     }
     
     return render(request, 'finance/finance_dashboard.html', context)
-
 
 # ============================================
 # TRANSACTION HISTORY
@@ -153,8 +164,9 @@ def transaction_history(request):
     """View all transactions with filtering and pagination"""
     user = request.user
     
-    # Base queryset
-    transactions = Transaction.objects.filter(user=user).select_related('investment', 'loan')
+    # Base queryset - FIX: Remove select_related for non-existent fields
+    transactions = Transaction.objects.filter(user=user)
+    # No select_related needed since user is the only FK
     
     # Apply filters
     transaction_type = request.GET.get('type')
@@ -211,7 +223,6 @@ def transaction_history(request):
     
     return render(request, 'finance/transaction_history.html', context)
 
-
 @login_required
 @require_GET
 def transaction_detail(request, transaction_id):
@@ -230,7 +241,7 @@ def transaction_detail(request, transaction_id):
 
 
 # ============================================
-# DEPOSITS (M-PESA)
+# DEPOSITS (M-PESA) WITH HEDERA INTEGRATION
 # ============================================
 
 @login_required
@@ -262,7 +273,7 @@ def deposit(request):
 def initiate_deposit(request):
     """
     Initiate M-Pesa STK Push via IntaSend
-    Supports both AJAX (JSON) and form submissions
+    Store transaction on Hedera Consensus Service
     """
     user = request.user
     
@@ -278,7 +289,7 @@ def initiate_deposit(request):
         else:
             data = request.POST.dict()
         
-        # Extract phone and amount - support both 'tel' and 'phone' field names
+        # Extract phone and amount
         phone_raw = data.get('tel', data.get('phone', '')).strip()
         amount_str = data.get('amount', '0')
         
@@ -288,7 +299,7 @@ def initiate_deposit(request):
         phone = clean_phone_number(phone_raw)
         
         if not phone:
-            error_msg = 'Please enter a valid M-Pesa number (254XXXXXXXX)'
+            error_msg = 'Please enter a valid M-Pesa number (07XXXXXXXX or 254XXXXXXXX)'
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -299,13 +310,11 @@ def initiate_deposit(request):
                 messages.error(request, error_msg)
                 return redirect('finance:deposit')
         
-        # Format phone for IntaSend (ensure it's integer without leading zero)
+        # Format phone for IntaSend (254XXXXXXXX without leading zero)
         if phone.startswith('0'):
             intasend_phone = int(f"254{phone[1:]}")
-        elif phone.startswith('254'):
-            intasend_phone = int(phone)
         else:
-            intasend_phone = int(f"254{phone}")
+            intasend_phone = int(phone)
         
         # ============================================
         # 3. VALIDATE AMOUNT
@@ -389,7 +398,7 @@ def initiate_deposit(request):
             fee=0,
             net_amount=amount,
             balance_before=wallet.balance,
-            balance_after=wallet.balance,  # Will be updated on callback
+            balance_after=wallet.balance,
             phone_number=phone,
             description=f"M-Pesa deposit of KES {amount:,.0f} from {phone}",
             status='pending',
@@ -405,36 +414,68 @@ def initiate_deposit(request):
         )
         
         # ============================================
-        # 8. CALL INTASEND API
+        # 8. SUBMIT TO HEDERA CONSENSUS SERVICE
+        # ============================================
+        try:
+            hedera_data = {
+                'transaction_id': transaction.id,
+                'reference': transaction.reference,
+                'type': transaction.transaction_type,
+                'amount': float(transaction.amount),
+                'user_id': user.id,
+                'user_email': user.email,
+                'phone': phone,
+                'status': 'pending',
+                'initiated_at': transaction.initiated_at.isoformat(),
+                'ip_address': get_client_ip(request),
+                'description': f"Deposit initiated via M-Pesa"
+            }
+            
+            hedera_result = hedera_consensus.submit_message(hedera_data)
+            
+            if hedera_result.get('status') == 'success':
+                transaction.hedera_topic_id = hedera_result.get('topic')
+                transaction.hedera_message_id = hedera_result.get('message_id')
+                transaction.hedera_sequence_number = hedera_result.get('sequence_number')
+                transaction.hedera_consensus_timestamp = hedera_result.get('consensus_timestamp')
+                transaction.hedera_submitted = True
+                transaction.metadata['hedera_submission'] = hedera_result
+                transaction.save(update_fields=[
+                    'hedera_topic_id', 'hedera_message_id', 'hedera_sequence_number',
+                    'hedera_consensus_timestamp', 'hedera_submitted', 'metadata'
+                ])
+                
+                logger.info(f"Transaction {transaction.reference} stored on Hedera: {hedera_result.get('message_id')}")
+            else:
+                logger.error(f"Failed to store transaction on Hedera: {hedera_result.get('message')}")
+                
+        except Exception as e:
+            logger.error(f"Error submitting to Hedera: {str(e)}")
+            # Continue anyway - don't block the deposit
+        
+        # ============================================
+        # 9. CALL INTASEND API
         # ============================================
         try:
             # Ensure user has an email
             user_email = user.email
             if not user_email:
-                # If user doesn't have email, use a fallback or generate one
-                # This shouldn't happen in your system, but just in case
                 user_email = f"user_{user.id}@airvyb.co.ke"
             
-            # Log the request for debugging
-            logger.info(f"Initiating IntaSend STK Push for user {user.id}: Phone={intasend_phone}, Amount={amount}, Email={user_email}")
+            logger.info(f"Initiating IntaSend STK Push for user {user.id}: Phone={intasend_phone}, Amount={amount}")
             
             # Initiate STK Push with IntaSend
             response = intasend_service.collect.mpesa_stk_push(
                 phone_number=intasend_phone,
-                email=user_email,  # Email is required - use user's email
-                amount=int(amount),  # Amount must be integer
+                email=user_email,
+                amount=int(amount),
                 narrative=f"Wallet Deposit - {user.get_full_name() or user.username}"
             )
             
-            # Log the response for debugging
             logger.info(f"IntaSend API Response: {response}")
             
-            # ============================================
-            # 9. HANDLE API RESPONSE
-            # ============================================
-            # Check if response has the expected structure
+            # Handle response
             if response and isinstance(response, dict):
-                # Check for error in response
                 if 'error' in response:
                     error_message = response.get('error', 'Unknown error')
                     error_detail = response.get('detail', '')
@@ -458,18 +499,14 @@ def initiate_deposit(request):
                         messages.error(request, error_message)
                         return redirect('finance:deposit')
                 
-                # Check for success response with id and invoice_id
                 if response.get('id') and response.get('invoice'):
-                    # Extract IntaSend specific IDs
                     payment_id = response.get('id')
                     invoice_data = response.get('invoice', {})
                     invoice_id = invoice_data.get('invoice_id')
                     
                     if not invoice_id:
-                        # Try alternative path
                         invoice_id = response.get('invoice_id')
                     
-                    # Update transaction - successfully initiated
                     transaction.status = 'processing'
                     transaction.processed_at = timezone.now()
                     transaction.metadata.update({
@@ -479,9 +516,21 @@ def initiate_deposit(request):
                     })
                     transaction.save()
                     
-                    logger.info(f"STK Push initiated successfully for transaction {transaction.id}: Invoice ID {invoice_id}")
+                    logger.info(f"STK Push initiated successfully for transaction {transaction.id}")
                     
-                    # Return success response
+                    # Update Hedera with processing status
+                    try:
+                        hedera_update = {
+                            'transaction_id': transaction.id,
+                            'reference': transaction.reference,
+                            'status': 'processing',
+                            'intasend_invoice_id': invoice_id,
+                            'updated_at': timezone.now().isoformat(),
+                        }
+                        hedera_consensus.submit_message(hedera_update, topic_id=transaction.hedera_topic_id)
+                    except Exception as e:
+                        logger.error(f"Failed to update Hedera: {str(e)}")
+                    
                     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                         return JsonResponse({
                             'success': True,
@@ -492,8 +541,10 @@ def initiate_deposit(request):
                                 'amount': float(transaction.amount),
                                 'phone': transaction.phone_number,
                                 'status': transaction.status,
-                                'initiated_at': transaction.initiated_at,
-                                'invoice_id': invoice_id  # Return for frontend polling
+                                'initiated_at': transaction.initiated_at.isoformat(),
+                                'invoice_id': invoice_id,
+                                'hedera_message_id': transaction.hedera_message_id,
+                                'hedera_explorer_url': transaction.hedera_explorer_url
                             }
                         })
                     else:
@@ -502,7 +553,6 @@ def initiate_deposit(request):
                         )
                         return redirect('finance:deposit')
                 else:
-                    # Unexpected response structure
                     error_message = 'Unexpected response from payment service'
                     
                     transaction.status = 'failed'
@@ -521,7 +571,6 @@ def initiate_deposit(request):
                         messages.error(request, error_message)
                         return redirect('finance:deposit')
             else:
-                # Empty or invalid response
                 error_message = 'Invalid response from payment service'
                 
                 transaction.status = 'failed'
@@ -541,7 +590,6 @@ def initiate_deposit(request):
                     return redirect('finance:deposit')
         
         except Exception as e:
-            # IntaSend API exception
             error_msg = 'Payment service temporarily unavailable. Please try again later.'
             
             transaction.status = 'failed'
@@ -558,7 +606,7 @@ def initiate_deposit(request):
                 }, status=502)
             else:
                 messages.error(request, error_msg)
-                return redirect('finance:deposit')
+                return redirect('finance:dashboard')
     
     except Wallet.DoesNotExist:
         error_msg = 'Wallet not found. Please contact support.'
@@ -573,7 +621,6 @@ def initiate_deposit(request):
             return redirect('finance:dashboard')
     
     except Exception as e:
-        # Global exception handler
         logger.error(f"Deposit initiation error for user {user.id}: {str(e)}", exc_info=True)
         
         error_msg = 'An error occurred while processing your request. Please try again.'
@@ -587,10 +634,11 @@ def initiate_deposit(request):
             messages.error(request, error_msg)
             return redirect('finance:dashboard')
 
+
 @login_required
 @require_GET
 def check_deposit_status(request, transaction_id):
-    """Check deposit transaction status - supports both local and IntaSend status"""
+    """Check deposit transaction status"""
     transaction = get_object_or_404(
         Transaction,
         id=transaction_id,
@@ -610,6 +658,7 @@ def check_deposit_status(request, transaction_id):
                 invoice = status_response['invoice']
                 state = invoice.get('state')
                 failed_reason = invoice.get('failed_reason')
+                mpesa_receipt = invoice.get('mpesa_receipt_number')
                 
                 # Map IntaSend states to your statuses
                 status_mapping = {
@@ -624,22 +673,55 @@ def check_deposit_status(request, transaction_id):
                 # Update transaction if status changed
                 if new_status != transaction.status:
                     with db_transaction.atomic():
+                        old_status = transaction.status
                         transaction.status = new_status
                         
                         if state == 'COMPLETE':
                             transaction.completed_at = timezone.now()
-                            transaction.mpesa_code = invoice.get('mpesa_receipt_number')
+                            transaction.mpesa_code = mpesa_receipt or transaction.mpesa_code
                             
                             # Update wallet balance
                             wallet = Wallet.objects.get(user=request.user)
+                            balance_before = wallet.balance
                             wallet.balance += transaction.amount
+                            wallet.total_deposited += transaction.amount
+                            wallet.last_deposit_at = timezone.now()
                             wallet.save()
                             
+                            transaction.balance_before = balance_before
                             transaction.balance_after = wallet.balance
+                            
+                            # Update Hedera with final status
+                            try:
+                                hedera_data = {
+                                    'transaction_id': transaction.id,
+                                    'reference': transaction.reference,
+                                    'old_status': old_status,
+                                    'new_status': new_status,
+                                    'mpesa_code': transaction.mpesa_code,
+                                    'completed_at': transaction.completed_at.isoformat(),
+                                }
+                                hedera_consensus.submit_message(hedera_data, topic_id=transaction.hedera_topic_id)
+                            except Exception as e:
+                                logger.error(f"Failed to update Hedera: {str(e)}")
                             
                         elif state == 'FAILED':
                             transaction.failed_at = timezone.now()
                             transaction.metadata['failed_reason'] = failed_reason
+                            
+                            # Update Hedera with failure status
+                            try:
+                                hedera_data = {
+                                    'transaction_id': transaction.id,
+                                    'reference': transaction.reference,
+                                    'old_status': old_status,
+                                    'new_status': new_status,
+                                    'failed_reason': failed_reason,
+                                    'failed_at': transaction.failed_at.isoformat(),
+                                }
+                                hedera_consensus.submit_message(hedera_data, topic_id=transaction.hedera_topic_id)
+                            except Exception as e:
+                                logger.error(f"Failed to update Hedera: {str(e)}")
                         
                         transaction.metadata['last_status_check'] = {
                             'timestamp': timezone.now().isoformat(),
@@ -654,8 +736,10 @@ def check_deposit_status(request, transaction_id):
                     'intasend_state': state,
                     'mpesa_code': transaction.mpesa_code,
                     'failed_reason': failed_reason,
-                    'completed_at': transaction.completed_at,
-                    'balance_after': float(transaction.balance_after) if transaction.balance_after else None
+                    'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+                    'balance_after': float(transaction.balance_after) if transaction.balance_after else None,
+                    'hedera_message_id': transaction.hedera_message_id,
+                    'hedera_explorer_url': transaction.hedera_explorer_url
                 })
                 
         except Exception as e:
@@ -667,118 +751,372 @@ def check_deposit_status(request, transaction_id):
         'success': True,
         'status': transaction.status,
         'mpesa_code': transaction.mpesa_code,
-        'completed_at': transaction.completed_at,
-        'balance_after': float(transaction.balance_after) if transaction.balance_after else None
+        'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+        'balance_after': float(transaction.balance_after) if transaction.balance_after else None,
+        'hedera_message_id': transaction.hedera_message_id,
+        'hedera_explorer_url': transaction.hedera_explorer_url
     })
-
 
 @csrf_exempt
 @require_POST
 def deposit_callback(request):
     """
     Handle IntaSend payment callback for deposits
+    Store final status on Hedera Consensus Service
     """
+    request_id = id_generator(8)
+    ip_address = get_client_ip(request)
+    
+    logger.info(f"[Callback:{request_id}] Received deposit callback from {ip_address}")
+    
     try:
-        # Parse callback data
-        payload = json.loads(request.body)
-        
-        # Extract IntaSend specific fields
-        invoice_id = payload.get('invoice_id')
-        state = payload.get('state')
-        failed_reason = payload.get('failed_reason')
-        mpesa_receipt = payload.get('mpesa_receipt_number')
-        
-        if not invoice_id:
-            logger.error("Missing invoice_id in callback")
-            return JsonResponse({'error': 'Missing invoice_id'}, status=400)
-        
-        # Find transaction by invoice_id in metadata
+        # ============================================
+        # 1. PARSE AND VALIDATE REQUEST
+        # ============================================
         try:
-            transaction = Transaction.objects.get(
-                metadata__intasend_invoice_id=invoice_id,
-                transaction_type='deposit'
-            )
+            payload = json.loads(request.body)
+        except json.JSONDecodeError as e:
+            logger.error(f"[Callback:{request_id}] Invalid JSON payload: {str(e)}")
+            return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+        
+        response_data = payload.get('response', payload)
+        
+        # Extract transaction reference
+        reference = (
+            response_data.get('ExternalReference') or 
+            response_data.get('external_reference') or
+            response_data.get('reference')
+        )
+        
+        if not reference:
+            logger.error(f"[Callback:{request_id}] Missing transaction reference")
+            return JsonResponse({'error': 'Missing transaction reference'}, status=400)
+        
+        # Extract status and M-Pesa code
+        status = response_data.get('Status') or response_data.get('status')
+        mpesa_code = response_data.get('MpesaReceiptNumber') or response_data.get('mpesa_code')
+        
+        logger.info(f"[Callback:{request_id}] Processing callback for reference: {reference}, status: {status}")
+        
+        # ============================================
+        # 2. CHECK IDEMPOTENCY (Prevent duplicate processing)
+        # ============================================
+        cache_key = f"callback_processed_{reference}"
+        if cache.get(cache_key):
+            logger.info(f"[Callback:{request_id}] Callback already processed for reference: {reference}")
+            return JsonResponse({'success': True, 'message': 'Callback already processed'})
+        
+        cache.set(cache_key, True, 3600)
+        
+        # ============================================
+        # 3. FIND TRANSACTION
+        # ============================================
+        try:
+            transaction = Transaction.objects.select_related('user', 'user__wallet').get(reference=reference)
         except Transaction.DoesNotExist:
-            # Try to find by searching in metadata JSON
-            transactions = Transaction.objects.filter(
-                transaction_type='deposit',
-                metadata__has_key='intasend_invoice_id'
-            )
-            transaction = None
-            for t in transactions:
-                if t.metadata.get('intasend_invoice_id') == invoice_id:
-                    transaction = t
-                    break
+            # Try to find by metadata.external_reference
+            transaction = Transaction.objects.filter(metadata__external_reference=reference).first()
             
             if not transaction:
-                logger.error(f"Transaction not found for invoice_id: {invoice_id}")
+                logger.error(f"[Callback:{request_id}] Transaction not found for reference: {reference}")
                 return JsonResponse({'error': 'Transaction not found'}, status=404)
         
-        # Process based on state
-        with db_transaction.atomic():
-            # Get user's wallet
-            wallet = Wallet.objects.get(user=transaction.user)
-            
-            # Map IntaSend states to your statuses
-            if state == 'COMPLETE':
-                # Update transaction
-                transaction.status = 'completed'
-                transaction.completed_at = timezone.now()
-                transaction.mpesa_code = mpesa_receipt
+        # Check if transaction already processed
+        if transaction.status in ['completed', 'failed', 'cancelled']:
+            logger.info(f"[Callback:{request_id}] Transaction {reference} already processed with status: {transaction.status}")
+            return JsonResponse({'success': True, 'message': f'Already processed as {transaction.status}'})
+        
+        # ============================================
+        # 4. PROCESS PAYMENT WITH ATOMIC TRANSACTION
+        # ============================================
+        try:
+            with db_transaction.atomic():
+                old_status = transaction.status
                 
-                # Update wallet balance
-                wallet.balance += transaction.amount
-                wallet.save()
+                # Determine if success
+                is_success = status and ('Success' in str(status) or 'COMPLETE' in str(status))
+                is_failed = status and ('Failed' in str(status) or 'FAILED' in str(status))
                 
-                transaction.balance_after = wallet.balance
-                transaction.metadata['callback_data'] = payload
+                # Update common fields
+                transaction.mpesa_code = mpesa_code or transaction.mpesa_code
+                transaction.metadata['callback_payload'] = payload
+                transaction.metadata['callback_received_at'] = timezone.now().isoformat()
+                transaction.metadata['callback_ip'] = ip_address
+                transaction.metadata['callback_request_id'] = request_id
+                
+                if is_success:
+                    # Get user wallet
+                    wallet = transaction.user.wallet
+                    
+                    # Credit wallet
+                    balance_before = wallet.balance
+                    balance_after = wallet.balance + transaction.amount
+                    
+                    wallet.balance = balance_after
+                    wallet.total_deposited += transaction.amount
+                    wallet.last_deposit_at = timezone.now()
+                    wallet.remaining_daily_deposit = max(0, wallet.remaining_daily_deposit - transaction.amount)
+                    wallet.save()
+                    
+                    # Update transaction
+                    transaction.status = 'completed'
+                    transaction.completed_at = timezone.now()
+                    transaction.processed_at = timezone.now()
+                    transaction.balance_before = balance_before
+                    transaction.balance_after = balance_after
+                    
+                    logger.info(f"[Callback:{request_id}] Payment completed: {reference}, Amount: {transaction.amount}")
+                    
+                elif is_failed:
+                    transaction.status = 'failed'
+                    transaction.failed_at = timezone.now()
+                    
+                    logger.info(f"[Callback:{request_id}] Payment failed: {reference}")
+                    
+                else:
+                    # Unknown status - keep as processing
+                    logger.warning(f"[Callback:{request_id}] Unknown payment status: {status}")
+                    transaction.metadata['unknown_status'] = {'status': status, 'payload': payload}
+                
                 transaction.save()
                 
-                logger.info(f"Deposit completed for user {transaction.user.id}: KES {transaction.amount}")
+                # ============================================
+                # 5. SUBMIT FINAL STATUS TO HEDERA
+                # ============================================
+                try:
+                    hedera_data = {
+                        'transaction_id': transaction.id,
+                        'reference': transaction.reference,
+                        'old_status': old_status,
+                        'new_status': transaction.status,
+                        'amount': float(transaction.amount),
+                        'mpesa_code': mpesa_code or '',
+                        'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+                        'failed_at': transaction.failed_at.isoformat() if transaction.failed_at else None,
+                        'callback_id': request_id,
+                    }
+                    
+                    hedera_result = hedera_consensus.submit_message(hedera_data, topic_id=transaction.hedera_topic_id)
+                    
+                    if hedera_result.get('status') == 'success':
+                        logger.info(f"Final status for {transaction.reference} stored on Hedera")
+                    else:
+                        logger.error(f"Failed to store final status on Hedera: {hedera_result.get('message')}")
+                        
+                except Exception as e:
+                    logger.error(f"Error submitting final status to Hedera: {str(e)}")
                 
-                # Send success notification (optional)
-                # send_deposit_success_notification(transaction)
+                # Create notification
+                try:
+                    Notification.objects.create(
+                        user=transaction.user,
+                        notification_type='deposit',
+                        title='Deposit ' + ('Successful' if is_success else 'Failed'),
+                        message=f'Your deposit of KES {transaction.amount:,.0f} has been {"credited" if is_success else "failed"}.',
+                        metadata={
+                            'transaction_id': transaction.id,
+                            'status': transaction.status,
+                            'hedera_message_id': transaction.hedera_message_id,
+                        }
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to create notification: {str(e)}")
                 
-                return JsonResponse({'success': True, 'status': 'completed'})
-            
-            elif state == 'FAILED':
-                transaction.status = 'failed'
-                transaction.failed_at = timezone.now()
-                transaction.metadata['failed_reason'] = failed_reason
-                transaction.metadata['callback_data'] = payload
-                transaction.save()
-                
-                logger.info(f"Deposit failed for user {transaction.user.id}: {failed_reason}")
-                
-                # Send failure notification (optional)
-                # send_deposit_failed_notification(transaction, failed_reason)
-                
-                return JsonResponse({'success': True, 'status': 'failed'})
-            
-            elif state == 'PENDING':
-                transaction.status = 'pending'
-                transaction.metadata['callback_data'] = payload
-                transaction.save()
-                
-                return JsonResponse({'success': True, 'status': 'pending'})
-            
-            else:
-                # Other states (PROCESSING, etc.)
-                transaction.metadata['callback_data'] = payload
-                transaction.save()
-                return JsonResponse({'success': True, 'status': state.lower()})
-    
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON in callback")
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    except Wallet.DoesNotExist:
-        logger.error(f"Wallet not found for transaction {invoice_id}")
-        return JsonResponse({'error': 'Wallet not found'}, status=404)
+                # Create audit log
+                try:
+                    AuditLog.objects.create(
+                        user=transaction.user,
+                        action='deposit_callback',
+                        model_name='Transaction',
+                        object_id=str(transaction.id),
+                        details={
+                            'reference': transaction.reference,
+                            'old_status': old_status,
+                            'new_status': transaction.status,
+                            'amount': str(transaction.amount),
+                            'mpesa_code': mpesa_code or '',
+                            'callback_id': request_id
+                        },
+                        ip_address=ip_address
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to create audit log: {str(e)}")
+        
+        except Exception as e:
+            logger.error(f"[Callback:{request_id}] Error processing payment: {str(e)}", exc_info=True)
+            cache.delete(cache_key)  # Allow retry on error
+            return JsonResponse({'error': 'Error processing payment'}, status=500)
+        
+        return JsonResponse({
+            'success': True,
+            'status': transaction.status,
+            'reference': transaction.reference,
+            'hedera_message_id': transaction.hedera_message_id,
+            'hedera_explorer_url': transaction.hedera_explorer_url
+        })
     
     except Exception as e:
-        logger.error(f"Deposit callback error: {str(e)}", exc_info=True)
+        logger.error(f"[Callback:{request_id}] Unhandled callback error: {str(e)}", exc_info=True)
         return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+# ============================================
+# HEDERA VERIFICATION ENDPOINT
+# ============================================
+
+@login_required
+@require_GET
+def verify_transaction(request, transaction_id):
+    """Verify transaction on Hedera Consensus Service"""
+    transaction = get_object_or_404(Transaction, id=transaction_id, user=request.user)
+    
+    return JsonResponse({
+        'success': True,
+        'transaction': {
+            'id': transaction.id,
+            'reference': transaction.reference,
+            'amount': float(transaction.amount),
+            'type': transaction.transaction_type,
+            'status': transaction.status,
+            'created_at': transaction.initiated_at.isoformat(),
+            'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+            'hedera': {
+                'submitted': transaction.hedera_submitted,
+                'topic_id': transaction.hedera_topic_id,
+                'message_id': transaction.hedera_message_id,
+                'sequence_number': transaction.hedera_sequence_number,
+                'consensus_timestamp': transaction.hedera_consensus_timestamp,
+                'explorer_url': transaction.hedera_explorer_url,
+            }
+        }
+    })
+
+
+@login_required
+@require_GET
+def check_transaction_status(request, transaction_id):
+    """Check transaction status with IntaSend and update locally"""
+    transaction = get_object_or_404(Transaction, id=transaction_id, user=request.user)
+    
+    # If transaction has IntaSend invoice_id and is still processing, check with IntaSend
+    if transaction.status in ['pending', 'processing'] and transaction.metadata.get('intasend_invoice_id'):
+        try:
+            invoice_id = transaction.metadata['intasend_invoice_id']
+            
+            # Check status with IntaSend
+            status_response = intasend_service.collect.status(invoice_id=invoice_id)
+            logger.info(f"IntaSend status check response: {status_response}")
+            
+            if status_response and 'invoice' in status_response:
+                invoice = status_response['invoice']
+                state = invoice.get('state')
+                failed_reason = invoice.get('failed_reason')
+                mpesa_receipt = invoice.get('mpesa_receipt_number')
+                
+                # Map IntaSend states to your statuses
+                status_mapping = {
+                    'PENDING': 'pending',
+                    'PROCESSING': 'processing',
+                    'COMPLETE': 'completed',
+                    'FAILED': 'failed'
+                }
+                
+                new_status = status_mapping.get(state, transaction.status)
+                
+                # Update transaction if status changed
+                if new_status != transaction.status:
+                    with db_transaction.atomic():
+                        old_status = transaction.status
+                        transaction.status = new_status
+                        
+                        if state == 'COMPLETE':
+                            transaction.completed_at = timezone.now()
+                            transaction.mpesa_code = mpesa_receipt or transaction.mpesa_code
+                            
+                            # Update wallet balance
+                            wallet = Wallet.objects.get(user=request.user)
+                            balance_before = wallet.balance
+                            wallet.balance += transaction.amount
+                            wallet.total_deposited += transaction.amount
+                            wallet.last_deposit_at = timezone.now()
+                            wallet.save()
+                            
+                            transaction.balance_before = balance_before
+                            transaction.balance_after = wallet.balance
+                            
+                            # Update Hedera with final status
+                            try:
+                                hedera_data = {
+                                    'transaction_id': transaction.id,
+                                    'reference': transaction.reference,
+                                    'old_status': old_status,
+                                    'new_status': new_status,
+                                    'mpesa_code': transaction.mpesa_code,
+                                    'completed_at': transaction.completed_at.isoformat(),
+                                }
+                                hedera_consensus.submit_message(hedera_data, topic_id=transaction.hedera_topic_id)
+                            except Exception as e:
+                                logger.error(f"Failed to update Hedera: {str(e)}")
+                            
+                        elif state == 'FAILED':
+                            transaction.failed_at = timezone.now()
+                            transaction.metadata['failed_reason'] = failed_reason
+                        
+                        transaction.metadata['last_status_check'] = {
+                            'timestamp': timezone.now().isoformat(),
+                            'state': state,
+                            'failed_reason': failed_reason
+                        }
+                        transaction.save()
+                        
+                        # Create notification
+                        try:
+                            Notification.objects.create(
+                                user=transaction.user,
+                                notification_type='deposit',
+                                title=f'Deposit {new_status.title()}',
+                                message=f'Your deposit of KES {transaction.amount:,.0f} has been {"credited" if new_status == "completed" else new_status}.',
+                                metadata={
+                                    'transaction_id': transaction.id,
+                                    'status': new_status,
+                                    'auto_check': True
+                                }
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to create notification: {str(e)}")
+                
+                return JsonResponse({
+                    'success': True,
+                    'status': transaction.status,
+                    'intasend_state': state,
+                    'mpesa_code': transaction.mpesa_code,
+                    'failed_reason': failed_reason,
+                    'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+                    'balance_after': float(transaction.balance_after) if transaction.balance_after else None,
+                    'hedera_message_id': transaction.hedera_message_id,
+                    'hedera_explorer_url': transaction.hedera_explorer_url
+                })
+                
+        except Exception as e:
+            logger.error(f"IntaSend status check error: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'error': str(e),
+                'status': transaction.status
+            }, status=500)
+    
+    # Return local status if IntaSend check not needed or failed
+    return JsonResponse({
+        'success': True,
+        'status': transaction.status,
+        'mpesa_code': transaction.mpesa_code,
+        'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+        'balance_after': float(transaction.balance_after) if transaction.balance_after else None,
+        'hedera_message_id': transaction.hedera_message_id,
+        'hedera_explorer_url': transaction.hedera_explorer_url
+    })
+
+
 # ============================================
 # WITHDRAWALS
 # ============================================
@@ -810,7 +1148,7 @@ def withdrawal(request):
 @login_required
 @require_POST
 def process_withdrawal(request):
-    """Process withdrawal request"""
+    """Process withdrawal request with Hedera storage"""
     try:
         data = json.loads(request.body) if request.body else request.POST
         
@@ -863,6 +1201,34 @@ def process_withdrawal(request):
             status='pending'
         )
         
+        # Submit to Hedera
+        try:
+            hedera_data = {
+                'transaction_id': transaction.id,
+                'reference': transaction.reference,
+                'type': transaction.transaction_type,
+                'amount': float(transaction.amount),
+                'user_id': request.user.id,
+                'user_email': request.user.email,
+                'phone': phone,
+                'status': 'pending',
+                'initiated_at': transaction.initiated_at.isoformat(),
+                'description': f"Withdrawal via M-Pesa"
+            }
+            
+            hedera_result = hedera_consensus.submit_message(hedera_data)
+            
+            if hedera_result.get('status') == 'success':
+                transaction.hedera_topic_id = hedera_result.get('topic')
+                transaction.hedera_message_id = hedera_result.get('message_id')
+                transaction.hedera_sequence_number = hedera_result.get('sequence_number')
+                transaction.hedera_consensus_timestamp = hedera_result.get('consensus_timestamp')
+                transaction.hedera_submitted = True
+                transaction.metadata['hedera_submission'] = hedera_result
+                
+        except Exception as e:
+            logger.error(f"Error submitting withdrawal to Hedera: {str(e)}")
+        
         # Update wallet
         wallet.balance -= amount
         wallet.total_withdrawn += amount
@@ -873,6 +1239,19 @@ def process_withdrawal(request):
         transaction.status = 'completed'
         transaction.completed_at = timezone.now()
         transaction.save()
+        
+        # Update Hedera with final status
+        try:
+            hedera_update = {
+                'transaction_id': transaction.id,
+                'reference': transaction.reference,
+                'old_status': 'pending',
+                'new_status': 'completed',
+                'completed_at': transaction.completed_at.isoformat(),
+            }
+            hedera_consensus.submit_message(hedera_update, topic_id=transaction.hedera_topic_id)
+        except Exception as e:
+            logger.error(f"Failed to update withdrawal on Hedera: {str(e)}")
         
         # Update finance summary
         summary, created = FinanceSummary.objects.get_or_create(user=request.user)
@@ -886,11 +1265,14 @@ def process_withdrawal(request):
                 'reference': transaction.reference,
                 'amount': float(transaction.amount),
                 'phone': transaction.phone_number,
-                'balance_after': float(transaction.balance_after)
+                'balance_after': float(transaction.balance_after),
+                'hedera_message_id': transaction.hedera_message_id,
+                'hedera_explorer_url': transaction.hedera_explorer_url
             }
         })
         
     except Exception as e:
+        logger.error(f"Withdrawal error: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -941,7 +1323,7 @@ def loans(request):
 @login_required
 @require_POST
 def apply_loan(request):
-    """Apply for a new loan"""
+    """Apply for a new loan with Hedera storage"""
     try:
         data = json.loads(request.body) if request.body else request.POST
         
@@ -1028,6 +1410,33 @@ def apply_loan(request):
             completed_at=timezone.now()
         )
         
+        # Submit to Hedera
+        try:
+            hedera_data = {
+                'transaction_id': transaction.id,
+                'reference': transaction.reference,
+                'type': transaction.transaction_type,
+                'amount': float(transaction.amount),
+                'user_id': request.user.id,
+                'loan_reference': loan.reference,
+                'status': 'completed',
+                'completed_at': transaction.completed_at.isoformat(),
+                'description': f"Loan disbursement"
+            }
+            
+            hedera_result = hedera_consensus.submit_message(hedera_data)
+            
+            if hedera_result.get('status') == 'success':
+                transaction.hedera_topic_id = hedera_result.get('topic')
+                transaction.hedera_message_id = hedera_result.get('message_id')
+                transaction.hedera_sequence_number = hedera_result.get('sequence_number')
+                transaction.hedera_consensus_timestamp = hedera_result.get('consensus_timestamp')
+                transaction.hedera_submitted = True
+                transaction.save()
+                
+        except Exception as e:
+            logger.error(f"Error submitting loan to Hedera: {str(e)}")
+        
         # Update wallet
         wallet.balance += amount
         wallet.save()
@@ -1048,10 +1457,15 @@ def apply_loan(request):
                 'interest_rate': float(loan.interest_rate),
                 'total_repayable': float(loan.total_repayable),
                 'monthly_installment': float(loan.monthly_installment)
+            },
+            'transaction': {
+                'hedera_message_id': transaction.hedera_message_id,
+                'hedera_explorer_url': transaction.hedera_explorer_url
             }
         })
         
     except Exception as e:
+        logger.error(f"Loan application error: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -1067,11 +1481,6 @@ def loan_detail(request, loan_id):
     # Get repayment schedule
     repayments = loan.repayments.all().order_by('due_date')
     
-    # Generate future repayment schedule if not yet created
-    if loan.status in ['approved', 'active'] and not repayments.exists():
-        # In production, you'd generate the full schedule here
-        pass
-    
     context = {
         'loan': loan,
         'repayments': repayments,
@@ -1084,7 +1493,7 @@ def loan_detail(request, loan_id):
 @login_required
 @require_POST
 def repay_loan(request, loan_id):
-    """Make a loan repayment"""
+    """Make a loan repayment with Hedera storage"""
     try:
         loan = get_object_or_404(Loan, id=loan_id, user=request.user)
         
@@ -1109,8 +1518,7 @@ def repay_loan(request, loan_id):
         if amount > loan.outstanding_balance:
             amount = loan.outstanding_balance
         
-        # Calculate principal and interest portions
-        # Simplified: 70% principal, 30% interest for this payment
+        # Calculate principal and interest portions (simplified)
         principal_paid = amount * Decimal('0.7')
         interest_paid = amount * Decimal('0.3')
         
@@ -1129,6 +1537,33 @@ def repay_loan(request, loan_id):
             status='completed',
             completed_at=timezone.now()
         )
+        
+        # Submit to Hedera
+        try:
+            hedera_data = {
+                'transaction_id': transaction.id,
+                'reference': transaction.reference,
+                'type': transaction.transaction_type,
+                'amount': float(transaction.amount),
+                'user_id': request.user.id,
+                'loan_reference': loan.reference,
+                'status': 'completed',
+                'completed_at': transaction.completed_at.isoformat(),
+                'description': f"Loan repayment"
+            }
+            
+            hedera_result = hedera_consensus.submit_message(hedera_data)
+            
+            if hedera_result.get('status') == 'success':
+                transaction.hedera_topic_id = hedera_result.get('topic')
+                transaction.hedera_message_id = hedera_result.get('message_id')
+                transaction.hedera_sequence_number = hedera_result.get('sequence_number')
+                transaction.hedera_consensus_timestamp = hedera_result.get('consensus_timestamp')
+                transaction.hedera_submitted = True
+                transaction.save()
+                
+        except Exception as e:
+            logger.error(f"Error submitting repayment to Hedera: {str(e)}")
         
         # Create repayment record
         repayment = LoanRepayment.objects.create(
@@ -1168,11 +1603,14 @@ def repay_loan(request, loan_id):
                 'amount': float(transaction.amount),
                 'balance_after': float(wallet.balance),
                 'loan_balance': float(loan.outstanding_balance),
-                'progress': loan.progress_percentage
+                'progress': loan.progress_percentage,
+                'hedera_message_id': transaction.hedera_message_id,
+                'hedera_explorer_url': transaction.hedera_explorer_url
             }
         })
         
     except Exception as e:
+        logger.error(f"Repayment error: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -1256,6 +1694,7 @@ def add_payment_method(request):
             }, status=400)
             
     except Exception as e:
+        logger.error(f"Add payment method error: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -1289,6 +1728,7 @@ def set_default_payment_method(request, method_id):
         })
         
     except Exception as e:
+        logger.error(f"Set default method error: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -1329,6 +1769,7 @@ def delete_payment_method(request, method_id):
         })
         
     except Exception as e:
+        logger.error(f"Delete method error: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -1423,371 +1864,29 @@ def calculate_loan(request):
         'monthly_installment': float(monthly_installment)
     })
 
-@csrf_exempt
-@require_POST
-def deposit_callback(request):
-    """
-    Handle PayHero M-Pesa payment callback
-    Optimized for production with comprehensive error handling,
-    atomic transactions, logging, and idempotency
-    """
-    request_id = id_generator(8)
-    ip_address = get_client_ip(request)
-    
-    logger.info(f"[Callback:{request_id}] Received deposit callback from {ip_address}")
-    
-    try:
-        # ============================================
-        # 1. PARSE AND VALIDATE REQUEST
-        # ============================================
-        try:
-            payload = json.loads(request.body)
-        except json.JSONDecodeError as e:
-            logger.error(f"[Callback:{request_id}] Invalid JSON payload: {str(e)}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Invalid JSON payload'
-            }, status=400)
-        
-        # Extract response data (handle both nested and flat structures)
-        response_data = payload.get('response', payload)
-        
-        # Extract transaction reference - check multiple possible field names
-        reference = (
-            response_data.get('ExternalReference') or 
-            response_data.get('external_reference') or
-            response_data.get('reference')
-        )
-        
-        if not reference:
-            logger.error(f"[Callback:{request_id}] Missing transaction reference in callback")
-            return JsonResponse({
-                'success': False,
-                'error': 'Missing transaction reference'
-            }, status=400)
-        
-        # Extract status - check multiple possible field names
-        status = (
-            response_data.get('Status') or 
-            response_data.get('status') or
-            response_data.get('resultCode') or
-            response_data.get('ResultCode')
-        )
-        
-        # Extract M-Pesa receipt number
-        mpesa_code = (
-            response_data.get('MpesaReceiptNumber') or
-            response_data.get('mpesa_code') or
-            response_data.get('transaction_id')
-        )
-        
-        # Extract amount (if provided in callback)
-        amount_str = (
-            response_data.get('Amount') or
-            response_data.get('amount')
-        )
-        
-        # Extract phone number (if provided)
-        phone = (
-            response_data.get('PhoneNumber') or
-            response_data.get('phone_number') or
-            response_data.get('phone')
-        )
-        
-        logger.info(f"[Callback:{request_id}] Processing callback for reference: {reference}, status: {status}")
-        
-        # ============================================
-        # 2. CHECK IDEMPOTENCY (Prevent duplicate processing)
-        # ============================================
-        cache_key = f"callback_processed_{reference}"
-        if cache.get(cache_key):
-            logger.info(f"[Callback:{request_id}] Callback already processed for reference: {reference}")
-            return JsonResponse({
-                'success': True,
-                'message': 'Callback already processed'
-            })
-        
-        # Set cache with 1 hour expiry
-        cache.set(cache_key, True, 3600)
-        
-        # ============================================
-        # 3. FIND TRANSACTION
-        # ============================================
-        try:
-            # Try primary reference first
-            payment = Transaction.objects.select_related('user', 'user__wallet').get(reference=reference)
-        except Transaction.DoesNotExist:
-            # Try to find by metadata.external_reference
-            try:
-                payment = Transaction.objects.filter(
-                    metadata__external_reference=reference
-                ).select_related('user', 'user__wallet').first()
-                
-                if not payment:
-                    logger.error(f"[Callback:{request_id}] Transaction not found for reference: {reference}")
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Transaction not found'
-                    }, status=404)
-            except Exception as e:
-                logger.error(f"[Callback:{request_id}] Error finding transaction: {str(e)}")
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Transaction lookup failed'
-                }, status=500)
-        
-        # Check if transaction already processed
-        if payment.status in ['completed', 'success', 'failed', 'cancelled']:
-            logger.info(f"[Callback:{request_id}] Transaction {reference} already processed with status: {payment.status}")
-            return JsonResponse({
-                'success': True,
-                'message': f'Transaction already processed as {payment.status}',
-                'status': payment.status
-            })
-        
-        # ============================================
-        # 4. DETERMINE PAYMENT STATUS
-        # ============================================
-        # Normalize status string
-        if isinstance(status, str):
-            status_lower = status.lower()
-        elif isinstance(status, int):
-            status_lower = 'success' if status == 0 else 'failed'
-        else:
-            status_lower = str(status).lower() if status else ''
-        
-        # Check for success conditions
-        is_success = (
-            status_lower in ['success', 'completed', 'paid', '0'] or
-            status == 0 or
-            status_lower == 'success' or
-            response_data.get('success') in [True, 'true', 'True']
-        )
-        
-        # Check for failed/cancelled conditions
-        is_failed = (
-            status_lower in ['failed', 'error', 'timeout', 'expired'] or
-            status_lower == 'failed'
-        )
-        
-        is_cancelled = (
-            status_lower in ['cancelled', 'canceled', 'reversed'] or
-            status_lower == 'cancelled'
-        )
-        
-        # ============================================
-        # 5. PROCESS PAYMENT WITH ATOMIC TRANSACTION
-        # ============================================
-        try:
-            with db_transaction.atomic():
-                # Update common fields
-                payment.mpesa_code = mpesa_code or payment.mpesa_code
-                payment.metadata['callback_payload'] = payload
-                payment.metadata['callback_received_at'] = timezone.now().isoformat()
-                payment.metadata['callback_ip'] = ip_address
-                payment.metadata['callback_request_id'] = request_id
-                
-                # Update phone if provided
-                if phone:
-                    payment.phone_number = phone
-                
-                # Update amount if provided and matches
-                if amount_str:
-                    try:
-                        callback_amount = Decimal(str(amount_str))
-                        if callback_amount != payment.amount:
-                            logger.warning(
-                                f"[Callback:{request_id}] Amount mismatch: "
-                                f"transaction={payment.amount}, callback={callback_amount}"
-                            )
-                            payment.metadata['amount_mismatch'] = {
-                                'transaction': str(payment.amount),
-                                'callback': str(callback_amount)
-                            }
-                    except (InvalidOperation, TypeError, ValueError):
-                        pass
-                
-                # Process based on status
-                if is_success:
-                    # Get user wallet
-                    wallet = payment.user.wallet
-                    
-                    # Check if already credited (double payment prevention)
-                    if payment.status == 'completed':
-                        logger.info(f"[Callback:{request_id}] Payment already completed for {reference}")
-                    else:
-                        # Calculate new balance
-                        balance_before = wallet.balance
-                        balance_after = wallet.balance + payment.amount
-                        
-                        # Update wallet
-                        wallet.balance = balance_after
-                        wallet.total_deposited += payment.amount
-                        wallet.last_deposit_at = timezone.now()
-                        wallet.remaining_daily_deposit = max(
-                            0, 
-                            wallet.remaining_daily_deposit - payment.amount
-                        )
-                        wallet.save(update_fields=[
-                            'balance', 'total_deposited', 'last_deposit_at', 
-                            'remaining_daily_deposit', 'updated_at'
-                        ])
-                        
-                        # Update transaction
-                        payment.status = 'completed'
-                        payment.completed_at = timezone.now()
-                        payment.processed_at = timezone.now()
-                        payment.balance_before = balance_before
-                        payment.balance_after = balance_after
-                        payment.save(update_fields=[
-                            'status', 'completed_at', 'processed_at', 
-                            'balance_before', 'balance_after', 'mpesa_code',
-                            'metadata', 'updated_at'
-                        ])
-                        
-                        # Update finance summary (async or background task recommended)
-                        try:
-                            summary, _ = FinanceSummary.objects.get_or_create(user=payment.user)
-                            summary.total_deposits += payment.amount
-                            summary.save(update_fields=['total_deposits', 'last_calculated'])
-                        except Exception as e:
-                            logger.error(f"[Callback:{request_id}] Failed to update finance summary: {str(e)}")
-                        
-                        # Create notification
-                        try:
-                            Notification.objects.create(
-                                user=payment.user,
-                                notification_type='deposit',
-                                title='Deposit Successful',
-                                message=f'Your deposit of KES {payment.amount:,.0f} has been credited to your wallet.',
-                                metadata={
-                                    'transaction_id': payment.id,
-                                    'transaction_reference': payment.reference,
-                                    'amount': str(payment.amount),
-                                    'mpesa_code': mpesa_code or ''
-                                }
-                            )
-                        except Exception as e:
-                            logger.error(f"[Callback:{request_id}] Failed to create notification: {str(e)}")
-                        
-                        # Create audit log
-                        try:
-                            AuditLog.objects.create(
-                                user=payment.user,
-                                action='payment_success',
-                                model_name='Transaction',
-                                object_id=str(payment.id),
-                                details={
-                                    'reference': payment.reference,
-                                    'amount': str(payment.amount),
-                                    'mpesa_code': mpesa_code or '',
-                                    'callback_id': request_id
-                                },
-                                ip_address=ip_address
-                            )
-                        except Exception as e:
-                            logger.error(f"[Callback:{request_id}] Failed to create audit log: {str(e)}")
-                        
-                        logger.info(
-                            f"[Callback:{request_id}] Payment completed successfully: "
-                            f"User={payment.user.id}, Amount={payment.amount}, "
-                            f"Reference={reference}, M-Pesa={mpesa_code}"
-                        )
-                    
-                    response_status = 'completed'
-                    response_message = 'Payment processed successfully'
-                
-                elif is_cancelled:
-                    payment.status = 'cancelled'
-                    payment.metadata['cancelled_at'] = timezone.now().isoformat()
-                    payment.save(update_fields=['status', 'metadata', 'updated_at'])
-                    
-                    logger.info(f"[Callback:{request_id}] Payment cancelled: {reference}")
-                    response_status = 'cancelled'
-                    response_message = 'Payment was cancelled'
-                
-                elif is_failed:
-                    payment.status = 'failed'
-                    payment.failed_at = timezone.now()
-                    payment.metadata['failure_reason'] = response_data.get('message', response_data.get('error', 'Payment failed'))
-                    payment.save(update_fields=['status', 'failed_at', 'metadata', 'updated_at'])
-                    
-                    logger.info(f"[Callback:{request_id}] Payment failed: {reference}")
-                    response_status = 'failed'
-                    response_message = 'Payment failed'
-                
-                else:
-                    # Unknown status - log but don't change
-                    logger.warning(f"[Callback:{request_id}] Unknown payment status: {status} for {reference}")
-                    payment.metadata['unknown_status'] = {
-                        'status': status,
-                        'payload': payload
-                    }
-                    payment.save(update_fields=['metadata', 'updated_at'])
-                    
-                    response_status = payment.status
-                    response_message = 'Callback received with unknown status'
-        
-        except Exception as e:
-            logger.error(
-                f"[Callback:{request_id}] Error processing payment: {str(e)}", 
-                exc_info=True
-            )
-            
-            # Clear idempotency cache on error to allow retry
-            cache.delete(cache_key)
-            
-            return JsonResponse({
-                'success': False,
-                'error': 'Error processing payment'
-            }, status=500)
-        
-        # ============================================
-        # 6. RETURN SUCCESS RESPONSE
-        # ============================================
-        return JsonResponse({
-            'success': True,
-            'status': response_status,
-            'message': response_message,
-            'reference': payment.reference,
-            'transaction_id': payment.id
-        })
-    
-    except Exception as e:
-        logger.error(
-            f"[Callback:{request_id}] Unhandled callback error: {str(e)}", 
-            exc_info=True
-        )
-        return JsonResponse({
-            'success': False,
-            'error': 'Internal server error'
-        }, status=500)
-
 
 # ============================================
-# SIMPLIFIED VERSION FOR QUICK FIX
+# SIMPLIFIED CALLBACK FOR BACKWARD COMPATIBILITY
 # ============================================
 
 @csrf_exempt
 @require_POST
 def deposit_success_simple(request):
     """
-    Simplified version - use this if the above is too complex
-    Maintains backward compatibility with your existing endpoint
+    Simplified version for backward compatibility
     """
     try:
         data = json.loads(request.body)
         response_data = data.get('response', {})
-        print(f"[Callback: {response_data}")
         
-        # Extract reference (check multiple field names)
+        # Extract reference
         reference = (
             response_data.get("ExternalReference") or 
             response_data.get("external_reference") or
             response_data.get("reference")
         )
         
-        # Extract status (check multiple field names)
+        # Extract status
         status = (
             response_data.get("Status") or 
             response_data.get("status")
@@ -1830,7 +1929,21 @@ def deposit_success_simple(request):
         payment.metadata['callback_data'] = data
         payment.save()
         
-        logger.info(f"Deposit callback processed: {reference} - {old_status} -> {payment.status}")
+        # Try to submit to Hedera
+        try:
+            hedera_data = {
+                'transaction_id': payment.id,
+                'reference': payment.reference,
+                'old_status': old_status,
+                'new_status': payment.status,
+                'amount': float(payment.amount),
+                'callback': 'simple'
+            }
+            hedera_consensus.submit_message(hedera_data, topic_id=payment.hedera_topic_id)
+        except Exception as e:
+            logger.error(f"Failed to submit to Hedera in simple callback: {str(e)}")
+        
+        logger.info(f"Simple deposit callback processed: {reference} - {old_status} -> {payment.status}")
         
         return JsonResponse({
             'success': True,
@@ -1841,5 +1954,5 @@ def deposit_success_simple(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
-        logger.error(f"Callback error: {e}", exc_info=True)
+        logger.error(f"Simple callback error: {e}", exc_info=True)
         return JsonResponse({'error': 'Internal error'}, status=500)

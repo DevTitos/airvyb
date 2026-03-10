@@ -290,6 +290,9 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
     transition: var(--transition);
     gap: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
 }
 
 @media (min-width: 768px) {
@@ -336,7 +339,12 @@
     color: var(--accent-3);
 }
 
-.transaction-icon.contribution {
+.transaction-icon.loan {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--accent-5);
+}
+
+.transaction-icon.loan_repayment {
     background: rgba(0, 200, 83, 0.1);
     color: #00c853;
 }
@@ -385,12 +393,13 @@
 
 .transaction-amount.deposit,
 .transaction-amount.dividend,
-.transaction-amount.contribution {
+.transaction-amount.loan {
     color: #00c853;
 }
 
 .transaction-amount.withdrawal,
-.transaction-amount.investment {
+.transaction-amount.investment,
+.transaction-amount.loan_repayment {
     color: var(--accent-1);
 }
 
@@ -530,6 +539,32 @@
     margin-top: 10px;
 }
 
+/* Hedera Badge */
+.hedera-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: rgba(0, 200, 83, 0.1);
+    border: 1px solid rgba(0, 200, 83, 0.2);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: #00c853;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.hedera-badge:hover {
+    background: #00c853;
+    color: white;
+    border-color: #00c853;
+}
+
+.hedera-badge i {
+    font-size: 0.8rem;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
@@ -624,6 +659,49 @@
     line-height: 1;
 }
 
+/* Hedera Tooltip */
+.hedera-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.hedera-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+    color: var(--text);
+    text-align: left;
+    border-radius: 8px;
+    padding: 12px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.hedera-tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #16213e transparent transparent transparent;
+}
+
+.hedera-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -673,7 +751,7 @@
     <div class="finance-header">
         <div class="finance-title">
             <h1>Finance Dashboard</h1>
-            <p>Manage your wallet, monthly contributions, withdrawals, and loans</p>
+            <p>Manage your wallet, contributions, withdrawals, and loans</p>
         </div>
         <div class="finance-actions">
             <a href="{% url 'finance:deposit' %}" class="btn btn-primary">
@@ -693,11 +771,11 @@
         <div class="wallet-grid">
             <div class="wallet-item">
                 <span class="wallet-label">
-                    <i class="fas fa-wallet"></i> Available
+                    <i class="fas fa-wallet"></i> Available Balance
                 </span>
                 <div class="wallet-value">Ksh {{ wallet.available_balance|floatformat:0|intcomma }}</div>
-                <span class="wallet-sub">This Year's Contributions</span>
-                {% if wallet.balance > wallet.available_balance %}
+                <span class="wallet-sub">Available for withdrawal</span>
+                {% if wallet.locked_balance > 0 %}
                 <span class="wallet-change change-positive">
                     <i class="fas fa-lock"></i> Ksh {{ wallet.locked_balance|floatformat:0|intcomma }} locked
                 </span>
@@ -706,18 +784,7 @@
             
             <div class="wallet-item">
                 <span class="wallet-label">
-                    <i class="fas fa-calendar-alt"></i> Current Month
-                </span>
-                <div class="wallet-value">Ksh {{ current_month_contribution|floatformat:0|intcomma }}</div>
-                <span class="wallet-sub">Contributed this month</span>
-                <span class="wallet-change change-positive">
-                    <i class="fas fa-clock"></i> Target: Ksh {{ monthly_target|floatformat:0|intcomma }}
-                </span>
-            </div>
-            
-            <div class="wallet-item">
-                <span class="wallet-label">
-                    <i class="fas fa-chart-line"></i> Total Contributions
+                    <i class="fas fa-calendar-alt"></i> Total Deposits
                 </span>
                 <div class="wallet-value">Ksh {{ wallet.total_deposited|floatformat:0|intcomma }}</div>
                 <span class="wallet-sub">Lifetime contributions</span>
@@ -728,12 +795,23 @@
             
             <div class="wallet-item">
                 <span class="wallet-label">
-                    <i class="fas fa-credit-card"></i> Total Withdrawn
+                    <i class="fas fa-chart-line"></i> Total Withdrawn
                 </span>
                 <div class="wallet-value">Ksh {{ wallet.total_withdrawn|floatformat:0|intcomma }}</div>
                 <span class="wallet-sub">Lifetime withdrawals</span>
                 <span class="wallet-change change-negative">
                     <i class="fas fa-arrow-up"></i> Last: {% if wallet.last_withdrawal_at %}{{ wallet.last_withdrawal_at|date:"M d, Y" }}{% else %}Never{% endif %}
+                </span>
+            </div>
+            
+            <div class="wallet-item">
+                <span class="wallet-label">
+                    <i class="fas fa-coins"></i> Daily Limits
+                </span>
+                <div class="wallet-value">Ksh {{ wallet.remaining_daily_deposit|floatformat:0|intcomma }}</div>
+                <span class="wallet-sub">Remaining deposit</span>
+                <span class="wallet-change change-positive">
+                    <i class="fas fa-arrow-down"></i> Ksh {{ wallet.remaining_daily_withdrawal|floatformat:0|intcomma }} withdrawal
                 </span>
             </div>
         </div>
@@ -743,50 +821,6 @@
     <div class="finance-grid">
         <!-- Left Column -->
         <div class="finance-column">
-            <!-- Contribution Progress -->
-            <div class="finance-card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <i class="fas fa-chart-pie"></i> Monthly Contribution Progress
-                    </h2>
-                    <div class="card-actions">
-                        <a href="{% url 'finance:deposit' %}" class="card-action-btn">
-                            <i class="fas fa-plus-circle"></i> Make Contribution
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="contribution-summary">
-                    <div class="contribution-stat">
-                        <div class="contribution-stat-value">Ksh {{ current_month_contribution|floatformat:0|intcomma }}</div>
-                        <div class="contribution-stat-label">Contributed This Month</div>
-                    </div>
-                    <div class="contribution-stat">
-                        <div class="contribution-stat-value">Ksh {{ monthly_target|floatformat:0|intcomma }}</div>
-                        <div class="contribution-stat-label">Monthly Target</div>
-                    </div>
-                    <div class="contribution-stat">
-                        <div class="contribution-stat-value">{{ contribution_percentage|floatformat:0 }}%</div>
-                        <div class="contribution-stat-label">Progress</div>
-                    </div>
-                </div>
-                
-                <div class="limit-progress" style="margin-bottom: 20px;">
-                    <div class="progress-header">
-                        <span class="progress-label">{{ current_month_name }} {{ current_year }} Progress</span>
-                        <span class="progress-percent">{{ contribution_percentage|floatformat:0 }}%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ contribution_percentage|floatformat:0 }}%;"></div>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 15px; justify-content: space-between; color: var(--text-light); font-size: 0.9rem;">
-                    <span><i class="fas fa-calendar-check" style="color: #00c853;"></i> Next Month: {{ next_month_name }} {{ next_year }}</span>
-                    <span><i class="fas fa-arrow-up" style="color: #00c853;"></i> Min: Ksh 500</span>
-                </div>
-            </div>
-            
             <!-- Recent Transactions -->
             <div class="finance-card">
                 <div class="card-header">
@@ -797,9 +831,6 @@
                         <a href="{% url 'finance:transactions' %}" class="card-action-btn">
                             <i class="fas fa-eye"></i> View All
                         </a>
-                        <a href="{% url 'finance:transactions' %}?export=1" class="card-action-btn">
-                            <i class="fas fa-download"></i> Export
-                        </a>
                     </div>
                 </div>
                 
@@ -807,16 +838,12 @@
                     {% if recent_transactions %}
                         {% for tx in recent_transactions %}
                         <a href="{% url 'finance:transaction_detail' tx.id %}" class="transaction-item">
-                            <div class="transaction-icon {% if tx.transaction_type == 'deposit' %}contribution{% else %}{{ tx.transaction_type }}{% endif %}">
-                                <i class="fas fa-{% if tx.transaction_type == 'deposit' %}calendar-check{% elif tx.transaction_type == 'withdrawal' %}arrow-up{% elif tx.transaction_type == 'investment' %}hand-holding-usd{% elif tx.transaction_type == 'dividend' %}coins{% elif tx.transaction_type == 'loan' %}money-bill{% else %}exchange-alt{% endif %}"></i>
+                            <div class="transaction-icon {% if tx.transaction_type == 'deposit' %}deposit{% elif tx.transaction_type == 'withdrawal' %}withdrawal{% elif tx.transaction_type == 'investment' %}investment{% elif tx.transaction_type == 'dividend' %}dividend{% elif tx.transaction_type == 'loan' %}loan{% elif tx.transaction_type == 'loan_repayment' %}loan_repayment{% endif %}">
+                                <i class="fas fa-{% if tx.transaction_type == 'deposit' %}arrow-down{% elif tx.transaction_type == 'withdrawal' %}arrow-up{% elif tx.transaction_type == 'investment' %}hand-holding-usd{% elif tx.transaction_type == 'dividend' %}coins{% elif tx.transaction_type == 'loan' %}money-bill{% elif tx.transaction_type == 'loan_repayment' %}credit-card{% else %}exchange-alt{% endif %}"></i>
                             </div>
                             <div class="transaction-info">
                                 <div class="transaction-title">
-                                    {% if tx.transaction_type == 'deposit' %}
-                                        Monthly Contribution - {{ tx.month_name|default:tx.description|truncatechars:50 }}
-                                    {% else %}
-                                        {{ tx.description|truncatechars:50 }}
-                                    {% endif %}
+                                    {{ tx.description|truncatechars:50 }}
                                 </div>
                                 <div class="transaction-meta">
                                     <span class="transaction-reference">{{ tx.reference }}</span>
@@ -825,13 +852,26 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="transaction-amount {% if tx.transaction_type == 'deposit' %}deposit{% else %}{{ tx.transaction_type }}{% endif %}">
-                                {% if tx.transaction_type == 'withdrawal' or tx.transaction_type == 'investment' %}-{% else %}+{% endif %}
+                            <div class="transaction-amount {% if tx.transaction_type == 'deposit' or tx.transaction_type == 'dividend' or tx.transaction_type == 'loan' %}deposit{% elif tx.transaction_type == 'withdrawal' or tx.transaction_type == 'investment' or tx.transaction_type == 'loan_repayment' %}withdrawal{% endif %}">
+                                {% if tx.transaction_type == 'withdrawal' or tx.transaction_type == 'investment' or tx.transaction_type == 'loan_repayment' %}-{% else %}+{% endif %}
                                 Ksh {{ tx.amount|floatformat:0|intcomma }}
                             </div>
                             <div class="transaction-status status-{{ tx.status }}">
                                 {{ tx.get_status_display|upper }}
                             </div>
+                            
+                            {% if tx.hedera_submitted %}
+                            <div class="hedera-tooltip">
+                                <span class="hedera-badge" onclick="event.preventDefault(); window.open('{{ tx.hedera_explorer_url }}', '_blank');">
+                                    <i class="fas fa-link"></i> Hedera
+                                </span>
+                                <span class="tooltip-text">
+                                    <strong>Hedera Verified</strong><br>
+                                    Message ID: {{ tx.hedera_message_id|truncatechars:20 }}<br>
+                                    Click to view on HashScan
+                                </span>
+                            </div>
+                            {% endif %}
                         </a>
                         {% endfor %}
                     {% else %}
@@ -883,47 +923,6 @@
         
         <!-- Right Column -->
         <div class="finance-column">
-            <!-- Upcoming Contributions -->
-            <div class="finance-card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <i class="fas fa-calendar-alt"></i> Upcoming Months
-                    </h2>
-                    <div class="card-actions">
-                        <a href="{% url 'finance:deposit' %}" class="card-action-btn">
-                            <i class="fas fa-plus"></i> Plan Ahead
-                        </a>
-                    </div>
-                </div>
-                
-                {% if upcoming_months %}
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        {% for month in upcoming_months|slice:":3" %}
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 15px; background: rgba(0,200,83,0.02); border-radius: var(--radius); border: 1px solid rgba(0,200,83,0.1);">
-                            <div style="width: 45px; height: 45px; border-radius: 10px; background: rgba(0,200,83,0.1); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-calendar" style="color: #00c853;"></i>
-                            </div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; margin-bottom: 4px;">{{ month.name }} {{ month.year }}</div>
-                                <div style="color: var(--text-light); font-size: 0.8rem;">
-                                    Target: Ksh {{ month.target|floatformat:0|intcomma }}
-                                </div>
-                            </div>
-                            <a href="{% url 'finance:deposit' %}?month={{ month.value }}" class="btn btn-outline btn-sm" style="padding: 6px 12px;">
-                                <i class="fas fa-plus"></i> Pay
-                            </a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-alt"></i>
-                        <h3>No Upcoming Months</h3>
-                        <p>Check back later for upcoming contribution months.</p>
-                    </div>
-                {% endif %}
-            </div>
-            
             <!-- Active Loans -->
             <div class="finance-card">
                 <div class="card-header">
@@ -932,7 +931,7 @@
                     </h2>
                     <div class="card-actions">
                         <a href="{% url 'finance:loans' %}" class="card-action-btn">
-                            <i class="fas fa-plus"></i> Apply for Loan
+                            <i class="fas fa-plus"></i> Apply
                         </a>
                     </div>
                 </div>
@@ -1048,6 +1047,43 @@
                     </div>
                 {% endif %}
             </div>
+            
+            <!-- Hedera Status Card -->
+            <div class="finance-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-link"></i> Hedera Verification
+                    </h2>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0,200,83,0.05); border-radius: var(--radius); border: 1px solid rgba(0,200,83,0.1);">
+                        <div style="width: 50px; height: 50px; border-radius: 25px; background: rgba(0,200,83,0.1); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #00c853;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; margin-bottom: 4px;">Hedera Consensus Service</div>
+                            <div style="color: var(--text-light); font-size: 0.85rem;">
+                                {% if verified_transactions_count %}
+                                    {{ verified_transactions_count }} transactions verified on Hedera
+                                {% else %}
+                                    All transactions are immutably stored on Hedera
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="https://hashscan.io/testnet/topic/{{ hedera_topic_id|default:'0.0.48764329' }}" 
+                           target="_blank" 
+                           class="btn btn-outline btn-sm">
+                            <i class="fas fa-external-link-alt"></i> View Topic
+                        </a>
+                    </div>
+                    
+                    <div style="font-size: 0.8rem; color: var(--text-light); padding: 0 10px;">
+                        <i class="fas fa-info-circle" style="color: #00c853;"></i>
+                        Every transaction is timestamped and stored on the Hedera network for verifiable transparency.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -1056,7 +1092,7 @@
         <a href="{% url 'finance:deposit' %}" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: rgba(0,200,83,0.05); border-radius: var(--radius); border: 1px solid rgba(0,200,83,0.1); text-decoration: none; color: var(--text); transition: var(--transition);">
             <i class="fas fa-calendar-plus" style="font-size: 1.5rem; color: #00c853; margin-bottom: 10px;"></i>
             <span style="font-weight: 600; margin-bottom: 4px;">Contribute</span>
-            <span style="color: var(--text-light); font-size: 0.8rem;">Monthly contribution (Min Ksh 500)</span>
+            <span style="color: var(--text-light); font-size: 0.8rem;">Monthly contribution</span>
         </a>
         
         <a href="{% url 'finance:withdrawal' %}" style="display: flex; flex-direction: column; align-items: center; padding: 20px; background: rgba(255,255,255,0.02); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: var(--text); transition: var(--transition);">
@@ -1172,13 +1208,13 @@ function closeRepayModal() {
 
 function setRepayAmount(amount) {
     const input = document.getElementById('repayAmount');
-    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'));
+    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'.replace(/,/g, '')));
     input.value = Math.min(amount, maxAmount);
 }
 
 function setFullRepayment() {
     const input = document.getElementById('repayAmount');
-    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'));
+    const maxAmount = Math.min(currentOutstandingBalance, parseFloat('{{ wallet.available_balance }}'.replace(/,/g, '')));
     input.value = maxAmount;
 }
 
@@ -1202,7 +1238,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            if (parseFloat(amount) > parseFloat('{{ wallet.available_balance }}')) {
+            const availableBalance = parseFloat('{{ wallet.available_balance }}'.replace(/,/g, ''));
+            if (parseFloat(amount) > availableBalance) {
                 showToast('Insufficient balance', 'error');
                 return;
             }

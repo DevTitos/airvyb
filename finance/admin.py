@@ -5,7 +5,7 @@ from .models import Transaction
 # Register your models here.
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ['reference', 'user', 'transaction_type', 'amount', 'status', 'created_at']
-    list_filter = ['transaction_type', 'status', 'created_at']
+    list_display = ['reference', 'user', 'transaction_type', 'amount', 'status', 'initiated_at']
+    list_filter = ['transaction_type', 'status', 'initiated_at']
     search_fields = ['reference', 'user__email', 'description']
-    readonly_fields = ['created_at', 'completed_at']
+    readonly_fields = ['initiated_at', 'completed_at']
