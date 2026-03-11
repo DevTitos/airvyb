@@ -5,17 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Airvyb | Execution-Led Fractional Investment Platform</title>
-    <meta name="description" content="Airvyb executes fractional investment opportunities through structured operations, converting investor capital into real assets with disciplined management.">
+    <meta name="description" content="Airvyb executes fractional investment opportunities through structured operations, converting investor capital into real assets with disciplined management. Secured by Hedera Consensus Service.">
     
     <!-- SEO Meta Tags -->
     <meta property="og:title" content="Airvyb - Execution-Led Investment Platform">
-    <meta property="og:description" content="We don't just offer investments. We execute, manage, and deliver returns through disciplined operational frameworks.">
+    <meta property="og:description" content="We don't just offer investments. We execute, manage, and deliver returns through disciplined operational frameworks. Every transaction verified on Hedera.">
     <meta property="og:type" content="website">
-    <meta name="keywords" content="fractional investment, execution platform, asset management, disciplined operations, real asset investment">
+    <meta name="keywords" content="fractional investment, execution platform, asset management, disciplined operations, real asset investment, Hedera, blockchain">
     <link rel="canonical" href="https://airvyb.co.ke">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicon-32x32.png' %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicon-16x16.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'apple-touch-icon.png' %}">
+    
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -29,12 +30,15 @@
             --accent-3: #3a86ff;
             --accent-4: #fb5607;
             --accent-5: #ffbe0b;
+            --hedera-green: #00c853;
+            --hedera-green-dark: #00a84f;
             --text: #ffffff;
             --text-light: #e2e8f0;
             --card-bg: rgba(255, 255, 255, 0.05);
             --gradient-1: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
             --gradient-2: linear-gradient(135deg, #3a86ff 0%, #fb5607 100%);
             --gradient-3: linear-gradient(135deg, #ffbe0b 0%, #fb5607 100%);
+            --gradient-hedera: linear-gradient(135deg, #00c853 0%, #00e676 100%);
             --gradient-bg: radial-gradient(circle at 20% 50%, rgba(255, 0, 110, 0.15) 0%, transparent 50%),
                           radial-gradient(circle at 80% 20%, rgba(58, 134, 255, 0.15) 0%, transparent 50%),
                           radial-gradient(circle at 40% 80%, rgba(131, 56, 236, 0.1) 0%, transparent 50%);
@@ -42,6 +46,7 @@
             --radius-lg: 20px;
             --shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             --shadow-accent: 0 10px 40px rgba(255, 0, 110, 0.3);
+            --shadow-hedera: 0 10px 40px rgba(0, 200, 83, 0.3);
             --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
             --glow: 0 0 20px rgba(255, 0, 110, 0.5);
         }
@@ -151,6 +156,24 @@
             left: 0;
             background: var(--gradient-1);
             border-radius: 2px;
+        }
+        
+        /* Hedera Badge in Header */
+        .hedera-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 15px;
+            padding: 6px 12px;
+            background: rgba(0, 200, 83, 0.1);
+            border: 1px solid rgba(0, 200, 83, 0.3);
+            border-radius: 30px;
+            font-size: 0.8rem;
+            color: var(--hedera-green);
+        }
+        
+        .hedera-badge i {
+            font-size: 0.9rem;
         }
         
         /* Navigation */
@@ -619,6 +642,10 @@
             background: var(--gradient-3);
         }
         
+        .card-icon.hedera {
+            background: var(--gradient-hedera);
+        }
+        
         .card-title {
             font-size: 1.3rem;
             margin-bottom: 15px;
@@ -634,6 +661,108 @@
             .card-title {
                 font-size: 1.6rem;
             }
+        }
+        
+        /* Deal Cards */
+        .deal-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 25px;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .deal-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent-1);
+            box-shadow: var(--shadow-accent);
+        }
+        
+        .deal-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            color: white;
+        }
+        
+        .deal-category {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(58, 134, 255, 0.2);
+            color: var(--accent-3);
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .deal-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--accent-1);
+        }
+        
+        .deal-minimum {
+            font-size: 1rem;
+            color: var(--accent-5);
+            margin-bottom: 15px;
+        }
+        
+        .deal-progress {
+            margin: 20px 0;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-hedera);
+            border-radius: 4px;
+        }
+        
+        .deal-meta {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .deal-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .deal-tag {
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-light);
         }
         
         /* Grid Layouts */
@@ -673,6 +802,19 @@
         @media (min-width: 1200px) {
             .grid-2 {
                 grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            }
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        @media (min-width: 768px) {
+            .grid-3 {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
             }
         }
         
@@ -754,110 +896,6 @@
             }
         }
         
-        /* Investment Platforms */
-        .platform-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        
-        @media (min-width: 640px) {
-            .platform-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 25px;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .platform-grid {
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            }
-        }
-        
-        .platform-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius);
-            padding: 20px;
-            transition: var(--transition);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        @media (min-width: 768px) {
-            .platform-card {
-                padding: 25px;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .platform-card {
-                padding: 30px;
-            }
-        }
-        
-        .platform-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--accent-3);
-            box-shadow: 0 15px 40px rgba(58, 134, 255, 0.2);
-        }
-        
-        .platform-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: var(--gradient-2);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        
-        @media (min-width: 768px) {
-            .platform-badge {
-                font-size: 0.8rem;
-                padding: 5px 15px;
-            }
-        }
-        
-        .platform-title {
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            color: var(--accent-3);
-        }
-        
-        @media (min-width: 768px) {
-            .platform-title {
-                font-size: 1.3rem;
-                margin-bottom: 15px;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .platform-title {
-                font-size: 1.4rem;
-            }
-        }
-        
-        .platform-minimum {
-            display: inline-block;
-            padding: 5px 12px;
-            background: rgba(255, 190, 11, 0.2);
-            color: var(--accent-5);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255, 190, 11, 0.3);
-        }
-        
-        @media (min-width: 768px) {
-            .platform-minimum {
-                font-size: 0.9rem;
-                padding: 5px 15px;
-            }
-        }
-        
         /* Stats */
         .stats-container {
             display: grid;
@@ -926,6 +964,28 @@
             }
         }
         
+        /* Hedera Stats */
+        .hedera-stat {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(0, 200, 83, 0.1);
+            border-radius: 50px;
+            padding: 10px 20px;
+            border: 1px solid rgba(0, 200, 83, 0.3);
+        }
+        
+        .hedera-stat i {
+            color: var(--hedera-green);
+            font-size: 1.2rem;
+        }
+        
+        .hedera-stat span {
+            color: var(--hedera-green);
+            font-weight: 600;
+        }
+        
         /* CTA Buttons */
         .cta-button {
             display: inline-block;
@@ -980,6 +1040,14 @@
         .cta-button:hover {
             transform: translateY(-5px);
             box-shadow: var(--shadow-accent);
+        }
+        
+        .cta-button.hedera {
+            background: var(--gradient-hedera);
+        }
+        
+        .cta-button.hedera:hover {
+            box-shadow: var(--shadow-hedera);
         }
         
         .cta-secondary {
@@ -1404,17 +1472,22 @@
     <header id="header">
         <div class="container header-container">
             <a href="#" class="logo">Air<span>vyb</span></a>
+            <div class="hedera-badge">
+                <i class="fas fa-link"></i>
+                <span>Secured by Hedera</span>
+            </div>
             
             <button class="mobile-toggle" id="mobileToggle">
                 <i class="fas fa-bars"></i>
             </button>
             
             <nav class="nav-links" id="navLinks">
+                <a href="#deals"><i class="fas fa-fire"></i> Active Deals</a>
                 <a href="#execution-model"><i class="fas fa-rocket"></i> Execution Model</a>
-                <a href="#platforms"><i class="fas fa-cogs"></i> Investment Platforms</a>
+                <a href="#platforms"><i class="fas fa-cogs"></i> Platforms</a>
                 <a href="#process"><i class="fas fa-play-circle"></i> How It Works</a>
                 <a href="#governance"><i class="fas fa-shield-alt"></i> Governance</a>
-                <a href="{% url 'login' %}"><i class="fas fa-users"></i> For Members</a>
+                <a href="{% url 'login' %}"><i class="fas fa-users"></i> Member Login</a>
                 <a href="{% url 'register' %}" class="cta-button" style="margin-top: 10px;">Join Airvyb</a>
             </nav>
         </div>
@@ -1430,12 +1503,15 @@
                 <div class="typewriter-container">
                     <div id="typewriter-text" class="typewriter-text cursor-blink"></div>
                 </div>
-                <div class="hero-tagline">Execution-led investment platform converting capital into real assets</div>
+                <div class="hero-tagline">
+                    <i class="fas fa-link" style="color: var(--hedera-green); margin-right: 8px;"></i>
+                    Every transaction verified on Hedera Consensus Service
+                </div>
                 <p>Airvyb executes fractional investment opportunities through structured operations, converting investor capital into real assets with disciplined management.</p>
                 <p><strong>We don't just offer investments. We <span style="color: var(--accent-1);">execute, manage, and deliver returns</span> through disciplined operational frameworks.</strong></p>
                 
                 <div class="hero-cta">
-                    <a href="#platforms" class="cta-button">Explore Investment Platforms</a>
+                    <a href="#deals" class="cta-button">View Active Deals</a>
                     <a href="#process" class="cta-button cta-secondary">See The Execution Process</a>
                 </div>
             </div>
@@ -1456,11 +1532,192 @@
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">Board</div>
-                    <div class="stat-label">Governed Investments</div>
+                    <div class="stat-label">Governed Deals</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">Structured</div>
-                    <div class="stat-label">Path to Ownership</div>
+                    <div class="stat-number">
+                        <i class="fas fa-link" style="font-size: 1.8rem; color: var(--hedera-green);"></i>
+                    </div>
+                    <div class="stat-label">Hedera Verified</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Active Deals Section - NEW -->
+    <section id="deals" class="fade-in">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">ACTIVE INVESTMENT DEALS</div>
+                <h2 class="section-title">Current <span>Deals</span></h2>
+                <p class="section-subtitle">Fractional investment opportunities with professional management and board governance.</p>
+            </div>
+            
+            <div class="grid-3">
+                <!-- M-Shamba Digital Deal -->
+                <div class="deal-card">
+                    <div class="deal-badge">AGRICULTURE</div>
+                    <div class="deal-category">
+                        <i class="fas fa-tractor"></i> M-Shamba Digital
+                    </div>
+                    <h3 class="deal-title">Kiambu Avocado Farm</h3>
+                    <div class="deal-minimum">From Ksh 500</div>
+                    
+                    <div class="deal-progress">
+                        <div class="progress-header">
+                            <span>Funding Progress</span>
+                            <span>78%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 78%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="deal-meta">
+                        <span><i class="fas fa-users"></i> 156 investors</span>
+                        <span><i class="fas fa-clock"></i> 12 days left</span>
+                    </div>
+                    
+                    <p>5-acre avocado farm in Kiambu. Professional management, harvest-based returns projected at 15-18% annually.</p>
+                    
+                    <div class="deal-tags">
+                        <span class="deal-tag">Hedera Verified</span>
+                        <span class="deal-tag">Board Governed</span>
+                        <span class="deal-tag">Monthly Returns</span>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'register' %}" class="cta-button" style="width: 100%;">Invest Now</a>
+                    </div>
+                </div>
+                
+                <!-- M-Jengo Digital Deal -->
+                <div class="deal-card">
+                    <div class="deal-badge">REAL ESTATE</div>
+                    <div class="deal-category">
+                        <i class="fas fa-building"></i> M-Jengo Digital
+                    </div>
+                    <h3 class="deal-title">Thika Greens Phase 2</h3>
+                    <div class="deal-minimum">From Ksh 1,000</div>
+                    
+                    <div class="deal-progress">
+                        <div class="progress-header">
+                            <span>Funding Progress</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="deal-meta">
+                        <span><i class="fas fa-users"></i> 89 investors</span>
+                        <span><i class="fas fa-clock"></i> 25 days left</span>
+                    </div>
+                    
+                    <p>Fractional ownership in residential development. Expected ROI 20-25% upon completion in 18 months.</p>
+                    
+                    <div class="deal-tags">
+                        <span class="deal-tag">Hedera Verified</span>
+                        <span class="deal-tag">Board Governed</span>
+                        <span class="deal-tag">Capital Growth</span>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'register' %}" class="cta-button" style="width: 100%;">Invest Now</a>
+                    </div>
+                </div>
+                
+                <!-- Solar Pesa Deal -->
+                <div class="deal-card">
+                    <div class="deal-badge">RENEWABLE ENERGY</div>
+                    <div class="deal-category">
+                        <i class="fas fa-solar-panel"></i> Solar Pesa
+                    </div>
+                    <h3 class="deal-title">Kajiado Solar Mini-Grid</h3>
+                    <div class="deal-minimum">From Ksh 1,500</div>
+                    
+                    <div class="deal-progress">
+                        <div class="progress-header">
+                            <span>Funding Progress</span>
+                            <span>62%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 62%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="deal-meta">
+                        <span><i class="fas fa-users"></i> 112 investors</span>
+                        <span><i class="fas fa-clock"></i> 18 days left</span>
+                    </div>
+                    
+                    <p>Solar mini-grid serving 500+ households. Revenue from pay-as-you-go model, 12-15% projected returns.</p>
+                    
+                    <div class="deal-tags">
+                        <span class="deal-tag">Hedera Verified</span>
+                        <span class="deal-tag">Board Governed</span>
+                        <span class="deal-tag">Monthly Revenue</span>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'register' %}" class="cta-button" style="width: 100%;">Invest Now</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-40">
+                <a href="{% url 'register' %}" class="cta-button cta-secondary">View All Deals</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hedera Verification Section - NEW -->
+    <section class="fade-in" style="background: rgba(0, 200, 83, 0.05);">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">IMMUTABLE VERIFICATION</div>
+                <h2 class="section-title">Secured by <span style="color: var(--hedera-green);">Hedera</span></h2>
+                <p class="section-subtitle">Every transaction, investment, and deal update is permanently recorded on Hedera Consensus Service.</p>
+            </div>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-icon hedera">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <h3 class="card-title">Hedera Consensus Service</h3>
+                    <p>All financial transactions are submitted to Hedera's distributed ledger technology, creating an immutable audit trail that cannot be altered or deleted.</p>
+                    <ul style="margin-top: 20px; padding-left: 20px;">
+                        <li>Every deposit and withdrawal verified</li>
+                        <li>Investment records permanently stored</li>
+                        <li>Deal updates time-stamped and immutable</li>
+                        <li>Transparent audit trail for all users</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon hedera">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="card-title">Verifiable Transparency</h3>
+                    <p>Every transaction includes a Hedera message ID that can be viewed on HashScan, providing complete transparency and trust.</p>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.3); border-radius: var(--radius); padding: 15px; margin-top: 20px;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <code style="color: var(--hedera-green); font-size: 0.8rem;">0.0.48764329@1741623845.672</code>
+                            <a href="#" class="cta-button hedera" style="padding: 8px 16px; font-size: 0.9rem;">
+                                <i class="fas fa-external-link-alt"></i> View on HashScan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-40">
+                <div class="hedera-stat">
+                    <i class="fas fa-check-circle"></i>
+                    <span>All transactions verified on Hedera Testnet</span>
                 </div>
             </div>
         </div>
@@ -1512,45 +1769,100 @@
                 <p class="section-subtitle">Board-controlled fractional investment platforms with professional management and structured returns.</p>
             </div>
             
-            <div class="platform-grid">
+            <div class="grid">
                 <!-- M-Shamba Digital -->
-                <div class="platform-card">
-                    <div class="platform-badge">Agriculture</div>
-                    <h3 class="platform-title">M-Shamba Digital</h3>
+                <div class="card">
+                    <div class="card-icon gradient-1">
+                        <i class="fas fa-tractor"></i>
+                    </div>
+                    <h3 class="card-title">M-Shamba Digital</h3>
                     <div class="platform-minimum">From Ksh 500</div>
                     <p>Fractional farmland investment with professional management. Buy shares of farmland, receive harvest-based returns.</p>
                     <div class="tag-wrapper">
                         <span class="tag" style="background: rgba(58, 134, 255, 0.2); color: var(--accent-3);">Professional Farmers</span>
                         <span class="tag" style="background: rgba(255, 0, 110, 0.2); color: var(--accent-1);">Harvest Returns</span>
                         <span class="tag" style="background: rgba(255, 190, 11, 0.2); color: var(--accent-5);">Land Ownership</span>
+                        <span class="tag" style="background: rgba(0, 200, 83, 0.2); color: var(--hedera-green);">Hedera Verified</span>
                     </div>
                 </div>
                 
-
+                <!-- M-Jengo Digital -->
+                <div class="card">
+                    <div class="card-icon gradient-2">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3 class="card-title">M-Jengo Digital</h3>
+                    <div class="platform-minimum">From Ksh 1,000</div>
+                    <p>Fractional real estate investment. Own shares of residential and commercial properties with rental income and capital appreciation.</p>
+                    <div class="tag-wrapper">
+                        <span class="tag" style="background: rgba(58, 134, 255, 0.2); color: var(--accent-3);">Property Management</span>
+                        <span class="tag" style="background: rgba(255, 0, 110, 0.2); color: var(--accent-1);">Rental Income</span>
+                        <span class="tag" style="background: rgba(255, 190, 11, 0.2); color: var(--accent-5);">Capital Growth</span>
+                        <span class="tag" style="background: rgba(0, 200, 83, 0.2); color: var(--hedera-green);">Hedera Verified</span>
+                    </div>
+                </div>
+                
+                <!-- Solar Pesa -->
+                <div class="card">
+                    <div class="card-icon gradient-3">
+                        <i class="fas fa-solar-panel"></i>
+                    </div>
+                    <h3 class="card-title">Solar Pesa</h3>
+                    <div class="platform-minimum">From Ksh 1,500</div>
+                    <p>Fractional investment in solar energy projects. Revenue from pay-as-you-go solar systems and power purchase agreements.</p>
+                    <div class="tag-wrapper">
+                        <span class="tag" style="background: rgba(58, 134, 255, 0.2); color: var(--accent-3);">Renewable Energy</span>
+                        <span class="tag" style="background: rgba(255, 0, 110, 0.2); color: var(--accent-1);">Usage Revenue</span>
+                        <span class="tag" style="background: rgba(255, 190, 11, 0.2); color: var(--accent-5);">Green Impact</span>
+                        <span class="tag" style="background: rgba(0, 200, 83, 0.2); color: var(--hedera-green);">Hedera Verified</span>
+                    </div>
+                </div>
+                
+                <!-- Safari Share -->
+                <div class="card">
+                    <div class="card-icon gradient-1">
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <h3 class="card-title">Safari Share</h3>
+                    <div class="platform-minimum">From Ksh 2,000</div>
+                    <p>Fractional ownership in tourism assets including safari vehicles, eco-lodges, and experience-based tourism ventures.</p>
+                    <div class="tag-wrapper">
+                        <span class="tag" style="background: rgba(58, 134, 255, 0.2); color: var(--accent-3);">Tourism</span>
+                        <span class="tag" style="background: rgba(255, 0, 110, 0.2); color: var(--accent-1);">Seasonal Returns</span>
+                        <span class="tag" style="background: rgba(255, 190, 11, 0.2); color: var(--accent-5);">Experience Economy</span>
+                        <span class="tag" style="background: rgba(0, 200, 83, 0.2); color: var(--hedera-green);">Hedera Verified</span>
+                    </div>
+                </div>
                 
                 <!-- PesaCare -->
-                <div class="platform-card">
-                    <div class="platform-badge">Healthcare</div>
-                    <h3 class="platform-title">PesaCare</h3>
+                <div class="card">
+                    <div class="card-icon gradient-2">
+                        <i class="fas fa-hospital"></i>
+                    </div>
+                    <h3 class="card-title">PesaCare</h3>
                     <div class="platform-minimum">From Ksh 1,500</div>
                     <p>Fractional investment in medical equipment and clinics with usage-based returns from procedures and consultations.</p>
                     <div class="tag-wrapper">
                         <span class="tag" style="background: rgba(58, 134, 255, 0.2); color: var(--accent-3);">Medical Equipment</span>
                         <span class="tag" style="background: rgba(255, 0, 110, 0.2); color: var(--accent-1);">Usage Revenue</span>
                         <span class="tag" style="background: rgba(255, 190, 11, 0.2); color: var(--accent-5);">Health Impact</span>
+                        <span class="tag" style="background: rgba(0, 200, 83, 0.2); color: var(--hedera-green);">Hedera Verified</span>
                     </div>
                 </div>
                 
                 <!-- TechVest Africa -->
-                <div class="platform-card">
-                    <div class="platform-badge">Technology</div>
-                    <h3 class="platform-title">TechVest Africa</h3>
+                <div class="card">
+                    <div class="card-icon gradient-3">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <h3 class="card-title">TechVest Africa</h3>
                     <div class="platform-minimum">From Ksh 1,000</div>
                     <p>Micro-investments in vetted Kenyan tech startups through structured portfolios with professional due diligence.</p>
                     <div class="tag-wrapper">
                         <span class="tag" style="background: rgba(58, 134, 255, 0.2); color: var(--accent-3);">Startup Portfolio</span>
                         <span class="tag" style="background: rgba(255, 0, 110, 0.2); color: var(--accent-1);">High Growth</span>
                         <span class="tag" style="background: rgba(255, 190, 11, 0.2); color: var(--accent-5);">Diversified Risk</span>
+                        <span class="tag" style="background: rgba(0, 200, 83, 0.2); color: var(--hedera-green);">Hedera Verified</span>
                     </div>
                 </div>
             </div>
@@ -1562,7 +1874,7 @@
         <div class="container">
             <div class="testimonial-content">
                 <div class="testimonial-text">
-                    "We don't believe in passive investment. Every Airvyb platform has professional operators, clear accountability, and board governance."
+                    "We don't believe in passive investment. Every Airvyb platform has professional operators, clear accountability, and board governance. Every transaction is permanently recorded on Hedera."
                 </div>
                 <div style="font-size: 1.2rem; font-weight: 600;">— Airvyb Manifesto</div>
             </div>
@@ -1592,6 +1904,9 @@
                     <div class="card">
                         <h3 class="card-title">Fractional Investment</h3>
                         <p>Invest any amount from Ksh 500. Own fractional shares of real assets with defined ownership rights.</p>
+                        <div style="margin-top: 10px; font-size: 0.9rem; color: var(--hedera-green);">
+                            <i class="fas fa-link"></i> Transaction recorded on Hedera
+                        </div>
                     </div>
                 </div>
                 
@@ -1616,6 +1931,9 @@
                     <div class="card">
                         <h3 class="card-title">Returns Distribution</h3>
                         <p>Get automated returns through M-Pesa based on asset performance and revenue generation.</p>
+                        <div style="margin-top: 10px; font-size: 0.9rem; color: var(--hedera-green);">
+                            <i class="fas fa-link"></i> Every payment verified on Hedera
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1657,6 +1975,7 @@
                         <li>Physical asset verification</li>
                         <li>Background checks on operators</li>
                         <li>Insurance-backed protection</li>
+                        <li><span style="color: var(--hedera-green);">Hedera transaction verification</span></li>
                     </ul>
                 </div>
             </div>
@@ -1667,7 +1986,7 @@
                     <div style="text-align: center; padding: 20px; border-radius: var(--radius); background: rgba(255, 0, 110, 0.1);">
                         <i class="fas fa-check-circle" style="font-size: 1.8rem; color: var(--accent-1); margin-bottom: 15px;"></i>
                         <h4 style="color: var(--accent-1); margin-bottom: 10px;">Pre-Approval Process</h4>
-                        <p>All investments undergo 4-stage board vetting before acceptance.</p>
+                        <p>All deals undergo 4-stage board vetting before acceptance.</p>
                     </div>
                     <div style="text-align: center; padding: 20px; border-radius: var(--radius); background: rgba(131, 56, 236, 0.1);">
                         <i class="fas fa-money-bill-wave" style="font-size: 1.8rem; color: var(--accent-2); margin-bottom: 15px;"></i>
@@ -1678,6 +1997,11 @@
                         <i class="fas fa-chart-line" style="font-size: 1.8rem; color: var(--accent-3); margin-bottom: 15px;"></i>
                         <h4 style="color: var(--accent-3); margin-bottom: 10px;">Performance Monitoring</h4>
                         <p>Real-time tracking of asset performance with board oversight.</p>
+                    </div>
+                    <div style="text-align: center; padding: 20px; border-radius: var(--radius); background: rgba(0, 200, 83, 0.1);">
+                        <i class="fas fa-link" style="font-size: 1.8rem; color: var(--hedera-green); margin-bottom: 15px;"></i>
+                        <h4 style="color: var(--hedera-green); margin-bottom: 10px;">Hedera Verification</h4>
+                        <p>Every transaction immutably recorded on Hedera.</p>
                     </div>
                 </div>
             </div>
@@ -1717,13 +2041,21 @@
                     <h3 class="card-title">Transparent Reporting</h3>
                     <p>Regular updates on asset performance, financial returns, and operational milestones.</p>
                 </div>
+                
+                <div class="card">
+                    <div class="card-icon hedera">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <h3 class="card-title">Hedera Verified</h3>
+                    <p>Every transaction permanently recorded on Hedera Consensus Service for complete transparency and trust.</p>
+                </div>
             </div>
             
             <div class="text-center mt-50">
                 <p style="font-size: 1.2rem; margin-bottom: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
-                    <strong>Ownership is real. Management is professional. Returns are structured.</strong>
+                    <strong>Ownership is real. Management is professional. Returns are structured. Transactions are immutable.</strong>
                 </p>
-                <a href="#join" class="cta-button">Start Investing Today</a>
+                <a href="{% url 'register' %}" class="cta-button">Start Investing Today</a>
             </div>
         </div>
     </section>
@@ -1734,7 +2066,7 @@
             <div class="section-header">
                 <div class="section-label">JOIN AIRVYB</div>
                 <h2 class="section-title">Ready to <span>Invest</span>?</h2>
-                <p class="section-subtitle">Choose execution-led investment with professional management and board governance.</p>
+                <p class="section-subtitle">Choose execution-led investment with professional management, board governance, and Hedera verification.</p>
             </div>
             
             <div class="grid">
@@ -1742,7 +2074,7 @@
                     <h3 class="card-title">For Individuals</h3>
                     <p>Start building your portfolio with fractional ownership of real assets.</p>
                     <div class="mt-30">
-                        <a href="#contact" class="cta-button">Join Now</a>
+                        <a href="{% url 'register' %}" class="cta-button">Join Now</a>
                     </div>
                 </div>
                 
@@ -1750,7 +2082,7 @@
                     <h3 class="card-title">For Corporate & Institutional</h3>
                     <p>Explore tailored investment solutions for corporates, SACCOs, and institutional investors.</p>
                     <div class="mt-30">
-                        <a href="#contact" class="cta-button cta-secondary">Corporate Solutions</a>
+                        <a href="{% url 'register' %}" class="cta-button cta-secondary">Corporate Solutions</a>
                     </div>
                 </div>
                 
@@ -1758,7 +2090,7 @@
                     <h3 class="card-title">For Partners & Operators</h3>
                     <p>Join Airvyb's network of professional operators and platform partners.</p>
                     <div class="mt-30">
-                        <a href="#contact" class="cta-button">Partner With Us</a>
+                        <a href="{% url 'register' %}" class="cta-button">Partner With Us</a>
                     </div>
                 </div>
             </div>
@@ -1772,7 +2104,7 @@
                 <div class="footer-column">
                     <div class="footer-logo">Air<span>vyb</span> Capital</div>
                     <div class="footer-tagline">Execution-led fractional investment platform.</div>
-                    <p>Board-governed investment platforms with professional management and structured returns.</p>
+                    <p>Board-governed investment platforms with professional management and structured returns. Secured by Hedera Consensus Service.</p>
                     <div class="social-links">
                         <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
                         <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
@@ -1782,24 +2114,24 @@
                 </div>
                 
                 <div class="footer-column footer-links">
+                    <h3>Active Deals</h3>
+                    <ul>
+                        <li><a href="#deals"><i class="fas fa-chevron-right"></i> Kiambu Avocado Farm</a></li>
+                        <li><a href="#deals"><i class="fas fa-chevron-right"></i> Thika Greens Phase 2</a></li>
+                        <li><a href="#deals"><i class="fas fa-chevron-right"></i> Kajiado Solar Mini-Grid</a></li>
+                        <li><a href="#deals"><i class="fas fa-chevron-right"></i> All Deals</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column footer-links">
                     <h3>Platforms</h3>
                     <ul>
                         <li><a href="#platforms"><i class="fas fa-chevron-right"></i> M-Shamba Digital</a></li>
                         <li><a href="#platforms"><i class="fas fa-chevron-right"></i> M-Jengo Digital</a></li>
                         <li><a href="#platforms"><i class="fas fa-chevron-right"></i> Solar Pesa</a></li>
                         <li><a href="#platforms"><i class="fas fa-chevron-right"></i> Safari Share</a></li>
-                        <li><a href="#platforms"><i class="fas fa-chevron-right"></i> All Platforms</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column footer-links">
-                    <h3>Core Principles</h3>
-                    <ul>
-                        <li><a href="#execution-model"><i class="fas fa-chevron-right"></i> Execution-First</a></li>
-                        <li><a href="#governance"><i class="fas fa-chevron-right"></i> Board Governance</a></li>
-                        <li><a href="#process"><i class="fas fa-chevron-right"></i> Structured Process</a></li>
-                        <li><a href="#for-investors"><i class="fas fa-chevron-right"></i> Investor Protection</a></li>
-                        <li><a href="#governance"><i class="fas fa-chevron-right"></i> Fraud Prevention</a></li>
+                        <li><a href="#platforms"><i class="fas fa-chevron-right"></i> PesaCare</a></li>
+                        <li><a href="#platforms"><i class="fas fa-chevron-right"></i> TechVest Africa</a></li>
                     </ul>
                 </div>
                 
@@ -1809,14 +2141,14 @@
                         <li><a href="mailto:capital@airvyb.com"><i class="fas fa-envelope"></i> capital@airvyb.co.ke</a></li>
                         <li><a href="#"><i class="fas fa-globe"></i> capital.airvyb.co.ke</a></li>
                         <li><a href="#"><i class="fas fa-map-marker-alt"></i> Investment Headquarters</a></li>
-                        <li style="margin-top: 20px;"><a href="#join" class="cta-button" style="padding: 12px 24px; font-size: 0.9rem;">Start Investing</a></li>
+                        <li style="margin-top: 20px;"><a href="{% url 'register' %}" class="cta-button" style="padding: 12px 24px; font-size: 0.9rem;">Start Investing</a></li>
                     </ul>
                 </div>
             </div>
             
             <div class="copyright">
-                <p>&copy; <span id="currentYear"></span> Airvyb Capital. All rights reserved. Execution-led fractional investment.</p>
-                <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7;">Investments are board-governed with professional management. Past performance doesn't guarantee future returns.</p>
+                <p>&copy; <span id="currentYear"></span> Airvyb Capital. All rights reserved. Execution-led fractional investment. Secured by Hedera Consensus Service.</p>
+                <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7;">Investments are board-governed with professional management. Past performance doesn't guarantee future returns. All transactions verified on Hedera.</p>
             </div>
         </div>
     </footer>
@@ -1917,6 +2249,7 @@
                 "Professional asset management with disciplined execution...",
                 "Real assets, real returns, real ownership...",
                 "From agriculture to technology, from Ksh 500...",
+                "Every transaction verified on Hedera Consensus Service...",
             ];
             
             let sequenceIndex = 0;

@@ -9,14 +9,32 @@ from django.views.decorators.http import require_POST, require_GET
 from decimal import Decimal
 import json
 import logging
+import string
+import random
 
 from .models import Deal, DealOptIn, DealCategory, DealReport, DealUpdate
+from finance.models import Wallet, Transaction
+from finance.hcs import submit_message as submit_hcs_transaction
+from hiero.nft import create_nft, mint_nft, associate_nft
 
 logger = logging.getLogger(__name__)
 
 # ============================================
 # DEAL LISTING
 # ============================================
+
+def id_generator(size=12, chars=string.ascii_uppercase + string.digits):
+    """Generate random reference ID"""
+    return ''.join(random.choice(chars) for _ in range(size))
+
+def get_client_ip(request):
+    """Get client IP address"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 @require_GET
 def deal_list(request):
@@ -119,21 +137,55 @@ def opt_in_deal(request, deal_id):
         messages.error(request, 'No available slots for this deal.')
         return redirect('deals:detail', slug=deal.slug)
     
+    # Check Wallet Balance
+    wallet = Wallet.objects.get(user=request.user)
+    bal = wallet.balance
+    if bal < deal.opt_in_amount:
+        messages.error(request, f'You do not have sufficient Funds in your Account to opt in to this deal, please add funds and try again.')
+        return redirect('deals:detail', slug=deal.slug)
+    
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                # Deduct Payment amount from Wallet
+                wallet.balance -= deal.opt_in_amount
+                wallet.save()
+
+                # Create Transaction Record on db and hcs
+                reference = f"OPTIN-{timezone.now().strftime('%Y%m%d%H%M%S')}-{request.user.id}-{id_generator(6)}"
+                Transaction.objects.create(
+                    user=request.user,
+                    transaction_type='deposit',
+                    payment_method='mpesa',
+                    reference=reference,
+                    amount=deal.opt_in_amount,
+                    fee=0,
+                    net_amount=deal.opt_in_amount,
+                    balance_before=wallet.balance + deal.opt_in_amount,
+                    balance_after=wallet.balance,
+                    phone_number=request.user.phone_number,
+                    description=f"Deal opt in of KES {deal.opt_in_amount:,.0f} from {request.user.phone_number}",
+                    status='completed',
+                    ip_address=get_client_ip(request),
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    initiated_at=timezone.now(),
+                    metadata={
+                        'payment_gateway': 'intasend',
+                        'provider': 'm-pesa',
+                        'external_reference': reference,
+                        'initiation_source': 'web'
+                    }
+                )
                 # Create opt-in record
                 opt_in = DealOptIn.objects.create(
                     user=request.user,
                     deal=deal,
                     amount=deal.opt_in_amount,
-                    status='pending',
+                    status='confirmed',
                     ip_address=get_client_ip(request),
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
                 
-                # For now, simulate payment success
-                # In production, integrate with M-Pesa/wallet
                 opt_in.confirm()
                 
                 messages.success(
@@ -226,15 +278,17 @@ def aml_dashboard(request):
     return render(request, 'deals/aml_dashboard.html', context)
 
 
-# ============================================
-# HELPER FUNCTIONS
-# ============================================
+# CREATE DEAL
+@login_required
+def aml_createDeal(request):
+    """Dashboard for AML to manage deals"""
+    if not request.user.is_staff:
+        messages.error(request, 'Access denied.')
+        return redirect('deals:list')
+    
+    # Handle Deal POST
 
-def get_client_ip(request):
-    """Get client IP address"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+    # Handle NFT Creation
+    receipt = create_nft(title="deal Title", symbol="NFTSYMBOL", max_supply=100)
+    
+    return render(request, 'deals/aml_dashboard.html')
