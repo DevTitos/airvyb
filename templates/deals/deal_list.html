@@ -4,106 +4,7 @@
 
 {% block title %}Investment Deals | Airvyb{% endblock %}
 
-{% block content %}
-<div class="deals-container">
-    <!-- Header -->
-    <div class="page-header">
-        <h1>Investment Deals</h1>
-        <p>Opt in to specific deals managed by Airvyb Management Ltd (AML)</p>
-    </div>
-    
-    <!-- Filters -->
-    <div class="filters-bar">
-        <form method="GET" class="filter-form">
-            <select name="category" onchange="this.form.submit()">
-                <option value="">All Categories</option>
-                {% for cat in categories %}
-                <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
-                    {{ cat.name }}
-                </option>
-                {% endfor %}
-            </select>
-            
-            <select name="status" onchange="this.form.submit()">
-                <option value="opt_in_open" {% if current_status == 'opt_in_open' %}selected{% endif %}>Opt-In Open</option>
-                <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active Deals</option>
-                <option value="setup" {% if current_status == 'setup' %}selected{% endif %}>In Setup</option>
-                <option value="closed" {% if current_status == 'closed' %}selected{% endif %}>Closed Deals</option>
-            </select>
-        </form>
-    </div>
-    
-    <!-- Deals Grid -->
-    <div class="deals-grid">
-        {% for deal in deals %}
-        <div class="deal-card">
-            {% if deal.cover_image %}
-            <img src="{{ deal.cover_image.url }}" alt="{{ deal.title }}" class="deal-image">
-            {% else %}
-            <div class="deal-image-placeholder">
-                <i class="fas fa-{{ deal.category.icon|default:'briefcase' }}"></i>
-            </div>
-            {% endif %}
-            
-            <div class="deal-content">
-                <span class="deal-category">{{ deal.category.name|default:'Uncategorized' }}</span>
-                <h3 class="deal-title">{{ deal.title }}</h3>
-                <p class="deal-objective">{{ deal.objective|truncatechars:100 }}</p>
-                
-                <div class="deal-meta">
-                    <div class="meta-item">
-                        <i class="fas fa-tag"></i>
-                        <span>Opt-In: Ksh {{ deal.opt_in_amount|floatformat:0|intcomma }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>{{ deal.duration_months }} months</span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <span class="risk-{{ deal.risk_level }}">{{ deal.get_risk_level_display }}</span>
-                    </div>
-                </div>
-                
-                {% if deal.is_opt_in_open %}
-                <div class="deal-progress">
-                    <div class="progress-header">
-                        <span>Opt-Ins: {{ deal.total_opted_in }}{% if deal.max_opt_in_members %} / {{ deal.max_opt_in_members }}{% endif %}</span>
-                        <span>{{ deal.progress_percentage|floatformat:0 }}%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ deal.progress_percentage|floatformat:0 }}%;"></div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <div class="deal-footer">
-                    <span class="deal-status status-{{ deal.status }}">
-                        {{ deal.get_status_display }}
-                    </span>
-                    
-                    <a href="{% url 'deals:detail' deal.slug %}" class="btn-view">
-                        View Deal <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-                
-                {% if deal.id in user_opt_in_deal_ids %}
-<div class="opted-in-badge">
-    <i class="fas fa-check-circle"></i> You're opted in
-</div>
-{% endif %}
-            </div>
-        </div>
-        {% empty %}
-        <div class="empty-state">
-            <i class="fas fa-search"></i>
-            <h3>No Deals Found</h3>
-            <p>Check back later for new investment opportunities.</p>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
+{% block extra_css %}
 <style>
 .deals-container {
     max-width: 1400px;
@@ -124,9 +25,24 @@
     margin-bottom: 10px;
 }
 
+.page-header p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+/* Filters */
 .filters-bar {
     margin-bottom: 30px;
     display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.filter-form {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
     justify-content: center;
 }
 
@@ -136,10 +52,21 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: var(--radius);
     color: var(--text);
-    margin: 0 5px;
     cursor: pointer;
+    min-width: 200px;
 }
 
+.filter-form select:hover {
+    border-color: var(--accent-1);
+}
+
+.filter-form select:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 2px rgba(255,0,110,0.2);
+}
+
+/* Deals Grid */
 .deals-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -230,6 +157,25 @@
 .risk-medium { color: var(--accent-5); }
 .risk-high { color: var(--accent-1); }
 
+/* NFT Badge */
+.nft-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(0,200,83,0.1);
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: 20px;
+    color: #00c853;
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.nft-badge i {
+    font-size: 0.8rem;
+}
+
+/* Deal Progress */
 .deal-progress {
     margin: 20px 0;
 }
@@ -256,6 +202,7 @@
     transition: width 0.5s ease;
 }
 
+/* Deal Footer */
 .deal-footer {
     display: flex;
     justify-content: space-between;
@@ -286,6 +233,16 @@
     color: var(--accent-5);
 }
 
+.status-sourcing {
+    background: rgba(108,117,125,0.1);
+    color: #6c757d;
+}
+
+.status-closed {
+    background: rgba(108,117,125,0.1);
+    color: #6c757d;
+}
+
 .btn-view {
     padding: 8px 16px;
     background: rgba(255,255,255,0.05);
@@ -293,6 +250,9 @@
     color: var(--text);
     text-decoration: none;
     transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-view:hover {
@@ -300,23 +260,107 @@
     color: white;
 }
 
+/* Opted-in Badge */
 .opted-in-badge {
     position: absolute;
     top: 15px;
     right: 15px;
-    background: rgba(0,200,83,0.9);
+    background: rgba(0,200,83,0.95);
     color: white;
     padding: 8px 15px;
     border-radius: 20px;
     font-size: 0.9rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,200,83,0.3);
 }
 
+.opted-in-badge i {
+    font-size: 1rem;
+}
+
+/* NFT Proof Link */
+.nft-proof-link {
+    position: absolute;
+    top: 70px;
+    right: 15px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: var(--transition);
+}
+
+.nft-proof-link:hover {
+    background: var(--accent-1);
+    color: white;
+    border-color: var(--accent-1);
+}
+
+/* Hedera Verified Badge */
+.hedera-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 5px;
+    color: #00c853;
+    font-size: 0.8rem;
+    cursor: help;
+}
+
+/* Tooltip */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #fff;
+    text-align: left;
+    border-radius: 8px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    border: 1px solid rgba(0,200,83,0.3);
+    pointer-events: none;
+    white-space: normal;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Empty State */
 .empty-state {
     grid-column: 1 / -1;
     text-align: center;
     padding: 60px;
     color: var(--text-light);
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .empty-state i {
@@ -325,6 +369,236 @@
     color: var(--accent-1);
     opacity: 0.5;
 }
-</style>
 
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .deals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filter-form select {
+        width: 100%;
+    }
+    
+    .opted-in-badge {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+    
+    .nft-proof-link {
+        top: 65px;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="deals-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>Investment Deals</h1>
+        <p>Opt in to specific deals managed by Airvyb Management Ltd (AML)</p>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-bar">
+        <form method="GET" class="filter-form">
+            <select name="category" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <select name="status" onchange="this.form.submit()">
+                <option value="opt_in_open" {% if current_status == 'opt_in_open' %}selected{% endif %}>Opt-In Open</option>
+                <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active Deals</option>
+                <option value="setup" {% if current_status == 'setup' %}selected{% endif %}>In Setup</option>
+                <option value="sourcing" {% if current_status == 'sourcing' %}selected{% endif %}>Sourcing</option>
+                <option value="closed" {% if current_status == 'closed' %}selected{% endif %}>Closed Deals</option>
+            </select>
+        </form>
+    </div>
+    
+    <!-- Deals Grid -->
+    <div class="deals-grid">
+        {% for deal in deals %}
+        <div class="deal-card">
+            <!-- Cover Image -->
+            {% if deal.cover_image %}
+            <img src="{{ deal.cover_image.url }}" alt="{{ deal.title }}" class="deal-image">
+            {% else %}
+            <div class="deal-image-placeholder">
+                <i class="fas fa-{{ deal.category.icon|default:'briefcase' }}"></i>
+            </div>
+            {% endif %}
+            
+            <!-- User Status Badges -->
+            {% if deal.id in user_opt_in_deal_ids %}
+                <div class="opted-in-badge">
+                    <i class="fas fa-check-circle"></i> Opted In
+                </div>
+
+                <!-- Loop through opt_ins to find match for this deal -->
+                {% for opt_in_id, opt_in in user_opt_ins.items %}
+                    {% if opt_in.deal_id == deal.id and opt_in.hedera_nft_id %}
+                    <a href="{% url 'deals:nft_proof' opt_in.id %}" class="nft-proof-link tooltip">
+                        <i class="fas fa-link"></i> NFT Proof
+                        <span class="tooltip-text">
+                            <strong>NFT Minted!</strong><br>
+                            Serial #{{ opt_in.hedera_serial_number }}<br>
+                            Click to view proof
+                        </span>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Deal Content -->
+            <div class="deal-content">
+                <span class="deal-category">
+                    {{ deal.category.name|default:'Uncategorized' }}
+                    {% if deal.hedera_token_id %}
+                    <span class="hedera-verified tooltip">
+                        <i class="fas fa-link"></i>
+                        <span class="tooltip-text">
+                            <strong>NFT Collection</strong><br>
+                            Token ID: {{ deal.hedera_token_id|truncatechars:20 }}<br>
+                            Click to view on HashScan
+                        </span>
+                    </span>
+                    {% endif %}
+                </span>
+                
+                <h3 class="deal-title">{{ deal.title }}</h3>
+                <p class="deal-objective">{{ deal.objective|truncatechars:100 }}</p>
+                
+                <div class="deal-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-tag"></i>
+                        <span>Ksh {{ deal.opt_in_amount|floatformat:0|intcomma }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>{{ deal.duration_months }} months</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span class="risk-{{ deal.risk_level }}">{{ deal.get_risk_level_display }}</span>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar (only for opt-in open deals) -->
+                {% if deal.is_opt_in_open %}
+                <div class="deal-progress">
+                    <div class="progress-header">
+                        <span>
+                            <i class="fas fa-users"></i>
+                            {{ deal.total_opted_in }}{% if deal.max_opt_in_members %} / {{ deal.max_opt_in_members }}{% endif %}
+                        </span>
+                        <span>{{ deal.progress_percentage|floatformat:0 }}% Funded</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ deal.progress_percentage|floatformat:0 }}%;"></div>
+                    </div>
+                    {% if deal.available_slots is not None %}
+                    <small style="color: var(--text-light); margin-top: 5px; display: block;">
+                        {{ deal.available_slots }} slot{{ deal.available_slots|pluralize }} available
+                    </small>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Deal Footer -->
+                <div class="deal-footer">
+                    <span class="deal-status status-{{ deal.status }}">
+                        {{ deal.get_status_display }}
+                    </span>
+                    
+                    <a href="{% url 'deals:detail' deal.slug %}" class="btn-view">
+                        View Deal <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h3>No Deals Found</h3>
+            <p>Check back later for new investment opportunities.</p>
+            {% if request.user.is_staff %}
+            <a href="{% url 'deals:aml_create_deal' %}" class="btn btn-primary" style="margin-top: 20px;">
+                <i class="fas fa-plus"></i> Create Your First Deal
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination (if needed) -->
+    {% if deals.has_other_pages %}
+    <div class="pagination">
+        {% if deals.has_previous %}
+        <a href="?page={{ deals.previous_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" class="btn btn-outline">
+            <i class="fas fa-chevron-left"></i> Previous
+        </a>
+        {% endif %}
+        
+        <span class="current-page">
+            Page {{ deals.number }} of {{ deals.paginator.num_pages }}
+        </span>
+        
+        {% if deals.has_next %}
+        <a href="?page={{ deals.next_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" class="btn btn-outline">
+            Next <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add template filter for dictionary access -->
+{% if user_opt_ins %}
+<script>
+// Helper to access dictionary in template
+document.addEventListener('DOMContentLoaded', function() {
+    // This is handled by Django template tags
+});
+</script>
+{% endif %}
+
+<script>
+// Optional: Add tooltip initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // You can add any JavaScript interactions here
+    console.log('Deals page loaded');
+});
+
+// Function to check opt-in status via AJAX (optional)
+function checkOptInStatus(dealId) {
+    fetch(`/deals/api/check-opt-in/${dealId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.opted_in) {
+                location.reload(); // Refresh to show badge
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+</script>
 {% endblock %}

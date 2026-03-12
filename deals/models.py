@@ -2,9 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
-from django.conf import settings
+from django.utils.text import slugify
 from decimal import Decimal
-from finance.models import Transaction
 import uuid
 
 User = get_user_model()
@@ -14,10 +13,10 @@ def generate_uuid():
     return f"{uuid.uuid4().hex[:12].upper()}"
 
 class DealCategory(models.Model):
-    """Categories for deals (e.g., M-Pesa Outlet, Service Unit, Asset)"""
+    """Categories for deals"""
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, help_text="Font Awesome icon class", default="briefcase")
+    icon = models.CharField(max_length=50, default="briefcase")
     order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     
@@ -30,7 +29,7 @@ class DealCategory(models.Model):
 
 
 class Deal(models.Model):
-    """Deal sourced by Airvyb Management Ltd (AML)"""
+    """Deal sourced by Airvyb Management Ltd (AML) - NFT Collection"""
     
     RISK_LEVELS = [
         ('low', 'Low Risk'),
@@ -39,16 +38,16 @@ class Deal(models.Model):
     ]
     
     STATUS_CHOICES = [
-        ('sourcing', 'Sourcing'),           # Deal being identified
-        ('disclosed', 'Disclosed'),          # Shared with members
-        ('opt_in_open', 'Opt-In Open'),      # Members can opt in
-        ('opt_in_closed', 'Opt-In Closed'),  # Opt-in period ended
-        ('setup', 'Setup'),                   # AML setting up operations
-        ('active', 'Active'),                 # Deal running
-        ('monitoring', 'Monitoring'),         # Under review
-        ('paused', 'Paused'),                  # Temporarily halted
-        ('closed', 'Closed'),                  # Deal ended
-        ('scaling', 'Scaling'),                # Expanding successful deal
+        ('sourcing', 'Sourcing'),
+        ('disclosed', 'Disclosed'),
+        ('opt_in_open', 'Opt-In Open'),
+        ('opt_in_closed', 'Opt-In Closed'),
+        ('setup', 'Setup'),
+        ('active', 'Active'),
+        ('monitoring', 'Monitoring'),
+        ('paused', 'Paused'),
+        ('closed', 'Closed'),
+        ('scaling', 'Scaling'),
     ]
     
     # Basic Info
@@ -57,72 +56,65 @@ class Deal(models.Model):
     category = models.ForeignKey(DealCategory, on_delete=models.SET_NULL, null=True, related_name='deals')
     reference = models.CharField(max_length=50, unique=True, default=generate_uuid)
     
-    # Deal Details (from AML)
-    objective = models.TextField(help_text="Deal objective - what this deal aims to achieve")
-    description = models.TextField(help_text="Detailed description of the deal")
+    # Deal Details
+    objective = models.TextField()
+    description = models.TextField()
     
     # Financials
     opt_in_amount = models.DecimalField(
         max_digits=14, decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))],
-        help_text="Fixed amount each member pays to opt in"
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     total_capital_required = models.DecimalField(
         max_digits=14, decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))],
-        help_text="Total capital needed for the deal"
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
-    min_opt_in_members = models.IntegerField(
-        default=1,
-        help_text="Minimum members needed for deal to proceed"
-    )
-    max_opt_in_members = models.IntegerField(
-        null=True, blank=True,
-        help_text="Maximum members allowed (null = unlimited)"
-    )
+    min_opt_in_members = models.IntegerField(default=1)
+    max_opt_in_members = models.IntegerField(null=True, blank=True)
     
     # Operations
-    expected_operations = models.TextField(
-        help_text="What the deal will do (not promised returns)"
-    )
+    expected_operations = models.TextField()
     risk_level = models.CharField(max_length=20, choices=RISK_LEVELS, default='medium')
-    duration_months = models.IntegerField(
-        validators=[MinValueValidator(1)],
-        help_text="Expected duration in months"
-    )
+    duration_months = models.IntegerField(validators=[MinValueValidator(1)])
     
-    # Management
+    # Management Fees
     management_fee_percent = models.DecimalField(
         max_digits=5, decimal_places=2,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
-        default=10.00,
-        help_text="AML management fee percentage of net profit"
+        default=10.00
     )
     performance_carry_percent = models.DecimalField(
         max_digits=5, decimal_places=2,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
-        default=20.00,
-        help_text="AML performance carry percentage of profits"
+        default=20.00
     )
     
     # Timeline
     disclosed_at = models.DateTimeField(null=True, blank=True)
     opt_in_start = models.DateTimeField(null=True, blank=True)
     opt_in_end = models.DateTimeField(null=True, blank=True)
-    setup_start = models.DateTimeField(null=True, blank=True)
     launched_at = models.DateTimeField(null=True, blank=True)
-    expected_end_date = models.DateField(null=True, blank=True)
     closed_at = models.DateTimeField(null=True, blank=True)
     
     # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='sourcing')
     
-    # Images/Documents
+    # Images
     cover_image = models.ImageField(upload_to='deals/covers/', null=True, blank=True)
     
     # Stats (calculated)
     total_opted_in = models.IntegerField(default=0)
     total_collected = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    
+    # Hedera NFT Collection Fields
+    hedera_token_id = models.CharField(max_length=50, null=True, blank=True, unique=True,
+                                       help_text="Hedera Token ID for this NFT collection")
+    hedera_topic_id = models.CharField(max_length=50, null=True, blank=True,
+                                      help_text="Hedera topic for deal updates")
+    hedera_metadata_uri = models.URLField(max_length=500, null=True, blank=True,
+                                         help_text="URI to collection metadata on IPFS")
+    hedera_supply_key_encrypted = models.TextField(null=True, blank=True,
+                                                  help_text="Encrypted supply key for minting NFTs")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -134,6 +126,7 @@ class Deal(models.Model):
         indexes = [
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['reference']),
+            models.Index(fields=['hedera_token_id']),
         ]
     
     def __str__(self):
@@ -141,7 +134,6 @@ class Deal(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            from django.utils.text import slugify
             base_slug = slugify(self.title)
             slug = base_slug
             counter = 1
@@ -153,14 +145,12 @@ class Deal(models.Model):
     
     @property
     def available_slots(self):
-        """Get number of available opt-in slots"""
         if self.max_opt_in_members:
             return max(0, self.max_opt_in_members - self.total_opted_in)
-        return None  # Unlimited
+        return None
     
     @property
     def is_opt_in_open(self):
-        """Check if opt-in is currently open"""
         now = timezone.now()
         return (
             self.status == 'opt_in_open' and
@@ -171,19 +161,19 @@ class Deal(models.Model):
     
     @property
     def progress_percentage(self):
-        """Calculate funding progress percentage"""
         if self.total_capital_required > 0:
             return (self.total_collected / self.total_capital_required) * 100
         return 0
     
     @property
-    def can_proceed(self):
-        """Check if deal has enough opt-ins to proceed"""
-        return self.total_opted_in >= self.min_opt_in_members
+    def hedera_explorer_url(self):
+        if self.hedera_token_id:
+            return f"https://hashscan.io/testnet/token/{self.hedera_token_id}"
+        return None
 
 
 class DealOptIn(models.Model):
-    """Member opt-in to a deal"""
+    """Member opt-in to a deal - NFT minting proof"""
     
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -200,8 +190,16 @@ class DealOptIn(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     # Payment
-    transaction = models.ForeignKey(Transaction, on_delete=models.SET_NULL, null=True, blank=True)
+    transaction = models.ForeignKey('finance.Transaction', on_delete=models.SET_NULL, null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    
+    # Hedera NFT Fields - Proof of opt-in
+    hedera_serial_number = models.IntegerField(null=True, blank=True,
+                                               help_text="NFT serial number for this opt-in")
+    hedera_nft_id = models.CharField(max_length=100, null=True, blank=True,
+                                     help_text="Full NFT ID (token_id/serial)")
+    hedera_message_id = models.CharField(max_length=100, null=True, blank=True,
+                                        help_text="Hedera message ID for NFT minting")
     
     # Metadata
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -213,9 +211,13 @@ class DealOptIn(models.Model):
     class Meta:
         ordering = ['-created_at']
         unique_together = ['user', 'deal']  # One opt-in per user per deal
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['hedera_nft_id']),
+        ]
     
     def __str__(self):
-        return f"{self.user.email} - {self.deal.title} - {self.amount}"
+        return f"{self.user.email} - {self.deal.title}"
     
     def confirm(self):
         """Confirm opt-in after payment"""
@@ -227,6 +229,12 @@ class DealOptIn(models.Model):
         self.deal.total_opted_in += 1
         self.deal.total_collected += self.amount
         self.deal.save()
+    
+    @property
+    def hedera_explorer_url(self):
+        if self.hedera_nft_id:
+            return f"https://hashscan.io/testnet/token/{self.hedera_nft_id}"
+        return None
 
 
 class DealRevenue(models.Model):
@@ -243,7 +251,7 @@ class DealRevenue(models.Model):
         ordering = ['-period_end']
     
     def __str__(self):
-        return f"{self.deal.title} - {self.period_start} to {self.period_end}: {self.amount}"
+        return f"{self.deal.title} - {self.period_start}: {self.amount}"
 
 
 class DealCost(models.Model):
@@ -293,32 +301,36 @@ class DealProfitDistribution(models.Model):
     
     distributed_at = models.DateTimeField(auto_now_add=True)
     
+    # Hedera distribution tracking
+    distribution_topic_id = models.CharField(max_length=50, null=True, blank=True,
+                                            help_text="Hedera topic for distribution record")
+    
     class Meta:
         ordering = ['-period_end']
     
     def __str__(self):
-        return f"{self.deal.title} - {self.period_start} to {self.period_end}"
+        return f"{self.deal.title} - {self.period_start}"
 
 
 class DealReport(models.Model):
     """Monthly reports for members"""
     deal = models.ForeignKey(Deal, on_delete=models.CASCADE, related_name='reports')
     title = models.CharField(max_length=200)
-    period = models.DateField(help_text="Month/quarter of the report")
+    period = models.DateField()
     
-    # Report content
     summary = models.TextField()
     revenue_details = models.TextField(blank=True)
     cost_details = models.TextField(blank=True)
-    aml_share = models.DecimalField(max_digits=14, decimal_places=2, help_text="AML management fee + carry")
+    aml_share = models.DecimalField(max_digits=14, decimal_places=2)
     net_profit = models.DecimalField(max_digits=14, decimal_places=2)
     
-    # Status
-    status_update = models.CharField(max_length=100, help_text="e.g., Active, Monitoring, Closed")
+    status_update = models.CharField(max_length=100)
     next_steps = models.TextField(blank=True)
     
-    # File
     pdf_report = models.FileField(upload_to='deals/reports/', null=True, blank=True)
+    
+    # Hedera report record
+    hedera_message_id = models.CharField(max_length=100, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -335,6 +347,9 @@ class DealUpdate(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     is_important = models.BooleanField(default=False)
+    
+    # Hedera update record
+    hedera_message_id = models.CharField(max_length=100, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     

@@ -4,23 +4,198 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction as db_transaction
 from django.views.decorators.http import require_POST, require_GET
 from decimal import Decimal
 import json
 import logging
 import string
 import random
+import os
 
 from .models import Deal, DealOptIn, DealCategory, DealReport, DealUpdate
 from finance.models import Wallet, Transaction
-from finance.hcs import submit_message as submit_hcs_transaction
-from hiero.nft import create_nft, mint_nft, associate_nft
+from finance.hedera_consensus import hedera_consensus
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 # ============================================
-# DEAL LISTING
+# HEDERA NFT UTILITIES
+# ============================================
+
+def create_hedera_nft_collection(deal, supply_key=None):
+    """
+    Create an NFT collection for a deal on Hedera
+    Returns token_id if successful, None otherwise
+    """
+    try:
+        from hiero_sdk_python import (
+            Client, Network, AccountId, PrivateKey,
+            TokenCreateTransaction, TokenType, TokenSupplyType
+        )
+        
+        # Initialize client
+        network = Network(network=getattr(settings, 'HEDERA_NETWORK', 'testnet'))
+        client = Client(network)
+        operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
+        operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
+        client.set_operator(operator_id, operator_key)
+        
+        # Generate supply key if not provided
+        if not supply_key:
+            supply_key = PrivateKey.generate()
+            supply_key_public = supply_key.public_key()
+            # Store encrypted supply key in deal
+            deal.hedera_supply_key_encrypted = hedera_consensus.cipher.encrypt(
+                supply_key.to_string().encode()
+            ).decode()
+        else:
+            supply_key_public = supply_key.public_key()
+        
+        # Prepare metadata
+        metadata = {
+            "name": deal.title,
+            "description": deal.objective[:200],
+            "creator": "Airvyb Management Ltd",
+            "deal_reference": deal.reference,
+            "opt_in_amount": str(deal.opt_in_amount),
+            "risk_level": deal.risk_level,
+            "duration_months": deal.duration_months,
+            "created_at": timezone.now().isoformat()
+        }
+        
+        # Create NFT collection
+        transaction = (
+            TokenCreateTransaction()
+            .set_token_name(f"Airvyb Deal: {deal.title[:30]}")
+            .set_token_symbol(f"AVB{deal.reference[:4]}")
+            .set_token_type(TokenType.NON_FUNGIBLE_UNIQUE)
+            .set_supply_type(TokenSupplyType.FINITE)
+            .set_max_supply(deal.max_opt_in_members or 1000)
+            .set_treasury_account_id(operator_id)
+            .set_admin_key(operator_key.public_key())
+            .set_supply_key(supply_key_public)
+            .set_metadata(json.dumps(metadata))
+            .set_max_transaction_fee(20_000_000)  # 20 HBAR max fee
+            .freeze_with(client)
+        )
+        
+        transaction.sign(operator_key)
+        if supply_key:
+            transaction.sign(supply_key)
+        
+        receipt = transaction.execute(client)
+        
+        if receipt.token_id:
+            token_id = str(receipt.token_id)
+            
+            # Create a topic for deal updates
+            topic_data = {
+                "deal_id": deal.id,
+                "deal_reference": deal.reference,
+                "title": deal.title,
+                "type": "deal_updates"
+            }
+            topic_result = hedera_consensus.submit_message(topic_data)
+            
+            if topic_result.get('status') == 'success':
+                deal.hedera_topic_id = topic_result.get('topic')
+            
+            return token_id
+            
+    except Exception as e:
+        logger.error(f"Failed to create NFT collection for deal {deal.id}: {str(e)}", exc_info=True)
+        return None
+
+
+def mint_opt_in_nft(opt_in):
+    """
+    Mint an NFT for a confirmed opt-in
+    Returns serial number if successful, None otherwise
+    """
+    try:
+        from hiero_sdk_python import (
+            Client, Network, AccountId, PrivateKey,
+            TokenMintTransaction
+        )
+        
+        deal = opt_in.deal
+        
+        # Check if deal has NFT collection
+        if not deal.hedera_token_id:
+            logger.error(f"Deal {deal.id} has no NFT collection")
+            return None
+        
+        # Initialize client
+        network = Network(network=getattr(settings, 'HEDERA_NETWORK', 'testnet'))
+        client = Client(network)
+        operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
+        operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
+        client.set_operator(operator_id, operator_key)
+        
+        # Decrypt supply key
+        supply_key = None
+        if deal.hedera_supply_key_encrypted:
+            supply_key_str = hedera_consensus.cipher.decrypt(
+                deal.hedera_supply_key_encrypted.encode()
+            ).decode()
+            supply_key = PrivateKey.from_string_ed25519(supply_key_str)
+        
+        # Prepare NFT metadata
+        metadata = {
+            "opt_in_reference": opt_in.reference,
+            "user_id": opt_in.user.id,
+            "user_email": opt_in.user.email,
+            "amount": str(opt_in.amount),
+            "opted_in_at": opt_in.created_at.isoformat(),
+            "deal_reference": deal.reference,
+            "deal_title": deal.title,
+            "type": "deal_opt_in"
+        }
+        
+        # Mint NFT
+        transaction = (
+            TokenMintTransaction()
+            .set_token_id(deal.hedera_token_id)
+            .set_metadata([json.dumps(metadata).encode()])
+            .freeze_with(client)
+        )
+        
+        transaction.sign(operator_key)
+        if supply_key:
+            transaction.sign(supply_key)
+        
+        receipt = transaction.execute(client)
+        
+        if receipt.serials and len(receipt.serials) > 0:
+            serial_number = receipt.serials[0]
+            nft_id = f"{deal.hedera_token_id}/{serial_number}"
+            
+            # Store NFT info in opt-in
+            opt_in.hedera_serial_number = serial_number
+            opt_in.hedera_nft_id = nft_id
+            opt_in.hedera_message_id = str(receipt.transaction_id)
+            opt_in.save(update_fields=['hedera_serial_number', 'hedera_nft_id', 'hedera_message_id'])
+            
+            # Log on HCS
+            hedera_consensus.submit_message({
+                "type": "nft_minted",
+                "opt_in_id": opt_in.id,
+                "nft_id": nft_id,
+                "serial": serial_number,
+                "user": opt_in.user.email
+            }, topic_id=deal.hedera_topic_id)
+            
+            return serial_number
+            
+    except Exception as e:
+        logger.error(f"Failed to mint NFT for opt-in {opt_in.id}: {str(e)}", exc_info=True)
+        return None
+
+
+# ============================================
+# UTILITY FUNCTIONS
 # ============================================
 
 def id_generator(size=12, chars=string.ascii_uppercase + string.digits):
@@ -35,6 +210,11 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
+# ============================================
+# DEAL LISTING
+# ============================================
 
 @require_GET
 def deal_list(request):
@@ -52,18 +232,22 @@ def deal_list(request):
     
     # Get opted-in deals for current user
     user_opt_in_deal_ids = []
+    user_opt_ins = {}
+    
     if request.user.is_authenticated:
-        user_opt_in_deal_ids = list(
-            DealOptIn.objects.filter(
-                user=request.user,
-                status='confirmed'
-            ).values_list('deal_id', flat=True)
-        )
+        user_opt_ins = {
+            opt_in.deal_id: opt_in 
+            for opt_in in DealOptIn.objects.filter(
+                user=request.user
+            ).select_related('deal')
+        }
+        user_opt_in_deal_ids = list(user_opt_ins.keys())
     
     context = {
         'deals': deals,
         'categories': DealCategory.objects.filter(is_active=True),
-        'user_opt_in_deal_ids': user_opt_in_deal_ids,  # Pass list instead of dict
+        'user_opt_in_deal_ids': user_opt_in_deal_ids,
+        'user_opt_ins': user_opt_ins,
         'current_category': category,
         'current_status': status,
     }
@@ -138,69 +322,102 @@ def opt_in_deal(request, deal_id):
         return redirect('deals:detail', slug=deal.slug)
     
     # Check Wallet Balance
-    wallet = Wallet.objects.get(user=request.user)
-    bal = wallet.balance
-    if bal < deal.opt_in_amount:
-        messages.error(request, f'You do not have sufficient Funds in your Account to opt in to this deal, please add funds and try again.')
+    try:
+        wallet = Wallet.objects.get(user=request.user)
+    except Wallet.DoesNotExist:
+        messages.error(request, 'You need to create a wallet first.')
+        return redirect('finance:dashboard')
+    
+    if wallet.balance < deal.opt_in_amount:
+        messages.error(request, f'Insufficient funds. Please add funds to your wallet and try again.')
         return redirect('deals:detail', slug=deal.slug)
     
-    if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                # Deduct Payment amount from Wallet
-                wallet.balance -= deal.opt_in_amount
-                wallet.save()
-
-                # Create Transaction Record on db and hcs
-                reference = f"OPTIN-{timezone.now().strftime('%Y%m%d%H%M%S')}-{request.user.id}-{id_generator(6)}"
-                Transaction.objects.create(
-                    user=request.user,
-                    transaction_type='deposit',
-                    payment_method='mpesa',
-                    reference=reference,
-                    amount=deal.opt_in_amount,
-                    fee=0,
-                    net_amount=deal.opt_in_amount,
-                    balance_before=wallet.balance + deal.opt_in_amount,
-                    balance_after=wallet.balance,
-                    phone_number=request.user.phone_number,
-                    description=f"Deal opt in of KES {deal.opt_in_amount:,.0f} from {request.user.phone_number}",
-                    status='completed',
-                    ip_address=get_client_ip(request),
-                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                    initiated_at=timezone.now(),
-                    metadata={
-                        'payment_gateway': 'intasend',
-                        'provider': 'm-pesa',
-                        'external_reference': reference,
-                        'initiation_source': 'web'
-                    }
-                )
-                # Create opt-in record
-                opt_in = DealOptIn.objects.create(
-                    user=request.user,
-                    deal=deal,
-                    amount=deal.opt_in_amount,
-                    status='confirmed',
-                    ip_address=get_client_ip(request),
-                    user_agent=request.META.get('HTTP_USER_AGENT', '')
-                )
-                
-                opt_in.confirm()
-                
-                messages.success(
-                    request,
-                    f'Successfully opted in to {deal.title}! You will receive updates as the deal progresses.'
-                )
-                
-                return redirect('deals:detail', slug=deal.slug)
-        
-        except Exception as e:
-            logger.error(f"Opt-in error: {str(e)}", exc_info=True)
-            messages.error(request, 'An error occurred. Please try again.')
+    try:
+        with db_transaction.atomic():
+            # Get balance before
+            balance_before = wallet.balance
+            
+            # Deduct payment from wallet
+            wallet.balance -= deal.opt_in_amount
+            wallet.save()
+            
+            # Create transaction record
+            reference = f"OPTIN-{timezone.now().strftime('%Y%m%d%H%M%S')}-{request.user.id}-{id_generator(6)}"
+            transaction = Transaction.objects.create(
+                user=request.user,
+                transaction_type='investment',
+                payment_method='wallet',
+                reference=reference,
+                amount=deal.opt_in_amount,
+                fee=0,
+                net_amount=deal.opt_in_amount,
+                balance_before=balance_before,
+                balance_after=wallet.balance,
+                description=f"Opt-in to deal: {deal.title}",
+                status='completed',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                initiated_at=timezone.now(),
+                metadata={
+                    'deal_id': deal.id,
+                    'deal_reference': deal.reference,
+                    'deal_title': deal.title
+                }
+            )
+            
+            # Create opt-in record
+            opt_in = DealOptIn.objects.create(
+                user=request.user,
+                deal=deal,
+                transaction=transaction,
+                amount=deal.opt_in_amount,
+                status='confirmed',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            
+            # Update deal stats
+            deal.total_opted_in += 1
+            deal.total_collected += deal.opt_in_amount
+            deal.save()
+            
+            # Submit to Hedera Consensus Service
+            try:
+                hedera_data = {
+                    'type': 'deal_opt_in',
+                    'opt_in_id': opt_in.id,
+                    'reference': opt_in.reference,
+                    'user_id': request.user.id,
+                    'deal_id': deal.id,
+                    'deal_reference': deal.reference,
+                    'amount': float(deal.opt_in_amount),
+                    'timestamp': timezone.now().isoformat()
+                }
+                hedera_consensus.submit_message(hedera_data, topic_id=deal.hedera_topic_id)
+            except Exception as e:
+                logger.error(f"HCS submission failed: {str(e)}")
+            
+            # Mint NFT for this opt-in (if deal has NFT collection)
+            if deal.hedera_token_id:
+                try:
+                    serial = mint_opt_in_nft(opt_in)
+                    if serial:
+                        messages.info(request, f'Your NFT proof has been minted with serial #{serial}')
+                except Exception as e:
+                    logger.error(f"NFT minting failed: {str(e)}")
+                    # Don't block the user, just log the error
+            
+            messages.success(
+                request,
+                f'Successfully opted in to {deal.title}! Your NFT proof will be available shortly.'
+            )
+            
             return redirect('deals:detail', slug=deal.slug)
     
-    return redirect('deals:detail', slug=deal.slug)
+    except Exception as e:
+        logger.error(f"Opt-in error: {str(e)}", exc_info=True)
+        messages.error(request, 'An error occurred. Please try again.')
+        return redirect('deals:detail', slug=deal.slug)
 
 
 # ============================================
@@ -214,13 +431,36 @@ def my_deals(request):
     opt_ins = DealOptIn.objects.filter(
         user=request.user,
         status='confirmed'
-    ).select_related('deal').order_by('-created_at')
+    ).select_related('deal', 'deal__category').order_by('-created_at')
     
     context = {
         'opt_ins': opt_ins,
     }
     
     return render(request, 'deals/my_deals.html', context)
+
+
+# ============================================
+# NFT PROOF VIEW
+# ============================================
+
+@login_required
+@require_GET
+def nft_proof(request, opt_in_id):
+    """View NFT proof for an opt-in"""
+    opt_in = get_object_or_404(
+        DealOptIn, 
+        id=opt_in_id, 
+        user=request.user,
+        status='confirmed'
+    )
+    
+    context = {
+        'opt_in': opt_in,
+        'nft_exists': bool(opt_in.hedera_nft_id),
+    }
+    
+    return render(request, 'deals/nft_proof.html', context)
 
 
 # ============================================
@@ -278,17 +518,126 @@ def aml_dashboard(request):
     return render(request, 'deals/aml_dashboard.html', context)
 
 
-# CREATE DEAL
+# ============================================
+# CREATE DEAL (AML)
+# ============================================
+
 @login_required
-def aml_createDeal(request):
-    """Dashboard for AML to manage deals"""
+def aml_create_deal(request):
+    """Create a new deal with NFT collection"""
     if not request.user.is_staff:
         messages.error(request, 'Access denied.')
         return redirect('deals:list')
     
-    # Handle Deal POST
-
-    # Handle NFT Creation
-    receipt = create_nft(title="deal Title", symbol="NFTSYMBOL", max_supply=100)
+    if request.method == 'POST':
+        try:
+            with db_transaction.atomic():
+                # Create deal
+                deal = Deal.objects.create(
+                    title=request.POST.get('title'),
+                    category_id=request.POST.get('category'),
+                    objective=request.POST.get('objective'),
+                    description=request.POST.get('description'),
+                    opt_in_amount=Decimal(request.POST.get('opt_in_amount')),
+                    total_capital_required=Decimal(request.POST.get('total_capital_required')),
+                    min_opt_in_members=int(request.POST.get('min_opt_in_members', 1)),
+                    max_opt_in_members=request.POST.get('max_opt_in_members') or None,
+                    expected_operations=request.POST.get('expected_operations'),
+                    risk_level=request.POST.get('risk_level', 'medium'),
+                    duration_months=int(request.POST.get('duration_months')),
+                    management_fee_percent=Decimal(request.POST.get('management_fee_percent', 10)),
+                    performance_carry_percent=Decimal(request.POST.get('performance_carry_percent', 20)),
+                    opt_in_start=request.POST.get('opt_in_start'),
+                    opt_in_end=request.POST.get('opt_in_end'),
+                    status='sourcing',
+                    created_by=request.user
+                )
+                
+                # Create Hedera NFT collection
+                token_id = create_hedera_nft_collection(deal)
+                
+                if token_id:
+                    deal.hedera_token_id = token_id
+                    deal.save()
+                    
+                    messages.success(
+                        request, 
+                        f'Deal created successfully! NFT Collection ID: {token_id}'
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        'Deal created but NFT collection creation failed. You can retry later.'
+                    )
+                
+                return redirect('deals:aml_dashboard')
+                
+        except Exception as e:
+            logger.error(f"Deal creation error: {str(e)}", exc_info=True)
+            messages.error(request, f'Error creating deal: {str(e)}')
+            return redirect('deals:aml_create_deal')
     
-    return render(request, 'deals/aml_dashboard.html')
+    # GET request - show form
+    categories = DealCategory.objects.filter(is_active=True)
+    context = {
+        'categories': categories,
+    }
+    return render(request, 'deals/aml_create_deal.html', context)
+
+
+# ============================================
+# RETRY NFT CREATION
+# ============================================
+
+@login_required
+def aml_retry_nft(request, deal_id):
+    """Retry creating NFT collection for a deal"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    deal = get_object_or_404(Deal, id=deal_id)
+    
+    if deal.hedera_token_id:
+        return JsonResponse({'error': 'NFT collection already exists'}, status=400)
+    
+    token_id = create_hedera_nft_collection(deal)
+    
+    if token_id:
+        deal.hedera_token_id = token_id
+        deal.save()
+        return JsonResponse({
+            'success': True,
+            'token_id': token_id,
+            'message': 'NFT collection created successfully'
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to create NFT collection'
+        }, status=500)
+
+
+# ============================================
+# API: CHECK OPT-IN STATUS
+# ============================================
+
+@login_required
+@require_GET
+def api_check_opt_in(request, deal_id):
+    """API endpoint to check if user is opted in"""
+    deal = get_object_or_404(Deal, id=deal_id)
+    
+    try:
+        opt_in = DealOptIn.objects.get(
+            user=request.user,
+            deal=deal,
+            status='confirmed'
+        )
+        return JsonResponse({
+            'opted_in': True,
+            'opt_in_id': opt_in.id,
+            'nft_id': opt_in.hedera_nft_id,
+            'has_nft': bool(opt_in.hedera_nft_id)
+        })
+    except DealOptIn.DoesNotExist:
+        return JsonResponse({'opted_in': False})
