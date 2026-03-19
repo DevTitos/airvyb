@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Create New Deal | AML Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.create-deal-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.page-header .btn-back {
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.page-header .btn-back:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+}
+
+/* Form Card */
+.form-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.form-card h2 {
+    font-size: 1.3rem;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-card h2 i {
+    color: var(--accent-1);
+}
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.form-group label i {
+    color: var(--accent-1);
+    margin-right: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 2px rgba(255,0,110,0.2);
+}
+
+.form-group input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.help-text {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 5px;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 5px;
+}
+
+/* NFT Preview Section */
+.nft-preview {
+    background: linear-gradient(135deg, rgba(0,200,83,0.05), rgba(0,200,83,0.1));
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.nft-preview h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #00c853;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+}
+
+.nft-preview h3 i {
+    font-size: 1.2rem;
+}
+
+.nft-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.nft-detail-item {
+    background: rgba(0,0,0,0.2);
+    padding: 12px;
+    border-radius: var(--radius);
+}
+
+.nft-detail-label {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
+
+.nft-detail-value {
+    color: #00c853;
+    font-weight: 600;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-primary, .btn-secondary {
+    padding: 14px 30px;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--gradient-1);
+    color: white;
+    flex: 2;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-light);
+    border: 1px solid rgba(255,255,255,0.1);
+    flex: 1;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+}
+
+/* Info Box */
+.info-box {
+    background: rgba(58,134,255,0.1);
+    border: 1px solid rgba(58,134,255,0.2);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.info-box i {
+    font-size: 2rem;
+    color: var(--accent-3);
+}
+
+.info-box-content {
+    flex: 1;
+}
+
+.info-box-content h3 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: var(--accent-3);
+}
+
+.info-box-content p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* Loading State */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-1);
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.loading-text {
+    color: white;
+    font-size: 1.1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-card {
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-primary, .btn-secondary {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-deal-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1><i class="fas fa-plus-circle"></i> Create New Deal</h1>
+        <a href="{% url 'deals:aml_dashboard' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+        <i class="fas fa-info-circle"></i>
+        <div class="info-box-content">
+            <h3>NFT Collection Will Be Created Automatically</h3>
+            <p>When you create a deal, an NFT collection will be created on Hedera. Each member who opts in will receive a unique NFT as proof of participation.</p>
+        </div>
+    </div>
+
+    <!-- Create Deal Form -->
+    <form method="POST" enctype="multipart/form-data" id="createDealForm">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="form-card">
+            <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label><i class="fas fa-heading"></i> Deal Title *</label>
+                    <input type="text" name="title" required placeholder="e.g., M-Pesa Outlet - Kitengela" maxlength="200">
+                    <div class="help-text">A clear, descriptive title for the deal</div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-folder"></i> Category *</label>
+                    <select name="category" required>
+                        <option value="">Select Category</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-image"></i> Cover Image</label>
+                    <input type="file" name="cover_image" accept="image/*">
+                    <div class="help-text">Recommended size: 1200x630px</div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label><i class="fas fa-bullseye"></i> Objective *</label>
+                    <textarea name="objective" required placeholder="What is the main objective of this deal?"></textarea>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label><i class="fas fa-align-left"></i> Description *</label>
+                    <textarea name="description" required placeholder="Provide detailed information about the deal..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Details -->
+        <div class="form-card">
+            <h2><i class="fas fa-coins"></i> Financial Details</h2>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Opt-In Amount (KES) *</label>
+                    <input type="number" name="opt_in_amount" required min="1" step="100" placeholder="e.g., 5000">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-chart-line"></i> Total Capital Required (KES) *</label>
+                    <input type="number" name="total_capital_required" required min="1" step="1000" placeholder="e.g., 500000">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-users"></i> Minimum Members *</label>
+                    <input type="number" name="min_opt_in_members" required min="1" value="1">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-user-plus"></i> Maximum Members</label>
+                    <input type="number" name="max_opt_in_members" min="1" placeholder="Leave empty for unlimited">
+                    <div class="help-text">Maximum number of members allowed</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations & Timeline -->
+        <div class="form-card">
+            <h2><i class="fas fa-calendar-alt"></i> Operations & Timeline</h2>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label><i class="fas fa-cogs"></i> Expected Operations *</label>
+                    <textarea name="expected_operations" required placeholder="What operations will this deal involve?"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-shield-alt"></i> Risk Level *</label>
+                    <select name="risk_level" required>
+                        <option value="low">Low Risk</option>
+                        <option value="medium" selected>Medium Risk</option>
+                        <option value="high">High Risk</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-hourglass-half"></i> Duration (Months) *</label>
+                    <input type="number" name="duration_months" required min="1" max="60" value="12">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-calendar-plus"></i> Opt-In Start Date *</label>
+                    <input type="datetime-local" name="opt_in_start" required>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-calendar-times"></i> Opt-In End Date *</label>
+                    <input type="datetime-local" name="opt_in_end" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fees & Management -->
+        <div class="form-card">
+            <h2><i class="fas fa-percentage"></i> Fees & Management</h2>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label><i class="fas fa-chart-pie"></i> Management Fee (%) *</label>
+                    <input type="number" name="management_fee_percent" required min="0" max="100" step="0.1" value="10.0">
+                    <div class="help-text">Percentage of net profit for AML management</div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-tachometer-alt"></i> Performance Carry (%) *</label>
+                    <input type="number" name="performance_carry_percent" required min="0" max="100" step="0.1" value="20.0">
+                    <div class="help-text">Performance carry percentage</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NFT Preview (will show after submission) -->
+        <div class="nft-preview" id="nftPreview" style="display: none;">
+            <h3><i class="fas fa-link"></i> NFT Collection Details</h3>
+            <div class="nft-details">
+                <div class="nft-detail-item">
+                    <div class="nft-detail-label">Token Name</div>
+                    <div class="nft-detail-value" id="nftTokenName">-</div>
+                </div>
+                <div class="nft-detail-item">
+                    <div class="nft-detail-label">Token Symbol</div>
+                    <div class="nft-detail-value" id="nftTokenSymbol">-</div>
+                </div>
+                <div class="nft-detail-item">
+                    <div class="nft-detail-label">Max Supply</div>
+                    <div class="nft-detail-value" id="nftMaxSupply">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn-primary" id="submitBtn">
+                <i class="fas fa-magic"></i> Create Deal & NFT Collection
+            </button>
+            <a href="{% url 'deals:aml_dashboard' %}" class="btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Creating deal and NFT collection on Hedera...</div>
+    </div>
+</div>
+
+<script>
+document.getElementById('createDealForm').addEventListener('submit', function(e) {
+    // Show loading overlay
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+    
+    // Optional: Update NFT preview with form values
+    const title = document.querySelector('input[name="title"]').value;
+    const maxMembers = document.querySelector('input[name="max_opt_in_members"]').value || 'Unlimited';
+    
+    // Generate token symbol from title
+    const words = title.split(' ');
+    let symbol = '';
+    for (let word of words) {
+        if (word.length > 0) {
+            symbol += word[0].toUpperCase();
+        }
+    }
+    symbol = symbol.substring(0, 5) + 'NFT';
+    
+    document.getElementById('nftTokenName').textContent = `Airvyb Deal: ${title.substring(0, 30)}`;
+    document.getElementById('nftTokenSymbol').textContent = symbol;
+    document.getElementById('nftMaxSupply').textContent = maxMembers;
+    document.getElementById('nftPreview').style.display = 'block';
+    
+    // Form will submit normally
+});
+
+// Validate that opt-in end is after opt-in start
+document.querySelector('input[name="opt_in_end"]').addEventListener('change', function() {
+    const start = document.querySelector('input[name="opt_in_start"]').value;
+    const end = this.value;
+    
+    if (start && end && new Date(end) <= new Date(start)) {
+        alert('Opt-in end date must be after start date');
+        this.value = '';
+    }
+});
+
+// Preview token symbol as user types
+document.querySelector('input[name="title"]').addEventListener('input', function() {
+    const title = this.value;
+    const words = title.split(' ');
+    let symbol = '';
+    for (let word of words) {
+        if (word.length > 0) {
+            symbol += word[0].toUpperCase();
+        }
+    }
+    symbol = symbol.substring(0, 5) + 'NFT';
+    
+    document.getElementById('nftTokenName').textContent = title ? `Airvyb Deal: ${title.substring(0, 30)}` : '-';
+    document.getElementById('nftTokenSymbol').textContent = symbol || '-';
+    
+    if (title) {
+        document.getElementById('nftPreview').style.display = 'block';
+    } else {
+        document.getElementById('nftPreview').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
