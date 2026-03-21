@@ -70,8 +70,9 @@ Traditional investment opportunities face several critical challenges:
 5. **Real-Time Verification** - View all transactions on HashScan with one click
 
 ---
-
 ## ⚙️ How It Works
+
+### Flow Diagram
 
 ```mermaid
 graph TD
