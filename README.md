@@ -1,3 +1,4 @@
+
 # Airvyb Invest - Tokenized Deal Participation Platform
 
 [![Hedera](https://img.shields.io/badge/Built%20on-Hedera-00c853?style=for-the-badge&logo=hedera&logoColor=white)](https://hedera.com)
@@ -69,7 +70,6 @@ Traditional investment opportunities face several critical challenges:
 5. **Real-Time Verification** - View all transactions on HashScan with one click
 
 ---
-
 ## ⚙️ How It Works
 
 ### Flow Diagram
