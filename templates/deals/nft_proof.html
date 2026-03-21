@@ -1,0 +1,546 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}NFT Proof | Airvyb{% endblock %}
+
+{% block extra_css %}
+<style>
+.nft-proof-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+/* Header */
+.page-header {
+    margin-bottom: 30px;
+}
+
+.back-nav {
+    margin-bottom: 20px;
+}
+
+.back-nav a {
+    color: var(--text-light);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.back-nav a:hover {
+    color: var(--accent-1);
+    transform: translateX(-5px);
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    background: linear-gradient(to right, #fff, #00c853);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-header h1 i {
+    font-size: 2rem;
+    color: #00c853;
+}
+
+.page-header p {
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+/* NFT Card */
+.nft-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.nft-header {
+    background: linear-gradient(135deg, rgba(0,200,83,0.1), rgba(0,200,83,0.05));
+    padding: 30px;
+    text-align: center;
+    border-bottom: 1px solid rgba(0,200,83,0.2);
+}
+
+.nft-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(0,200,83,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.nft-icon i {
+    font-size: 3rem;
+    color: #00c853;
+}
+
+.nft-header h2 {
+    font-size: 1.5rem;
+    color: #00c853;
+    margin-bottom: 10px;
+}
+
+.nft-header .nft-id {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    background: rgba(0,0,0,0.2);
+    padding: 8px 15px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.nft-content {
+    padding: 30px;
+}
+
+/* Info Sections */
+.info-section {
+    margin-bottom: 30px;
+}
+
+.info-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.info-section h3 i {
+    color: #00c853;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+}
+
+.info-label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.info-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.info-value.reference {
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* Metadata Section */
+.metadata-section {
+    background: rgba(0,0,0,0.2);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.metadata-section pre {
+    margin: 0;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: monospace;
+}
+
+/* Verification Badge */
+.verification-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(0,200,83,0.1);
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius);
+    margin-bottom: 30px;
+}
+
+.verification-badge i {
+    font-size: 1.5rem;
+    color: #00c853;
+}
+
+.verification-badge .text {
+    flex: 1;
+}
+
+.verification-badge .text strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #00c853;
+}
+
+.verification-badge .text p {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin: 0;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    flex: 1;
+    padding: 14px;
+    background: linear-gradient(135deg, #00c853, #00e676);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,200,83,0.3);
+}
+
+.btn-secondary {
+    flex: 1;
+    padding: 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    text-decoration: none;
+    text-align: center;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 60px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    border-top-color: #00c853;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* QR Code */
+.qr-code {
+    text-align: center;
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: var(--radius);
+    display: inline-block;
+    width: 100%;
+    max-width: 200px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .nft-header {
+        padding: 20px;
+    }
+    
+    .nft-content {
+        padding: 20px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="nft-proof-container">
+    <!-- Back Navigation -->
+    <div class="back-nav">
+        <a href="{% url 'deals:my_deals' %}">
+            <i class="fas fa-arrow-left"></i> Back to My Deals
+        </a>
+    </div>
+    
+    <!-- Header -->
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-certificate"></i>
+            NFT Proof of Participation
+        </h1>
+        <p>This NFT serves as your immutable proof of participation in this deal</p>
+    </div>
+    
+    {% if opt_in.hedera_nft_id %}
+    <!-- NFT Card -->
+    <div class="nft-card">
+        <div class="nft-header">
+            <div class="nft-icon">
+                <i class="fas fa-link"></i>
+            </div>
+            <h2>{{ opt_in.deal.title }}</h2>
+            <div class="nft-id">{{ opt_in.hedera_nft_id }}</div>
+        </div>
+        
+        <div class="nft-content">
+            <!-- Verification Badge -->
+            <div class="verification-badge">
+                <i class="fas fa-check-circle"></i>
+                <div class="text">
+                    <strong>Verified on Hedera Network</strong>
+                    <p>This NFT is immutably stored on the Hedera Hashgraph network</p>
+                </div>
+            </div>
+            
+            <!-- Deal Information -->
+            <div class="info-section">
+                <h3><i class="fas fa-chart-line"></i> Deal Information</h3>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Deal Title:</span>
+                        <span class="info-value">{{ opt_in.deal.title }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Deal Reference:</span>
+                        <span class="info-value reference">{{ opt_in.deal.reference }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Category:</span>
+                        <span class="info-value">{{ opt_in.deal.category.name|default:"Uncategorized" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Risk Level:</span>
+                        <span class="info-value">{{ opt_in.deal.get_risk_level_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Duration:</span>
+                        <span class="info-value">{{ opt_in.deal.duration_months }} months</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">{{ opt_in.deal.get_status_display }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Opt-In Information -->
+            <div class="info-section">
+                <h3><i class="fas fa-hand-holding-usd"></i> Opt-In Information</h3>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Opt-In Reference:</span>
+                        <span class="info-value reference">{{ opt_in.reference }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Amount:</span>
+                        <span class="info-value" style="color: var(--accent-1);">
+                            Ksh {{ opt_in.amount|floatformat:0|intcomma }}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Opt-In Date:</span>
+                        <span class="info-value">{{ opt_in.created_at|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">{{ opt_in.get_status_display }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NFT Details -->
+            <div class="info-section">
+                <h3><i class="fas fa-link"></i> NFT Details</h3>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Token ID:</span>
+                        <span class="info-value reference">{{ opt_in.deal.hedera_token_id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Serial Number:</span>
+                        <span class="info-value">{{ opt_in.hedera_serial_number }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">NFT ID:</span>
+                        <span class="info-value reference">{{ opt_in.hedera_nft_id }}</span>
+                    </div>
+                    {% if opt_in.hedera_message_id %}
+                    <div class="info-row">
+                        <span class="info-label">Transaction ID:</span>
+                        <span class="info-value reference">{{ opt_in.hedera_message_id }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Hedera Metadata (if stored) -->
+            {% if opt_in.metadata %}
+            <div class="info-section">
+                <h3><i class="fas fa-database"></i> Hedera Metadata</h3>
+                <div class="metadata-section">
+                    <pre>{{ opt_in.metadata|pprint }}</pre>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="https://hashscan.io/testnet/token/{{ opt_in.hedera_nft_id }}" target="_blank" class="btn-primary">
+                    <i class="fas fa-external-link-alt"></i> View on HashScan
+                </a>
+                <a href="{% url 'deals:detail' opt_in.deal.slug %}" class="btn-secondary">
+                    <i class="fas fa-eye"></i> View Deal Details
+                </a>
+                <button onclick="window.print()" class="btn-secondary">
+                    <i class="fas fa-print"></i> Print Certificate
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Information Note -->
+    <div style="margin-top: 30px; padding: 20px; background: rgba(58,134,255,0.05); border-radius: var(--radius); border: 1px solid rgba(58,134,255,0.1);">
+        <div style="display: flex; gap: 15px; align-items: flex-start;">
+            <i class="fas fa-info-circle" style="color: var(--accent-3); font-size: 1.2rem;"></i>
+            <div>
+                <strong style="display: block; margin-bottom: 5px;">What is this NFT?</strong>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin: 0;">
+                    This NFT is your immutable proof of participation in this deal. It is stored on the Hedera Consensus Service,
+                    a decentralized public ledger. You can view it on HashScan, a Hedera blockchain explorer, and it serves as 
+                    verifiable evidence of your opt-in to this deal.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- No NFT Found -->
+    <div class="nft-card">
+        <div class="nft-header" style="background: rgba(255,190,11,0.1);">
+            <div class="nft-icon" style="background: rgba(255,190,11,0.1);">
+                <i class="fas fa-clock" style="color: var(--accent-5);"></i>
+            </div>
+            <h2 style="color: var(--accent-5);">NFT Pending</h2>
+            <div class="nft-id">{{ opt_in.reference }}</div>
+        </div>
+        
+        <div class="nft-content">
+            <div class="verification-badge" style="background: rgba(255,190,11,0.1); border-color: rgba(255,190,11,0.2);">
+                <i class="fas fa-spinner fa-spin" style="color: var(--accent-5);"></i>
+                <div class="text">
+                    <strong style="color: var(--accent-5);">NFT Minting in Progress</strong>
+                    <p>Your NFT proof is being minted on the Hedera network. This process typically takes a few seconds.</p>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3><i class="fas fa-info-circle"></i> What's happening?</h3>
+                <p style="color: var(--text-light);">
+                    Your opt-in has been confirmed, and we're now creating your unique NFT proof on the Hedera network.
+                    This NFT will serve as your immutable proof of participation in this deal.
+                </p>
+                <p style="color: var(--text-light); margin-top: 10px;">
+                    <i class="fas fa-sync-alt fa-spin"></i> Please refresh the page in a few moments to view your NFT.
+                </p>
+            </div>
+            
+            <div class="action-buttons">
+                <button onclick="location.reload()" class="btn-primary">
+                    <i class="fas fa-sync-alt"></i> Refresh Status
+                </button>
+                <a href="{% url 'deals:my_deals' %}" class="btn-secondary">
+                    <i class="fas fa-list"></i> Back to My Deals
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Auto-refresh if NFT is pending
+{% if not opt_in.hedera_nft_id %}
+let refreshInterval;
+
+function checkNFTStatus() {
+    fetch(window.location.href)
+        .then(response => response.text())
+        .then(html => {
+            // Check if NFT ID appears in the response
+            if (html.includes('hedera_nft_id')) {
+                clearInterval(refreshInterval);
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error checking status:', error));
+}
+
+// Start checking every 5 seconds
+refreshInterval = setInterval(checkNFTStatus, 5000);
+
+// Stop after 2 minutes (24 attempts)
+setTimeout(() => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+}, 120000);
+{% endif %}
+</script>
+{% endblock %}

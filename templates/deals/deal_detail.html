@@ -4,6 +4,541 @@
 
 {% block title %}{{ deal.title }} | Airvyb{% endblock %}
 
+{% block extra_css %}
+<style>
+.deal-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.back-nav {
+    margin-bottom: 30px;
+}
+
+.back-nav a {
+    color: var(--text-light);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.back-nav a:hover {
+    color: var(--accent-1);
+    transform: translateX(-5px);
+}
+
+.deal-header {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    margin: 10px 0 15px;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.deal-meta-large {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.meta-badge {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.deal-status-large {
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.status-opt_in_open {
+    background: rgba(0,200,83,0.1);
+    color: #00c853;
+}
+
+.status-active {
+    background: rgba(58,134,255,0.1);
+    color: var(--accent-3);
+}
+
+.status-setup {
+    background: rgba(255,190,11,0.1);
+    color: var(--accent-5);
+}
+
+.deal-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.detail-section {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.detail-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.detail-section h2 i {
+    color: var(--accent-1);
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background: rgba(255,255,255,0.1);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -24px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid var(--accent-1);
+}
+
+.timeline-dot.completed {
+    background: var(--accent-1);
+}
+
+.timeline-content h4 {
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.timeline-content p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* NFT Section */
+.nft-section {
+    background: linear-gradient(135deg, rgba(0,200,83,0.05), rgba(0,200,83,0.1));
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    margin-bottom: 30px;
+}
+
+.nft-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: #00c853;
+}
+
+.nft-section h2 i {
+    font-size: 1.5rem;
+}
+
+.nft-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.nft-card {
+    background: rgba(0,0,0,0.2);
+    border-radius: var(--radius);
+    padding: 20px;
+}
+
+.nft-label {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nft-value {
+    font-family: monospace;
+    color: #00c853;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.nft-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    color: #00c853;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.nft-link:hover {
+    text-decoration: underline;
+}
+
+/* Updates Section */
+.update-item {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    margin-bottom: 15px;
+    border-left: 3px solid var(--accent-3);
+}
+
+.update-item.important {
+    border-left-color: var(--accent-1);
+    background: rgba(255,0,110,0.05);
+}
+
+.update-icon i {
+    font-size: 1.3rem;
+    color: var(--accent-3);
+}
+
+.update-item.important .update-icon i {
+    color: var(--accent-1);
+}
+
+.update-content h4 {
+    margin-bottom: 5px;
+}
+
+.update-date {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* Reports Section */
+.report-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+}
+
+.report-item:hover {
+    background: rgba(255,0,110,0.05);
+    transform: translateX(5px);
+}
+
+.report-icon i {
+    font-size: 2rem;
+    color: var(--accent-1);
+}
+
+.report-info {
+    flex: 1;
+}
+
+.report-info h4 {
+    margin-bottom: 3px;
+}
+
+.report-info p {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+/* Opt-In Panel */
+.opt-in-panel {
+    position: sticky;
+    top: 100px;
+}
+
+.panel-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 30px;
+}
+
+.opt-in-amount {
+    text-align: center;
+    padding: 25px;
+    background: rgba(255,0,110,0.05);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+
+.opt-in-amount .label {
+    display: block;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.opt-in-amount .amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-1);
+}
+
+.opt-in-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+}
+
+.stat-label {
+    display: block;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.opt-in-progress {
+    margin-bottom: 20px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-5));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.btn-opt-in {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent-1), #ff3366);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 15px;
+}
+
+.btn-opt-in:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+.btn-opt-in:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-align: center;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.btn-secondary:hover {
+    background: rgba(255,0,110,0.1);
+    border-color: var(--accent-1);
+}
+
+.opt-in-disclaimer {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    text-align: center;
+    margin: 15px 0;
+}
+
+.opted-in-message {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(0,200,83,0.1);
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+
+.opted-in-message i {
+    font-size: 2rem;
+    color: #00c853;
+}
+
+.opted-in-message h4 {
+    margin-bottom: 8px;
+}
+
+.nft-proof-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 15px;
+    background: rgba(0,200,83,0.15);
+    border-radius: 20px;
+    color: #00c853;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+
+.nft-proof-badge:hover {
+    background: #00c853;
+    color: white;
+}
+
+.opt-in-closed {
+    text-align: center;
+    padding: 30px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+}
+
+.opt-in-closed i {
+    font-size: 2rem;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.deal-meta-info {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.deal-meta-info h4 {
+    margin-bottom: 15px;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-1);
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+    .deal-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .opt-in-panel {
+        position: static;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="deal-detail-container">
     <!-- Back Navigation -->
@@ -172,38 +707,67 @@
                 </div>
                 {% endif %}
                 
+                <!-- User Opt-In Status -->
                 {% if user_opt_in %}
                     <div class="opted-in-message">
                         <i class="fas fa-check-circle"></i>
                         <div>
-                            <h4>You've opted in!</h4>
+                            <h4>✓ You've opted in!</h4>
                             <p>Status: <strong>{{ user_opt_in.get_status_display }}</strong></p>
                             <p>Opted in on: {{ user_opt_in.created_at|date:"F d, Y" }}</p>
+                            {% if user_opt_in.hedera_nft_id %}
+                            <a href="{% url 'deals:nft_proof' user_opt_in.id %}" class="nft-proof-badge">
+                                <i class="fas fa-link"></i> View Your NFT Proof
+                            </a>
+                            {% else %}
+                            <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-light);">
+                                <i class="fas fa-spinner fa-spin"></i> Your NFT proof is being minted...
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     
                     <a href="{% url 'deals:my_deals' %}" class="btn-secondary">
-                        View My Deals
+                        <i class="fas fa-list"></i> View My Deals
                     </a>
                     
+                <!-- Opt-In Form (Active) -->
                 {% elif can_opt_in %}
-                    <form method="POST" action="{% url 'deals:opt_in' deal.id %}">
+                    <form method="POST" action="{% url 'deals:opt_in' deal.id %}" id="optInForm">
                         {% csrf_token %}
-                        <button type="submit" class="btn-opt-in" {% if deal.available_slots == 0 %}disabled{% endif %}>
+                        <button type="submit" class="btn-opt-in" id="optInButton" {% if deal.available_slots == 0 %}disabled{% endif %}>
                             <i class="fas fa-hand-pointer"></i>
                             Opt In Now
                         </button>
                     </form>
                     
                     <p class="opt-in-disclaimer">
-                        By opting in, you agree to participate in this deal managed by Airvyb Management Ltd (AML).
+                        <i class="fas fa-info-circle"></i> By opting in, you agree to participate in this deal managed by Airvyb Management Ltd (AML).
                         Capital risk is limited to the opt-in amount.
                     </p>
                     
+                    {% if deal.hedera_token_id %}
+                    <div style="margin-top: 10px; padding: 12px; background: rgba(0,200,83,0.05); border-radius: var(--radius);">
+                        <i class="fas fa-link" style="color: #00c853;"></i>
+                        <span style="font-size: 0.85rem; margin-left: 8px;">
+                            Upon confirmation, you will receive a unique NFT proof of your participation.
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                <!-- Opt-In Not Available -->
                 {% elif not deal.is_opt_in_open %}
                     <div class="opt-in-closed">
                         <i class="fas fa-clock"></i>
                         <p>Opt-in period is {{ deal.get_status_display|lower }}</p>
+                        {% if deal.status == 'active' %}
+                        <p style="margin-top: 10px;">This deal is currently active.</p>
+                        {% endif %}
+                    </div>
+                {% elif deal.available_slots == 0 %}
+                    <div class="opt-in-closed">
+                        <i class="fas fa-users"></i>
+                        <p>All slots are filled</p>
                     </div>
                 {% endif %}
                 
@@ -225,383 +789,38 @@
                         <span>Performance Carry:</span>
                         <span>{{ deal.performance_carry_percent }}%</span>
                     </div>
+                    {% if deal.hedera_token_id %}
+                    <div class="meta-row">
+                        <span>NFT Collection:</span>
+                        <span style="color: #00c853;">
+                            <i class="fas fa-check-circle"></i> Active
+                        </span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.deal-detail-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 30px 20px;
-}
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Processing your opt-in...</div>
+</div>
 
-.back-nav {
-    margin-bottom: 30px;
-}
-
-.back-nav a {
-    color: var(--text-light);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
-}
-
-.back-nav a:hover {
-    color: var(--accent-1);
-    transform: translateX(-5px);
-}
-
-.deal-header {
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 30px;
-    margin-bottom: 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.header-content h1 {
-    font-size: 2rem;
-    margin: 10px 0 15px;
-    background: linear-gradient(to right, #fff, var(--accent-1));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.deal-meta-large {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.meta-badge {
-    padding: 8px 16px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 30px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.deal-status-large {
-    padding: 10px 25px;
-    border-radius: 30px;
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-.deal-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 30px;
-}
-
-.detail-section {
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 30px;
-    margin-bottom: 30px;
-}
-
-.detail-section h2 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.3rem;
-    margin-bottom: 20px;
-    color: var(--text);
-}
-
-.detail-section h2 i {
-    color: var(--accent-1);
-}
-
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 10px;
-    top: 0;
-    height: 100%;
-    width: 2px;
-    background: rgba(255,255,255,0.1);
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 25px;
-}
-
-.timeline-dot {
-    position: absolute;
-    left: -24px;
-    top: 0;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    border: 2px solid var(--accent-1);
-}
-
-.timeline-dot.completed {
-    background: var(--accent-1);
-}
-
-.timeline-content h4 {
-    margin-bottom: 5px;
-    color: var(--text);
-}
-
-.timeline-content p {
-    color: var(--text-light);
-    font-size: 0.9rem;
-}
-
-.update-item {
-    display: flex;
-    gap: 15px;
-    padding: 20px;
-    background: rgba(255,255,255,0.02);
-    border-radius: var(--radius);
-    margin-bottom: 15px;
-    border-left: 3px solid var(--accent-3);
-}
-
-.update-item.important {
-    border-left-color: var(--accent-1);
-    background: rgba(255,0,110,0.05);
-}
-
-.update-icon i {
-    font-size: 1.3rem;
-    color: var(--accent-3);
-}
-
-.update-item.important .update-icon i {
-    color: var(--accent-1);
-}
-
-.update-content h4 {
-    margin-bottom: 5px;
-}
-
-.update-date {
-    display: block;
-    margin-top: 8px;
-    color: var(--text-light);
-    font-size: 0.8rem;
-}
-
-.report-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-    background: rgba(255,255,255,0.02);
-    border-radius: var(--radius);
-    margin-bottom: 10px;
-    text-decoration: none;
-    color: inherit;
-    transition: var(--transition);
-}
-
-.report-item:hover {
-    background: rgba(255,0,110,0.05);
-}
-
-.report-icon i {
-    font-size: 2rem;
-    color: var(--accent-1);
-}
-
-.report-info {
-    flex: 1;
-}
-
-.report-info h4 {
-    margin-bottom: 3px;
-}
-
-.report-info p {
-    color: var(--text-light);
-    font-size: 0.85rem;
-}
-
-.opt-in-panel {
-    position: sticky;
-    top: 100px;
-}
-
-.panel-card {
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 30px;
-}
-
-.opt-in-amount {
-    text-align: center;
-    padding: 25px;
-    background: rgba(255,0,110,0.05);
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-}
-
-.opt-in-amount .label {
-    display: block;
-    color: var(--text-light);
-    margin-bottom: 10px;
-}
-
-.opt-in-amount .amount {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--accent-1);
-}
-
-.opt-in-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.stat {
-    text-align: center;
-    padding: 15px;
-    background: rgba(255,255,255,0.02);
-    border-radius: var(--radius);
-}
-
-.stat-label {
-    display: block;
-    color: var(--text-light);
-    font-size: 0.8rem;
-    margin-bottom: 5px;
-}
-
-.stat-value {
-    font-size: 1.3rem;
-    font-weight: 700;
-}
-
-.btn-opt-in {
-    width: 100%;
-    padding: 18px;
-    background: linear-gradient(135deg, var(--accent-1), #ff3366);
-    border: none;
-    border-radius: var(--radius);
-    color: white;
-    font-weight: 700;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: var(--transition);
-    margin-bottom: 15px;
-}
-
-.btn-opt-in:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-accent);
-}
-
-.btn-opt-in:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: var(--radius);
-    color: var(--text);
-    text-align: center;
-    text-decoration: none;
-    transition: var(--transition);
-}
-
-.btn-secondary:hover {
-    background: rgba(255,0,110,0.1);
-    border-color: var(--accent-1);
-}
-
-.opt-in-disclaimer {
-    font-size: 0.8rem;
-    color: var(--text-light);
-    text-align: center;
-    margin: 15px 0;
-}
-
-.opted-in-message {
-    display: flex;
-    gap: 15px;
-    padding: 20px;
-    background: rgba(0,200,83,0.1);
-    border: 1px solid rgba(0,200,83,0.2);
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-}
-
-.opted-in-message i {
-    font-size: 2rem;
-    color: #00c853;
-}
-
-.opt-in-closed {
-    text-align: center;
-    padding: 30px;
-    background: rgba(255,255,255,0.02);
-    border-radius: var(--radius);
-}
-
-.opt-in-closed i {
-    font-size: 2rem;
-    color: var(--text-light);
-    margin-bottom: 10px;
-}
-
-.deal-meta-info {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.deal-meta-info h4 {
-    margin-bottom: 15px;
-}
-
-.meta-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    color: var(--text-light);
-    font-size: 0.9rem;
-}
-
-@media (max-width: 1024px) {
-    .deal-grid {
-        grid-template-columns: 1fr;
-    }
+<script>
+// Handle opt-in form submission with loading state
+document.getElementById('optInForm')?.addEventListener('submit', function(e) {
+    const button = document.getElementById('optInButton');
+    const overlay = document.getElementById('loadingOverlay');
     
-    .opt-in-panel {
-        position: static;
-    }
-}
-</style>
+    // Show loading overlay
+    overlay.style.display = 'flex';
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Form will submit normally
+});
+</script>
 {% endblock %}

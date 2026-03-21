@@ -1,0 +1,505 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}My Deals | Airvyb{% endblock %}
+
+{% block extra_css %}
+<style>
+.my-deals-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    background: linear-gradient(to right, #fff, var(--accent-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.page-header p {
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: rgba(255,0,110,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.stat-icon i {
+    font-size: 1.5rem;
+    color: var(--accent-1);
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+/* Deals Grid */
+.deals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.deal-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.deal-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-1);
+    box-shadow: var(--shadow-accent);
+}
+
+.deal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255,0,110,0.05), rgba(58,134,255,0.05));
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.deal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.deal-reference {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    font-family: monospace;
+}
+
+.deal-content {
+    padding: 20px;
+}
+
+.opt-in-details {
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.detail-label {
+    color: var(--text-light);
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.detail-value.amount {
+    color: var(--accent-1);
+    font-size: 1.1rem;
+}
+
+/* NFT Section */
+.nft-section {
+    background: linear-gradient(135deg, rgba(0,200,83,0.05), rgba(0,200,83,0.1));
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.nft-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.nft-header i {
+    color: #00c853;
+    font-size: 1.2rem;
+}
+
+.nft-header h4 {
+    color: #00c853;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.nft-info {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.nft-id {
+    font-family: monospace;
+    font-size: 0.75rem;
+    background: rgba(0,0,0,0.2);
+    padding: 5px 8px;
+    border-radius: 4px;
+    word-break: break-all;
+    margin-top: 8px;
+}
+
+.nft-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.btn-nft {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(0,200,83,0.1);
+    border: 1px solid rgba(0,200,83,0.2);
+    border-radius: var(--radius);
+    color: #00c853;
+    text-decoration: none;
+    font-size: 0.8rem;
+    text-align: center;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-nft:hover {
+    background: #00c853;
+    color: white;
+    border-color: #00c853;
+}
+
+/* No NFT Yet */
+.nft-pending {
+    background: rgba(255,190,11,0.1);
+    border: 1px solid rgba(255,190,11,0.2);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nft-pending i {
+    color: var(--accent-5);
+    font-size: 1rem;
+}
+
+.nft-pending span {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-confirmed {
+    background: rgba(0,200,83,0.1);
+    color: #00c853;
+}
+
+.status-pending {
+    background: rgba(255,190,11,0.1);
+    color: var(--accent-5);
+}
+
+/* Deal Footer */
+.deal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.deal-date {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.btn-view {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-view:hover {
+    background: var(--accent-1);
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--accent-1);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--text);
+}
+
+.empty-state p {
+    color: var(--text-light);
+    margin-bottom: 25px;
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--accent-1), #ff3366);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .deals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .nft-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="my-deals-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>My Deals</h1>
+        <p>View all deals you have opted into and your NFT proofs</p>
+    </div>
+    
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <div class="stat-value">{{ opt_ins|length }}</div>
+            <div class="stat-label">Total Opt-Ins</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-link"></i>
+            </div>
+            <div class="stat-value">{{ opt_ins|length }}</div>
+            <div class="stat-label">NFTs Received</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-value">Ksh {{ opt_ins|length|add:0 }}</div>
+            <div class="stat-label">Total Invested</div>
+        </div>
+    </div>
+    
+    <!-- Deals Grid -->
+    <div class="deals-grid">
+        {% for opt_in in opt_ins %}
+        <div class="deal-card">
+            <div class="deal-header">
+                <h3 class="deal-title">{{ opt_in.deal.title }}</h3>
+                <div class="deal-reference">Reference: {{ opt_in.reference }}</div>
+            </div>
+            
+            <div class="deal-content">
+                <div class="opt-in-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Opt-In Amount:</span>
+                        <span class="detail-value amount">Ksh {{ opt_in.amount|floatformat:0|intcomma }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span class="status-badge status-{{ opt_in.status }}">
+                            {{ opt_in.get_status_display|upper }}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Opted In:</span>
+                        <span class="detail-value">{{ opt_in.created_at|date:"F d, Y" }}</span>
+                    </div>
+                    {% if opt_in.paid_at %}
+                    <div class="detail-row">
+                        <span class="detail-label">Confirmed:</span>
+                        <span class="detail-value">{{ opt_in.paid_at|date:"F d, Y" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- NFT Proof Section -->
+                {% if opt_in.hedera_nft_id %}
+                <div class="nft-section">
+                    <div class="nft-header">
+                        <i class="fas fa-link"></i>
+                        <h4>NFT Proof of Participation</h4>
+                    </div>
+                    <div class="nft-info">
+                        You have received a unique NFT as proof of your opt-in to this deal.
+                    </div>
+                    <div class="nft-id">
+                        <strong>NFT ID:</strong> {{ opt_in.hedera_nft_id }}
+                    </div>
+                    <div class="nft-buttons">
+                        <a href="https://hashscan.io/testnet/token/{{ opt_in.hedera_nft_id }}" target="_blank" class="btn-nft">
+                            <i class="fas fa-external-link-alt"></i> View on HashScan
+                        </a>
+                        <a href="{% url 'deals:nft_proof' opt_in.id %}" class="btn-nft">
+                            <i class="fas fa-certificate"></i> View NFT Proof
+                        </a>
+                    </div>
+                </div>
+                {% elif opt_in.status == 'confirmed' %}
+                <div class="nft-pending">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Your NFT proof is being minted. Check back soon!</span>
+                </div>
+                {% endif %}
+                
+                <div class="deal-footer">
+                    <span class="deal-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ opt_in.created_at|date:"M d, Y" }}
+                    </span>
+                    <a href="{% url 'deals:detail' opt_in.deal.slug %}" class="btn-view">
+                        <i class="fas fa-eye"></i> View Deal
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-hand-holding-usd"></i>
+            <h3>No Deals Yet</h3>
+            <p>You haven't opted into any deals yet.</p>
+            <a href="{% url 'deals:list' %}" class="btn-primary">
+                <i class="fas fa-search"></i> Browse Deals
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+// Optional: Add auto-refresh for pending NFTs
+let refreshInterval;
+
+function startAutoRefresh() {
+    refreshInterval = setInterval(function() {
+        // Check if there are any pending NFTs
+        const pendingNfts = document.querySelectorAll('.nft-pending');
+        if (pendingNfts.length > 0) {
+            location.reload();
+        } else {
+            // Stop refreshing once all NFTs are processed
+            clearInterval(refreshInterval);
+        }
+    }, 5000);
+}
+
+// Start auto-refresh if there are pending NFTs
+document.addEventListener('DOMContentLoaded', function() {
+    const pendingNfts = document.querySelectorAll('.nft-pending');
+    if (pendingNfts.length > 0) {
+        startAutoRefresh();
+    }
+});
+</script>
+{% endblock %}

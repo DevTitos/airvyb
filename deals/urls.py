@@ -24,9 +24,11 @@ urlpatterns = [
     path('aml/dashboard/', views.aml_dashboard, name='aml_dashboard'),
     path('aml/deal/create/', views.aml_create_deal, name='aml_create_deal'),
     path('aml/deal/<int:deal_id>/retry-nft/', views.aml_retry_nft, name='aml_retry_nft'),
+    path('aml/debug-nft/<int:deal_id>/', views.debug_nft_status, name='debug_nft_status'),
     
     # ============================================
     # API ENDPOINTS (AJAX)
     # ============================================
     path('api/check-opt-in/<int:deal_id>/', views.api_check_opt_in, name='api_check_opt_in'),
+    
 ]

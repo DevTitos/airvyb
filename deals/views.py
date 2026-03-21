@@ -31,12 +31,24 @@ def create_hedera_nft_collection(deal, supply_key=None):
     """
     try:
         from hiero_sdk_python import (
-            Client, Network, AccountId, PrivateKey,
-            TokenCreateTransaction, TokenType, TokenSupplyType
+            Client, Network, AccountId, PrivateKey, TokenId,
+            TokenCreateTransaction, TokenType, SupplyType
         )
+        from cryptography.fernet import Fernet
+        import json
+        import os
+        import hashlib
+        
+        # Initialize encryption cipher
+        encryption_key = os.getenv('HEDERA_ENCRYPTION_KEY')
+        if not encryption_key:
+            logger.error("HEDERA_ENCRYPTION_KEY not found in environment")
+            return None
+        
+        cipher = Fernet(encryption_key.encode())
         
         # Initialize client
-        network = Network(network=getattr(settings, 'HEDERA_NETWORK', 'testnet'))
+        network = Network(network=os.getenv('HEDERA_NETWORK', 'testnet'))
         client = Client(network)
         operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
         operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
@@ -47,62 +59,97 @@ def create_hedera_nft_collection(deal, supply_key=None):
             supply_key = PrivateKey.generate()
             supply_key_public = supply_key.public_key()
             # Store encrypted supply key in deal
-            deal.hedera_supply_key_encrypted = hedera_consensus.cipher.encrypt(
+            deal.hedera_supply_key_encrypted = cipher.encrypt(
                 supply_key.to_string().encode()
             ).decode()
+            deal.save(update_fields=['hedera_supply_key_encrypted'])
         else:
             supply_key_public = supply_key.public_key()
         
-        # Prepare metadata
-        metadata = {
-            "name": deal.title,
-            "description": deal.objective[:200],
-            "creator": "Airvyb Management Ltd",
-            "deal_reference": deal.reference,
-            "opt_in_amount": str(deal.opt_in_amount),
-            "risk_level": deal.risk_level,
-            "duration_months": deal.duration_months,
-            "created_at": timezone.now().isoformat()
-        }
+        # Create token name and symbol (limited to 100 chars)
+        token_name = f"AVB{deal.reference[:6]}"
+        token_symbol = f"AVB{deal.reference[:3]}"
+        
+        # Create a short metadata string (keep under 100 bytes)
+        metadata_str = f"{deal.title[:20]}|{deal.reference[:6]}|{deal.opt_in_amount}"
+        
+        # Ensure metadata doesn't exceed 100 bytes
+        if len(metadata_str.encode('utf-8')) > 100:
+            # Truncate to 95 bytes to be safe
+            max_bytes = 95
+            while len(metadata_str.encode('utf-8')) > max_bytes and len(metadata_str) > 10:
+                metadata_str = metadata_str[:-1]
+        
+        logger.info(f"Creating NFT collection with metadata: {metadata_str}")
         
         # Create NFT collection
         transaction = (
             TokenCreateTransaction()
-            .set_token_name(f"Airvyb Deal: {deal.title[:30]}")
-            .set_token_symbol(f"AVB{deal.reference[:4]}")
+            .set_token_name(token_name)
+            .set_token_symbol(token_symbol)
             .set_token_type(TokenType.NON_FUNGIBLE_UNIQUE)
-            .set_supply_type(TokenSupplyType.FINITE)
+            .set_supply_type(SupplyType.FINITE)
             .set_max_supply(deal.max_opt_in_members or 1000)
             .set_treasury_account_id(operator_id)
             .set_admin_key(operator_key.public_key())
             .set_supply_key(supply_key_public)
-            .set_metadata(json.dumps(metadata))
-            .set_max_transaction_fee(20_000_000)  # 20 HBAR max fee
+            .set_metadata(metadata_str.encode())
             .freeze_with(client)
         )
         
+        # Sign with operator key
         transaction.sign(operator_key)
+        
+        # Sign with supply key if it's a new key
         if supply_key:
             transaction.sign(supply_key)
         
+        # Execute transaction
         receipt = transaction.execute(client)
         
-        if receipt.token_id:
-            token_id = str(receipt.token_id)
+        # Get token ID from receipt
+        if hasattr(receipt, 'token_id') and receipt.token_id:
+            token_id_obj = receipt.token_id
+            token_id = str(token_id_obj)
             
-            # Create a topic for deal updates
-            topic_data = {
+            logger.info(f"NFT collection created with token ID: {token_id}")
+            
+            # Store token ID in deal
+            deal.hedera_token_id = token_id
+            deal.save(update_fields=['hedera_token_id'])
+            
+            # Store the actual metadata in deal model for reference
+            deal.hedera_metadata_uri = f"https://airvyb.com/deals/{deal.slug}/metadata"
+            deal.save(update_fields=['hedera_metadata_uri'])
+            
+            # Create a topic for deal updates (metadata can be stored here)
+            from finance.hedera_consensus import hedera_consensus
+            full_metadata = {
                 "deal_id": deal.id,
                 "deal_reference": deal.reference,
                 "title": deal.title,
-                "type": "deal_updates"
+                "objective": deal.objective[:200],
+                "description": deal.description[:200],
+                "opt_in_amount": str(deal.opt_in_amount),
+                "risk_level": deal.risk_level,
+                "duration_months": deal.duration_months,
+                "total_capital_required": str(deal.total_capital_required),
+                "min_opt_in_members": deal.min_opt_in_members,
+                "max_opt_in_members": deal.max_opt_in_members,
+                "created_at": deal.created_at.isoformat(),
+                "type": "deal_metadata"
             }
-            topic_result = hedera_consensus.submit_message(topic_data)
+            
+            topic_result = hedera_consensus.submit_message(full_metadata)
             
             if topic_result.get('status') == 'success':
                 deal.hedera_topic_id = topic_result.get('topic')
+                deal.save(update_fields=['hedera_topic_id'])
             
             return token_id
+        else:
+            logger.error("No token ID returned in receipt")
+            return None
             
     except Exception as e:
         logger.error(f"Failed to create NFT collection for deal {deal.id}: {str(e)}", exc_info=True)
@@ -116,9 +163,11 @@ def mint_opt_in_nft(opt_in):
     """
     try:
         from hiero_sdk_python import (
-            Client, Network, AccountId, PrivateKey,
-            TokenMintTransaction
+            Client, Network, AccountId, PrivateKey, TokenId,
+            TokenMintTransaction, ResponseCode
         )
+        from cryptography.fernet import Fernet
+        import os
         
         deal = opt_in.deal
         
@@ -127,72 +176,149 @@ def mint_opt_in_nft(opt_in):
             logger.error(f"Deal {deal.id} has no NFT collection")
             return None
         
+        # Initialize encryption cipher
+        encryption_key = os.getenv('HEDERA_ENCRYPTION_KEY')
+        if not encryption_key:
+            logger.error("HEDERA_ENCRYPTION_KEY not found in environment")
+            return None
+        
+        cipher = Fernet(encryption_key.encode())
+        
         # Initialize client
-        network = Network(network=getattr(settings, 'HEDERA_NETWORK', 'testnet'))
+        network = Network(network=os.getenv('HEDERA_NETWORK', 'testnet'))
         client = Client(network)
         operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
         operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
         client.set_operator(operator_id, operator_key)
         
+        # Convert token ID string to TokenId object
+        try:
+            token_id_obj = TokenId.from_string(deal.hedera_token_id)
+            logger.info(f"Token ID converted: {token_id_obj}")
+        except Exception as e:
+            logger.error(f"Failed to convert token ID: {str(e)}")
+            return None
+        
         # Decrypt supply key
         supply_key = None
         if deal.hedera_supply_key_encrypted:
-            supply_key_str = hedera_consensus.cipher.decrypt(
-                deal.hedera_supply_key_encrypted.encode()
-            ).decode()
-            supply_key = PrivateKey.from_string_ed25519(supply_key_str)
+            try:
+                supply_key_str = cipher.decrypt(
+                    deal.hedera_supply_key_encrypted.encode()
+                ).decode()
+                supply_key = PrivateKey.from_string_ed25519(supply_key_str)
+                logger.info(f"Supply key decrypted successfully for deal {deal.id}")
+            except Exception as e:
+                logger.error(f"Failed to decrypt supply key: {str(e)}")
+                return None
         
-        # Prepare NFT metadata
-        metadata = {
-            "opt_in_reference": opt_in.reference,
-            "user_id": opt_in.user.id,
-            "user_email": opt_in.user.email,
-            "amount": str(opt_in.amount),
-            "opted_in_at": opt_in.created_at.isoformat(),
-            "deal_reference": deal.reference,
-            "deal_title": deal.title,
-            "type": "deal_opt_in"
-        }
+        # Create minimal metadata (under 100 bytes)
+        metadata_str = f"{opt_in.reference[:8]}|{opt_in.user.id}|{opt_in.amount}|{deal.reference[:8]}"
         
-        # Mint NFT
+        # Ensure metadata doesn't exceed 100 bytes
+        if len(metadata_str.encode('utf-8')) > 100:
+            max_bytes = 95
+            while len(metadata_str.encode('utf-8')) > max_bytes and len(metadata_str) > 10:
+                metadata_str = metadata_str[:-1]
+        
+        logger.info(f"Minting NFT with metadata: {metadata_str} (length: {len(metadata_str.encode('utf-8'))} bytes)")
+        
+        # Build transaction
         transaction = (
             TokenMintTransaction()
-            .set_token_id(deal.hedera_token_id)
-            .set_metadata([json.dumps(metadata).encode()])
+            .set_token_id(token_id_obj)
+            .set_metadata([metadata_str.encode()])
             .freeze_with(client)
         )
         
+        # Sign with operator key
         transaction.sign(operator_key)
+        
+        # Sign with supply key if available
         if supply_key:
             transaction.sign(supply_key)
+            logger.info("Transaction signed with supply key")
         
+        # Execute transaction
+        logger.info("Executing NFT mint transaction...")
         receipt = transaction.execute(client)
         
-        if receipt.serials and len(receipt.serials) > 0:
-            serial_number = receipt.serials[0]
+        # Log the full receipt for debugging
+        logger.info(f"Receipt received: {receipt}")
+        logger.info(f"Receipt attributes: {dir(receipt)}")
+        
+        # Check transaction status
+        if hasattr(receipt, 'status'):
+            logger.info(f"Transaction status: {receipt.status}")
+            if receipt.status != ResponseCode.SUCCESS:
+                status_name = ResponseCode(receipt.status).name
+                logger.error(f"Transaction failed with status: {status_name}")
+                return None
+        
+        # Try to get serial numbers - different ways to access
+        serial_number = None
+        
+        # Method 1: Check for serials attribute
+        if hasattr(receipt, 'serials'):
+            logger.info(f"Receipt has serials: {receipt.serials}")
+            if receipt.serials and len(receipt.serials) > 0:
+                serial_number = receipt.serials[0]
+        
+        # Method 2: Check for serials in receipt object
+        elif hasattr(receipt, 'serial_numbers'):
+            logger.info(f"Receipt has serial_numbers: {receipt.serial_numbers}")
+            if receipt.serial_numbers and len(receipt.serial_numbers) > 0:
+                serial_number = receipt.serial_numbers[0]
+        
+        # Method 3: Check if receipt itself is a list of serials
+        elif isinstance(receipt, list) and len(receipt) > 0:
+            serial_number = receipt[0]
+        
+        # Method 4: Check receipt's topic_sequence_number (sometimes used for NFT serials)
+        elif hasattr(receipt, 'topic_sequence_number'):
+            logger.info(f"Receipt has topic_sequence_number: {receipt.topic_sequence_number}")
+            serial_number = receipt.topic_sequence_number
+        
+        # If we have a serial number, store it
+        if serial_number:
             nft_id = f"{deal.hedera_token_id}/{serial_number}"
             
             # Store NFT info in opt-in
             opt_in.hedera_serial_number = serial_number
             opt_in.hedera_nft_id = nft_id
-            opt_in.hedera_message_id = str(receipt.transaction_id)
+            opt_in.hedera_message_id = str(receipt.transaction_id) if hasattr(receipt, 'transaction_id') else str(receipt)
             opt_in.save(update_fields=['hedera_serial_number', 'hedera_nft_id', 'hedera_message_id'])
             
             # Log on HCS
-            hedera_consensus.submit_message({
+            from finance.hedera_consensus import hedera_consensus
+            full_metadata = {
                 "type": "nft_minted",
                 "opt_in_id": opt_in.id,
+                "opt_in_reference": opt_in.reference,
                 "nft_id": nft_id,
                 "serial": serial_number,
-                "user": opt_in.user.email
-            }, topic_id=deal.hedera_topic_id)
+                "user_id": opt_in.user.id,
+                "user_email": opt_in.user.email,
+                "amount": str(opt_in.amount),
+                "opted_in_at": opt_in.created_at.isoformat(),
+                "deal_id": deal.id,
+                "deal_reference": deal.reference,
+                "deal_title": deal.title
+            }
             
+            hedera_consensus.submit_message(full_metadata, topic_id=deal.hedera_topic_id)
+            
+            logger.info(f"NFT minted successfully for opt-in {opt_in.id} with serial: {serial_number}")
             return serial_number
+        else:
+            logger.error(f"No serial number found in receipt for opt-in {opt_in.id}")
+            logger.error(f"Full receipt: {receipt}")
+            return None
             
     except Exception as e:
         logger.error(f"Failed to mint NFT for opt-in {opt_in.id}: {str(e)}", exc_info=True)
         return None
-
+    
 
 # ============================================
 # UTILITY FUNCTIONS
@@ -300,10 +426,12 @@ def deal_detail(request, slug):
 # OPT-IN TO DEAL
 # ============================================
 
+# deals/views.py - Updated opt_in_deal function
+
 @login_required
 @require_POST
 def opt_in_deal(request, deal_id):
-    """Member opts in to a deal"""
+    """Member opts in to a deal - NFT will be minted automatically"""
     deal = get_object_or_404(Deal, id=deal_id)
     
     # Check if opt-in is open
@@ -383,11 +511,13 @@ def opt_in_deal(request, deal_id):
             
             # Submit to Hedera Consensus Service
             try:
+                from finance.hedera_consensus import hedera_consensus
                 hedera_data = {
                     'type': 'deal_opt_in',
                     'opt_in_id': opt_in.id,
                     'reference': opt_in.reference,
                     'user_id': request.user.id,
+                    'user_email': request.user.email,
                     'deal_id': deal.id,
                     'deal_reference': deal.reference,
                     'amount': float(deal.opt_in_amount),
@@ -397,20 +527,39 @@ def opt_in_deal(request, deal_id):
             except Exception as e:
                 logger.error(f"HCS submission failed: {str(e)}")
             
-            # Mint NFT for this opt-in (if deal has NFT collection)
+            # ============================================
+            # MINT NFT FOR THE OPT-IN
+            # ============================================
+            nft_minted = False
             if deal.hedera_token_id:
                 try:
+                    logger.info(f"Starting NFT minting for opt-in {opt_in.id}")
                     serial = mint_opt_in_nft(opt_in)
                     if serial:
-                        messages.info(request, f'Your NFT proof has been minted with serial #{serial}')
+                        nft_minted = True
+                        logger.info(f"NFT minted successfully for opt-in {opt_in.id} with serial: {serial}")
+                        messages.success(
+                            request,
+                            f'Successfully opted in to {deal.title}! Your NFT proof has been minted with serial #{serial}.'
+                        )
+                    else:
+                        logger.error(f"Failed to mint NFT for opt-in {opt_in.id}")
+                        messages.warning(
+                            request,
+                            f'Successfully opted in to {deal.title}, but NFT minting failed. Our team will resolve this shortly.'
+                        )
                 except Exception as e:
-                    logger.error(f"NFT minting failed: {str(e)}")
-                    # Don't block the user, just log the error
-            
-            messages.success(
-                request,
-                f'Successfully opted in to {deal.title}! Your NFT proof will be available shortly.'
-            )
+                    logger.error(f"Error minting NFT for opt-in {opt_in.id}: {str(e)}", exc_info=True)
+                    messages.warning(
+                        request,
+                        f'Successfully opted in to {deal.title}, but NFT minting encountered an issue. Please check back later.'
+                    )
+            else:
+                logger.warning(f"No NFT collection found for deal {deal.id}")
+                messages.success(
+                    request,
+                    f'Successfully opted in to {deal.title}!'
+                )
             
             return redirect('deals:detail', slug=deal.slug)
     
@@ -418,7 +567,6 @@ def opt_in_deal(request, deal_id):
         logger.error(f"Opt-in error: {str(e)}", exc_info=True)
         messages.error(request, 'An error occurred. Please try again.')
         return redirect('deals:detail', slug=deal.slug)
-
 
 # ============================================
 # MY DEALS (USER'S OPT-INS)
@@ -600,20 +748,27 @@ def aml_retry_nft(request, deal_id):
     if deal.hedera_token_id:
         return JsonResponse({'error': 'NFT collection already exists'}, status=400)
     
-    token_id = create_hedera_nft_collection(deal)
-    
-    if token_id:
-        deal.hedera_token_id = token_id
-        deal.save()
-        return JsonResponse({
-            'success': True,
-            'token_id': token_id,
-            'message': 'NFT collection created successfully'
-        })
-    else:
+    try:
+        token_id = create_hedera_nft_collection(deal)
+        
+        if token_id:
+            deal.hedera_token_id = token_id
+            deal.save(update_fields=['hedera_token_id'])
+            return JsonResponse({
+                'success': True,
+                'token_id': token_id,
+                'message': 'NFT collection created successfully'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to create NFT collection. Check logs for details.'
+            }, status=500)
+    except Exception as e:
+        logger.error(f"Error in retry NFT: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
-            'error': 'Failed to create NFT collection'
+            'error': str(e)
         }, status=500)
 
 
@@ -641,3 +796,51 @@ def api_check_opt_in(request, deal_id):
         })
     except DealOptIn.DoesNotExist:
         return JsonResponse({'opted_in': False})
+    
+
+
+
+##########################################
+############DEBUG VIEWS###################
+
+@login_required
+def debug_nft_status(request, deal_id):
+    """Debug endpoint to check NFT collection status"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    deal = get_object_or_404(Deal, id=deal_id)
+    
+    try:
+        from hiero_sdk_python import (
+            Client, Network, AccountId, PrivateKey, TokenId,
+            TokenInfoQuery
+        )
+        import os
+        
+        # Initialize client
+        network = Network(network=os.getenv('HEDERA_NETWORK', 'testnet'))
+        client = Client(network)
+        operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
+        operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
+        client.set_operator(operator_id, operator_key)
+        
+        # Convert token ID
+        token_id = TokenId.from_string(deal.hedera_token_id)
+        
+        # Query token info
+        query = TokenInfoQuery().set_token_id(token_id)
+        token_info = query.execute(client)
+        
+        return JsonResponse({
+            'success': True,
+            'token_id': deal.hedera_token_id,
+            'token_name': getattr(token_info, 'name', 'N/A'),
+            'token_symbol': getattr(token_info, 'symbol', 'N/A'),
+            'total_supply': getattr(token_info, 'total_supply', 'N/A'),
+            'supply_type': str(getattr(token_info, 'supply_type', 'N/A')),
+            'has_supply_key': hasattr(token_info, 'supply_key') and token_info.supply_key is not None
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

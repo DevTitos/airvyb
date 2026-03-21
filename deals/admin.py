@@ -95,8 +95,7 @@ class DealAdmin(admin.ModelAdmin):
         }),
         ('Timeline', {
             'fields': [
-                'disclosed_at', 'opt_in_start', 'opt_in_end',
-                'setup_start', 'launched_at', 'expected_end_date', 'closed_at'
+                'disclosed_at', 'opt_in_start', 'opt_in_end', 'launched_at', 'closed_at'
             ]
         }),
         ('Status', {
