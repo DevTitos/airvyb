@@ -17,11 +17,6 @@ load_dotenv()
 operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
 operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
 
-# Astral Draw
-# The Launchpad
-# The Cosmic Clock
-# The Nebula Split
-# The Galactic Forum
 def create_topic():
     network = Network(network='testnet')
     client = Client(network)
@@ -30,7 +25,7 @@ def create_topic():
 
     transaction = (
         TopicCreateTransaction(
-            memo="The Galactic Forum",
+            memo="Deals Log",
             admin_key=operator_key.public_key()
         )
         .freeze_with(client)
@@ -39,9 +34,9 @@ def create_topic():
 
     try:
         receipt = transaction.execute(client)
-        if receipt and receipt.topicId:
+        if receipt and receipt.topic_id:
             print(f"Topic created with ID: {receipt.topic_id}")
-            return receipt.topicId
+            return receipt.topic_id
         else:
             print("Topic creation failed: Topic ID not returned in receipt.")
     except Exception as e:

@@ -1099,7 +1099,7 @@
                             </div>
                         </div>
                         
-                        <div style="margin-top: 20px; text-align: center;">
+                        <div style="text-align: center;">
                             <a href="{{ transaction.hedera_explorer_url }}" target="_blank" class="btn-action btn-hedera">
                                 <i class="fas fa-external-link-alt"></i> View on HashScan
                             </a>
@@ -1135,17 +1135,7 @@
                     {% endif %}
                 </div>
 
-                <!-- Metadata -->
-                {% if transaction.metadata %}
-                <div class="metadata-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-database"></i> Metadata
-                    </h2>
-                    <div class="metadata-content">
-                        <pre>{{ transaction.metadata|pprint }}</pre>
-                    </div>
-                </div>
-                {% endif %}
+                
             </div>
 
             <!-- Right Column - Sidebar -->

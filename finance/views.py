@@ -25,6 +25,22 @@ from core.models import Notification, AuditLog
 from intasend import APIService
 from .hedera_consensus import hedera_consensus
 
+
+from hiero_sdk_python import (
+    Client,
+    Network,
+    AccountId,
+    PrivateKey,
+    TopicId,
+    TopicCreateTransaction,
+    TopicMessageSubmitTransaction,
+)
+
+import os
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -963,15 +979,101 @@ def deposit_callback(request):
 # ============================================
 # HEDERA VERIFICATION ENDPOINT
 # ============================================
-
 @login_required
 @require_GET
 def verify_transaction(request, transaction_id):
-    """Verify transaction on Hedera Consensus Service"""
+    """Verify transaction on Hedera Consensus Service - submit if not already submitted"""
+    
     transaction = get_object_or_404(Transaction, id=transaction_id, user=request.user)
     
+    # Get Hedera credentials from environment
+    operator_id = AccountId.from_string(os.getenv('OPERATOR_ID'))
+    operator_key = PrivateKey.from_string_ed25519(os.getenv('OPERATOR_KEY'))
+    topic_id = TopicId.from_string(os.getenv('TOPIC_ID'))
+    
+    # Check if transaction has already been submitted to Hedera
+    if not transaction.hedera_submitted:
+        # Prepare the message to submit
+        message_data = {
+            'type': 'transaction_verification',
+            'transaction_id': transaction.id,
+            'reference': transaction.reference,
+            'transaction_type': transaction.transaction_type,
+            'amount': float(transaction.amount),
+            'user_id': transaction.user.id,
+            'user_email': transaction.user.email,
+            'status': transaction.status,
+            'initiated_at': transaction.initiated_at.isoformat(),
+            'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+            'mpesa_code': transaction.mpesa_code or '',
+            'hedera_verification_requested': True,
+            'timestamp': timezone.now().isoformat()
+        }
+        
+        message = json.dumps(message_data, default=str)
+        
+        try:
+            # Initialize Hedera client
+            network = Network(network=os.getenv('HEDERA_NETWORK', 'testnet'))
+            client = Client(network)
+            client.set_operator(operator_id, operator_key)
+            
+            # Create and submit transaction
+            hedera_transaction = (
+                TopicMessageSubmitTransaction(topic_id=topic_id, message=message)
+                .freeze_with(client)
+                .sign(operator_key)
+            )
+            
+            receipt = hedera_transaction.execute(client)
+            
+            # Update transaction with Hedera submission details
+            transaction.hedera_submitted = True
+            transaction.hedera_topic_id = str(topic_id)
+            transaction.hedera_message_id = str(receipt.transaction_id) if hasattr(receipt, 'transaction_id') else None
+            transaction.hedera_sequence_number = getattr(receipt, 'topic_sequence_number', None)
+            transaction.hedera_consensus_timestamp = str(receipt.consensus_timestamp) if hasattr(receipt, 'consensus_timestamp') else None
+            transaction.metadata['hedera_verification'] = {
+                'submitted_at': timezone.now().isoformat(),
+                'receipt': str(receipt)
+            }
+            transaction.save(update_fields=[
+                'hedera_submitted', 'hedera_topic_id', 'hedera_message_id',
+                'hedera_sequence_number', 'hedera_consensus_timestamp', 'metadata'
+            ])
+            
+            # Log success
+            logger.info(f"Transaction {transaction.reference} submitted to Hedera on verification request")
+            
+        except Exception as e:
+            logger.error(f"Failed to submit transaction to Hedera: {str(e)}")
+            # Don't block the response - return current state with error flag
+            return JsonResponse({
+                'success': False,
+                'error': f'Hedera submission failed: {str(e)}',
+                'transaction': {
+                    'id': transaction.id,
+                    'reference': transaction.reference,
+                    'amount': float(transaction.amount),
+                    'type': transaction.transaction_type,
+                    'status': transaction.status,
+                    'created_at': transaction.initiated_at.isoformat(),
+                    'completed_at': transaction.completed_at.isoformat() if transaction.completed_at else None,
+                    'hedera': {
+                        'submitted': transaction.hedera_submitted,
+                        'topic_id': transaction.hedera_topic_id,
+                        'message_id': transaction.hedera_message_id,
+                        'sequence_number': transaction.hedera_sequence_number,
+                        'consensus_timestamp': transaction.hedera_consensus_timestamp,
+                        'explorer_url': transaction.hedera_explorer_url,
+                    }
+                }
+            }, status=500)
+    
+    # Return the transaction details with Hedera information
     return JsonResponse({
         'success': True,
+        'message': 'Transaction verified on Hedera' if transaction.hedera_submitted else 'Transaction pending Hedera submission',
         'transaction': {
             'id': transaction.id,
             'reference': transaction.reference,
@@ -989,6 +1091,43 @@ def verify_transaction(request, transaction_id):
                 'explorer_url': transaction.hedera_explorer_url,
             }
         }
+    })
+
+
+@login_required
+def decrypt_hedera_message(request, transaction_id):
+    """Decrypt a Hedera message for admin viewing"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    import os
+    import json
+    import base64
+    from cryptography.fernet import Fernet
+    
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+    
+    if not transaction.hedera_submitted:
+        return JsonResponse({'error': 'Transaction not submitted to Hedera'}, status=404)
+    
+    # Check if we have the encrypted data stored
+    if not transaction.metadata.get('hedera_verification', {}).get('encrypted'):
+        return JsonResponse({'error': 'No encrypted data found'}, status=404)
+    
+    encryption_key = os.getenv('HEDERA_ENCRYPTION_KEY')
+    if not encryption_key:
+        return JsonResponse({'error': 'Encryption key not configured'}, status=500)
+    
+    cipher = Fernet(encryption_key.encode())
+    
+    # Note: The actual encrypted message is stored on Hedera, not in our DB
+    # This function would need to fetch from Hedera first
+    # For now, return instructions
+    return JsonResponse({
+        'message': 'To decrypt, you need to fetch the message from Hedera using the message ID',
+        'message_id': transaction.hedera_message_id,
+        'topic_id': transaction.hedera_topic_id,
+        'hashscan_url': f"https://hashscan.io/testnet/message/{transaction.hedera_message_id}" if transaction.hedera_message_id else None
     })
 
 
