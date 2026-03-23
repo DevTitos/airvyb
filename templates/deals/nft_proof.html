@@ -65,6 +65,76 @@
     margin-bottom: 30px;
 }
 
+/* NFT Image Section */
+.nft-image-section {
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+    padding: 40px;
+    text-align: center;
+    border-bottom: 2px solid rgba(0,200,83,0.3);
+}
+
+.nft-image-container {
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.nft-image {
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    transition: transform 0.3s;
+    border: 2px solid rgba(0,200,83,0.3);
+}
+
+.nft-image:hover {
+    transform: scale(1.02);
+}
+
+.nft-image-loading {
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 80px 20px;
+    text-align: center;
+    border: 2px dashed rgba(0,200,83,0.3);
+}
+
+.nft-image-loading i {
+    font-size: 48px;
+    color: #00c853;
+    margin-bottom: 15px;
+}
+
+.nft-image-loading p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* Download Button */
+.download-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    border-radius: 50px;
+    padding: 10px 20px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    border: 1px solid rgba(0,200,83,0.5);
+}
+
+.download-btn:hover {
+    background: #00c853;
+    transform: translateY(-2px);
+}
+
 .nft-header {
     background: linear-gradient(135deg, rgba(0,200,83,0.1), rgba(0,200,83,0.05));
     padding: 30px;
@@ -277,18 +347,6 @@
     to { transform: rotate(360deg); }
 }
 
-/* QR Code */
-.qr-code {
-    text-align: center;
-    margin: 20px 0;
-    padding: 20px;
-    background: white;
-    border-radius: var(--radius);
-    display: inline-block;
-    width: 100%;
-    max-width: 200px;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
     .info-grid {
@@ -305,6 +363,17 @@
     
     .nft-content {
         padding: 20px;
+    }
+    
+    .nft-image-section {
+        padding: 20px;
+    }
+    
+    .download-btn {
+        bottom: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 12px;
     }
 }
 </style>
@@ -328,15 +397,37 @@
         <p>This NFT serves as your immutable proof of participation in this deal</p>
     </div>
     
-    {% if opt_in.hedera_nft_id %}
     <!-- NFT Card -->
     <div class="nft-card">
+        <!-- NFT Image Section -->
+        <div class="nft-image-section">
+            {% if opt_in.nft_image %}
+                <div class="nft-image-container">
+                    <img src="{{ opt_in.nft_image.url }}" alt="NFT Proof" class="nft-image" id="nftImage">
+                    <a href="{{ opt_in.nft_image.url }}" download="airvyb_nft_{{ opt_in.reference }}.png" class="download-btn" id="downloadBtn">
+                        <i class="fas fa-download"></i> Download NFT
+                    </a>
+                </div>
+            {% elif opt_in.hedera_nft_id %}
+                <div class="nft-image-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Generating your NFT image...</p>
+                    <p style="font-size: 0.8rem;">This may take a few moments</p>
+                </div>
+            {% else %}
+                <div class="nft-image-loading">
+                    <i class="fas fa-clock"></i>
+                    <p>NFT image will appear after minting</p>
+                </div>
+            {% endif %}
+        </div>
+        
         <div class="nft-header">
             <div class="nft-icon">
                 <i class="fas fa-link"></i>
             </div>
             <h2>{{ opt_in.deal.title }}</h2>
-            <div class="nft-id">{{ opt_in.hedera_nft_id }}</div>
+            <div class="nft-id">{{ opt_in.hedera_nft_id|default:"Minting in progress..." }}</div>
         </div>
         
         <div class="nft-content">
@@ -411,15 +502,15 @@
                 <div class="info-grid">
                     <div class="info-row">
                         <span class="info-label">Token ID:</span>
-                        <span class="info-value reference">{{ opt_in.deal.hedera_token_id }}</span>
+                        <span class="info-value reference">{{ opt_in.deal.hedera_token_id|default:"Minting..." }}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Serial Number:</span>
-                        <span class="info-value">{{ opt_in.hedera_serial_number }}</span>
+                        <span class="info-value">{{ opt_in.hedera_serial_number|default:"Pending" }}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">NFT ID:</span>
-                        <span class="info-value reference">{{ opt_in.hedera_nft_id }}</span>
+                        <span class="info-value reference">{{ opt_in.hedera_nft_id|default:"Minting in progress" }}</span>
                     </div>
                     {% if opt_in.hedera_message_id %}
                     <div class="info-row">
@@ -430,21 +521,13 @@
                 </div>
             </div>
             
-            <!-- Hedera Metadata (if stored) -->
-            {% if opt_in.metadata %}
-            <div class="info-section">
-                <h3><i class="fas fa-database"></i> Hedera Metadata</h3>
-                <div class="metadata-section">
-                    <pre>{{ opt_in.metadata|pprint }}</pre>
-                </div>
-            </div>
-            {% endif %}
-            
             <!-- Action Buttons -->
             <div class="action-buttons">
+                {% if opt_in.hedera_nft_id %}
                 <a href="https://hashscan.io/testnet/token/{{ opt_in.hedera_nft_id }}" target="_blank" class="btn-primary">
                     <i class="fas fa-external-link-alt"></i> View on HashScan
                 </a>
+                {% endif %}
                 <a href="{% url 'deals:detail' opt_in.deal.slug %}" class="btn-secondary">
                     <i class="fas fa-eye"></i> View Deal Details
                 </a>
@@ -466,65 +549,36 @@
                     a decentralized public ledger. You can view it on HashScan, a Hedera blockchain explorer, and it serves as 
                     verifiable evidence of your opt-in to this deal.
                 </p>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 10px;">
+                    <i class="fas fa-download"></i> You can download the NFT image for your records or share it as proof of your investment.
+                </p>
             </div>
         </div>
     </div>
-    
-    {% else %}
-    <!-- No NFT Found -->
-    <div class="nft-card">
-        <div class="nft-header" style="background: rgba(255,190,11,0.1);">
-            <div class="nft-icon" style="background: rgba(255,190,11,0.1);">
-                <i class="fas fa-clock" style="color: var(--accent-5);"></i>
-            </div>
-            <h2 style="color: var(--accent-5);">NFT Pending</h2>
-            <div class="nft-id">{{ opt_in.reference }}</div>
-        </div>
-        
-        <div class="nft-content">
-            <div class="verification-badge" style="background: rgba(255,190,11,0.1); border-color: rgba(255,190,11,0.2);">
-                <i class="fas fa-spinner fa-spin" style="color: var(--accent-5);"></i>
-                <div class="text">
-                    <strong style="color: var(--accent-5);">NFT Minting in Progress</strong>
-                    <p>Your NFT proof is being minted on the Hedera network. This process typically takes a few seconds.</p>
-                </div>
-            </div>
-            
-            <div class="info-section">
-                <h3><i class="fas fa-info-circle"></i> What's happening?</h3>
-                <p style="color: var(--text-light);">
-                    Your opt-in has been confirmed, and we're now creating your unique NFT proof on the Hedera network.
-                    This NFT will serve as your immutable proof of participation in this deal.
-                </p>
-                <p style="color: var(--text-light); margin-top: 10px;">
-                    <i class="fas fa-sync-alt fa-spin"></i> Please refresh the page in a few moments to view your NFT.
-                </p>
-            </div>
-            
-            <div class="action-buttons">
-                <button onclick="location.reload()" class="btn-primary">
-                    <i class="fas fa-sync-alt"></i> Refresh Status
-                </button>
-                <a href="{% url 'deals:my_deals' %}" class="btn-secondary">
-                    <i class="fas fa-list"></i> Back to My Deals
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 <script>
-// Auto-refresh if NFT is pending
-{% if not opt_in.hedera_nft_id %}
+// Auto-refresh if NFT is pending or image is still generating
+{% if not opt_in.hedera_nft_id or not opt_in.nft_image %}
+let refreshCount = 0;
 let refreshInterval;
 
 function checkNFTStatus() {
+    refreshCount++;
+    console.log('Checking NFT status...', refreshCount);
+    
     fetch(window.location.href)
         .then(response => response.text())
         .then(html => {
-            // Check if NFT ID appears in the response
-            if (html.includes('hedera_nft_id')) {
+            // Check if NFT image appears
+            if (html.includes('nft-image') && html.includes('/media/nft_proofs/')) {
+                console.log('NFT image found! Refreshing...');
+                clearInterval(refreshInterval);
+                location.reload();
+            }
+            // Check if NFT ID appears
+            else if (html.includes('hedera_nft_id') && html.includes('0.0.')) {
+                console.log('NFT ID found! Refreshing...');
                 clearInterval(refreshInterval);
                 location.reload();
             }
@@ -539,8 +593,29 @@ refreshInterval = setInterval(checkNFTStatus, 5000);
 setTimeout(() => {
     if (refreshInterval) {
         clearInterval(refreshInterval);
+        console.log('Auto-refresh stopped after timeout');
     }
 }, 120000);
 {% endif %}
+
+// Function to download NFT image
+function downloadNFTImage() {
+    const img = document.getElementById('nftImage');
+    if (img) {
+        const link = document.createElement('a');
+        link.download = 'airvyb_nft_{{ opt_in.reference }}.png';
+        link.href = img.src;
+        link.click();
+    }
+}
+
+// Print function with NFT image included
+const originalPrint = window.print;
+window.print = function() {
+    // Add a small delay to ensure images load
+    setTimeout(() => {
+        originalPrint();
+    }, 500);
+};
 </script>
 {% endblock %}

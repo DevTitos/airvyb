@@ -16,6 +16,8 @@ import os
 from .models import Deal, DealOptIn, DealCategory, DealReport, DealUpdate
 from finance.models import Wallet, Transaction
 from finance.hedera_consensus import hedera_consensus
+from .utils import NFTImageGenerator
+
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -508,6 +510,19 @@ def opt_in_deal(request, deal_id):
             deal.total_opted_in += 1
             deal.total_collected += deal.opt_in_amount
             deal.save()
+
+            try:
+                nft_generator = NFTImageGenerator()
+                nft_image = nft_generator.generate_opt_in_nft(opt_in, deal)
+                
+                if nft_image:
+                    opt_in.nft_image = nft_image
+                    opt_in.save(update_fields=['nft_image'])
+                    logger.info(f"NFT image generated for opt-in {opt_in.id}")
+                else:
+                    logger.error(f"Failed to generate NFT image for opt-in {opt_in.id}")
+            except Exception as e:
+                logger.error(f"Error generating NFT image: {str(e)}")
             
             # Submit to Hedera Consensus Service
             try:

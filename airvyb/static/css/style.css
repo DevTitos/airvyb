@@ -844,3 +844,237 @@ ul, ol {
         color: black !important;
     }
 }
+
+
+
+/* Add these styles to your style.css or in the head section */
+
+/* Desktop User Menu */
+.nav-user.desktop-user {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: 20px;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-profile:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 0, 110, 0.3);
+}
+
+.user-profile .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-profile .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-profile .user-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.user-profile .fa-chevron-down {
+    font-size: 12px;
+    color: var(--text-light);
+    transition: transform 0.3s;
+}
+
+.user-profile.active .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* Desktop User Actions Dropdown */
+.desktop-user-actions {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 220px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.desktop-user-actions.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.user-action:hover {
+    background: rgba(255, 0, 110, 0.1);
+    color: var(--accent-1);
+}
+
+.user-action i {
+    width: 20px;
+    font-size: 16px;
+}
+
+.user-action-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 8px 0;
+}
+
+.logout-action {
+    color: #ff4444;
+}
+
+.logout-action:hover {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+/* Mobile User Menu - Keep existing styles */
+.mobile-user {
+    display: none;
+}
+
+/* Responsive: Hide desktop user menu on mobile, show mobile version */
+@media (max-width: 992px) {
+    .nav-user.desktop-user {
+        display: none;
+    }
+    
+    .mobile-user {
+        display: block;
+    }
+    
+    .nav-user {
+        width: 100%;
+        margin-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 15px;
+    }
+    
+    .user-profile-mobile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        cursor: pointer;
+        width: 100%;
+    }
+    
+    .user-info-mobile {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .user-actions {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    
+    .user-actions.active {
+        display: flex;
+    }
+    
+    .user-action {
+        padding: 12px 20px;
+    }
+}
+
+.nav-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    margin: 15px 0;
+}
+
+/* Navigation Section Title */
+.nav-section-title {
+    padding: 8px 15px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #00c853;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.nav-section-title i {
+    font-size: 12px;
+}
+
+/* Mobile User Action Header */
+.user-action-header {
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #00c853;
+    background: rgba(0,200,83,0.05);
+    margin-top: 5px;
+}
+
+/* Hover effects for AML links */
+.nav-link[href*="aml"]:hover {
+    background: rgba(0,200,83,0.1);
+}
+
+.nav-link[href*="aml"] i {
+    color: #00c853;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .nav-section-title {
+        padding: 12px 20px;
+        margin-top: 10px;
+    }
+    
+    .nav-divider {
+        margin: 10px 0;
+    }
+    
+    .user-action-header {
+        padding: 12px 20px;
+    }
+}

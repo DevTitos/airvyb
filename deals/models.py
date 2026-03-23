@@ -200,6 +200,8 @@ class DealOptIn(models.Model):
                                      help_text="Full NFT ID (token_id/serial)")
     hedera_message_id = models.CharField(max_length=100, null=True, blank=True,
                                         help_text="Hedera message ID for NFT minting")
+    nft_image = models.ImageField(upload_to='nft_proofs/', null=True, blank=True,
+                                   help_text="Generated NFT image proof")
     
     # Metadata
     ip_address = models.GenericIPAddressField(null=True, blank=True)
