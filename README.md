@@ -13,11 +13,11 @@
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="media/1.png" alt="Fianace Dashboard" width="50%">
-  <img src="media/2.png" alt="Transactions" width="50%">
+  <img src="media/1.png" alt="Fianace Dashboard" width="80%">
+  <img src="media/2.png" alt="Transactions" width="80%">
   <br><br>
-  <img src="media/3.1.png" alt="Deals" width="50%">
-  <img src="media/4.png" alt="NFT Proof" width="50%">
+  <img src="media/3.1.png" alt="Deals" width="45%">
+  <img src="media/4.png" alt="NFT Proof" width="45%">
   <br><br>
   <img src="media/5.png" alt="Hedera HashScan Verification" width="45%">
   <img src="media/6.png" alt="Member Dashboard" width="45%">
@@ -317,11 +317,14 @@ Simple interface	🏗️ Wealth Building
 Curated opportunities	🌐 Network Usage
 NFTs + HCS messages
 # 🗺️ Roadmap
+```
 Phase	Status	Features
 Phase 1: Core Platform	✅ Complete	User registration • Wallet creation • Deal browsing • NFT minting • HCS logging
 Phase 2: Enhanced Features	🔲 Q3 2026	NFT marketplace • Automated distributions • Analytics • Mobile app
 Phase 3: Ecosystem Expansion	🔲 Q4 2026	Cross-chain • DAO governance • DeFi integration • Regional expansion
 Phase 4: Enterprise	🔲 2027	White-label • Compliance tools • Custom structuring • AI risk assessment
+```
+
 # 👥 Team
 Role	Name	GitHub
 Lead Developer	Titos Kipkoech	@devtitos
