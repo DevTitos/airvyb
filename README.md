@@ -13,11 +13,11 @@
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="media/1.png" alt="Fianace Dashboard" width="75%">
-  <img src="media/2.png" alt="Transactions" width="75%">
+  <img src="media/1.png" alt="Fianace Dashboard" width="50%">
+  <img src="media/2.png" alt="Transactions" width="50%">
   <br><br>
-  <img src="media/3.1.png" alt="Deals" width="75%">
-  <img src="media/4.png" alt="NFT Proof" width="75%">
+  <img src="media/3.1.png" alt="Deals" width="50%">
+  <img src="media/4.png" alt="NFT Proof" width="50%">
   <br><br>
   <img src="media/5.png" alt="Hedera HashScan Verification" width="45%">
   <img src="media/6.png" alt="Member Dashboard" width="45%">
@@ -79,31 +79,34 @@ graph TD
     F --> G[Verifiable on HashScan Forever]
 ```
 
+
 # Step-by-Step Flow
-Discover Deals - Browse curated investment opportunities from AML
+1. Discover Deals - Browse curated investment opportunities from AML
 
-Opt In - Select a deal and opt in using wallet balance
+2. Opt In - Select a deal and opt in using wallet balance
 
-Payment Processing - Funds deducted from wallet, transaction recorded
+3. Payment Processing - Funds deducted from wallet, transaction recorded
 
-NFT Minting - Unique NFT minted on Hedera Token Service
+4. NFT Minting - Unique NFT minted on Hedera Token Service
 
-Proof Generation - User receives NFT as immutable proof
+5. Proof Generation - User receives NFT as immutable proof
 
-Verification - View transaction and NFT on HashScan
+6. Verification - View transaction and NFT on HashScan
 
-🔗 Hedera Integration
+
+# 🔗 Hedera Integration
 1. Hedera Token Service (HTS) - NFT Collections
 Each deal is an NFT collection:
 
-
+```
 # Create NFT collection for a deal
 token_id = create_hedera_nft_collection(deal)
 # Returns: "0.0.1234567"
-2. Hedera Consensus Service (HCS) - Immutable Records
+```
+# 2. Hedera Consensus Service (HCS) - Immutable Records
 Every transaction is timestamped and stored:
 
-
+```
 # Submit transaction to HCS
 hedera_data = {
     'type': 'deal_opt_in',
@@ -112,15 +115,16 @@ hedera_data = {
     'timestamp': timezone.now().isoformat()
 }
 hedera_consensus.submit_message(hedera_data)
-3. Hedera Wallet Integration
+```
+# 3. Hedera Wallet Integration
 Auto-creation of Hedera accounts for users:
-
-
+```
 # Auto-create wallet on user verification
 account_data = HederaService.create_account(user.email)
 user.hedera_account_id = account_data['account_id']
-4. NFT Minting Process
-
+```
+# 4. NFT Minting Process
+```
 def mint_opt_in_nft(opt_in):
     # Prepare metadata (under 100 bytes)
     metadata = f"{opt_in.reference[:8]}|{opt_in.user.id}|{opt_in.amount}"
@@ -134,8 +138,9 @@ def mint_opt_in_nft(opt_in):
     receipt = transaction.execute(client)
     serial_number = receipt.serials[0]
     return serial_number
-🏗️ Technical Architecture
-
+```
+# 🏗️ Technical Architecture
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Frontend (Django Templates)              │
 ├─────────────────────────────────────────────────────────────┤
@@ -151,8 +156,10 @@ def mint_opt_in_nft(opt_in):
 ├─────────────────────────────────────────────────────────────┤
 │                    Database (PostgreSQL)                     │
 └─────────────────────────────────────────────────────────────┘
-Core Models
-python
+
+```
+# Core Models
+```
 # Deal Model - NFT Collection
 class Deal(models.Model):
     hedera_token_id = models.CharField(max_length=50, unique=True)
@@ -166,258 +173,174 @@ class DealOptIn(models.Model):
     hedera_serial_number = models.IntegerField(null=True)
     hedera_nft_id = models.CharField(max_length=100, null=True)
 ✨ Key Features
-For Members
+```
+---
+# For Members
 🔍 Browse Deals - Filter by category, risk level, status
-
 💰 Wallet Management - View balance, transaction history
-
 📝 Opt-In to Deals - One-click participation
-
 🎨 NFT Proof - Receive unique NFT as proof
-
 📊 Dashboard - Track all investments in one place
-
 🔗 HashScan Integration - Verify transactions instantly
 
-For AML (Admin)
+# For AML (Admin)
 🏗️ Deal Creation - Create new deals with NFT collections
-
 📈 Analytics Dashboard - Track total opt-ins, collections
-
 🔄 Retry Mechanism - Recover from failed NFT minting
-
 📊 Revenue Tracking - Monitor deal performance
 
-🛠️ Tech Stack
-Backend
-Framework: Django 5.2
+---
 
-Database: PostgreSQL
+## 🛠️ Tech Stack
 
-Payment: IntaSend M-Pesa API
+<div align="center">
 
-Caching: Redis
+| Category | Technologies |
+|----------|--------------|
+| **🎨 Frontend** | Django Templates • Custom CSS • Font Awesome • Chart.js • Vanilla JS |
+| **⚙️ Backend** | Django 5.2 • PostgreSQL • Redis • Celery • IntaSend API |
+| **🔗 Hedera** | hiero-sdk-python • HTS (NFTs) • HCS (Logs) • Hedera Account Service • Testnet |
+| **🐳 DevOps** | Docker • GitHub Actions • Cloud Ready |
 
-Task Queue: Celery (async processing)
+</div>
 
-Hedera Integration
-SDK: hiero-sdk-python
+---
 
-Services:
+## 🚀 Quick Start
 
-Hedera Token Service (HTS) - NFT minting
+### Prerequisites
 
-Hedera Consensus Service (HCS) - Transaction logs
+<div align="center">
+  
+| Requirement | Version |
+|-------------|---------|
+| Python | 3.10+ |
+| PostgreSQL | 14+ |
+| Redis | 7+ (optional) |
+| Hedera Account | Testnet |
 
-Hedera Account Service - Wallet creation
+</div>
 
-Network: Testnet (with mainnet ready)
+### 5-Minute Setup
 
-Frontend
-Templates: Django Templates
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/airvyb.git
+cd airvyb
 
-CSS: Custom + Font Awesome
+# Set up virtual environment
+python -m venv venv && source venv/bin/activate
 
-JavaScript: Vanilla JS
-
-Charts: Chart.js
-
-DevOps
-Container: Docker
-
-CI/CD: GitHub Actions
-
-Hosting: Ready for any cloud provider
-
-🚀 Installation
-Prerequisites
-Python 3.10+
-
-PostgreSQL
-
-Redis (optional)
-
-Hedera Testnet Account
-
-Step 1: Clone Repository
-bash
-git clone https://github.com/yourusername/airvyb-invest.git
-cd airvyb-invest
-Step 2: Set Up Virtual Environment
-bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-Step 3: Install Dependencies
-bash
+# Install dependencies
 pip install -r requirements.txt
-Step 4: Configure Environment Variables
-Create .env file:
 
-env
-# Django
+# Configure environment
+cp .env.example .env
+# Edit .env with your credentials
+
+# Run migrations
+python manage.py migrate
+
+# Start the server
+python manage.py runserver
+Environment Variables
+bash
+# .env file template
 SECRET_KEY=your-secret-key
 DEBUG=True
 
-# Database
 DATABASE_URL=postgresql://user:password@localhost:5432/airvyb
 
-# Hedera
 OPERATOR_ID=0.0.xxxxx
 OPERATOR_KEY=your-operator-private-key
 HEDERA_NETWORK=testnet
 HEDERA_ENCRYPTION_KEY=your-encryption-key
 
-# IntaSend
 INTASEND_TOKEN=your-intasend-token
 INTASEND_PUBLISHABLE_KEY=your-publishable-key
-Step 5: Generate Hedera Encryption Key
-python
-from cryptography.fernet import Fernet
-key = Fernet.generate_key()
-print(key.decode())
-# Add this to .env as HEDERA_ENCRYPTION_KEY
-Step 6: Run Migrations
-bash
-python manage.py migrate
-Step 7: Create Superuser
-bash
-python manage.py createsuperuser
-Step 8: Run Development Server
-bash
-python manage.py runserver
-🎮 Usage
-Member Flow
-Register - Create account with email/phone
+🎮 How It Works
+<div align="center">
+Member Journey
 
-Add Funds - Deposit via M-Pesa
 
-Browse Deals - Find investment opportunities
 
-Opt In - Choose a deal and invest
 
-Receive NFT - Get your proof of participation
 
-Track - Monitor all investments on dashboard
 
+Step	Action	Result
+1️⃣	Register	Create account with email/phone
+2️⃣	Add Funds	Deposit via M-Pesa
+3️⃣	Browse Deals	Discover community deals
+4️⃣	Opt In	Participate with KES
+5️⃣	Receive NFT	Get proof on Hedera
+6️⃣	Track	Monitor all participations
 Admin Flow
-Create Deal - Set up new investment opportunity
-
-Configure NFT - Automatic collection creation
-
-Monitor - Track opt-ins and collections
-
-Retry - Recover failed NFT minting
-
-🎥 Demo
-Live Demo
-Website: https://airvyb.co.ke
-
-Demo Video: https://youtu.be/GGQNo683X8w
-
+Step	Action	Result
+1️⃣	Create Deal	Set up new community deal
+2️⃣	Configure NFT	Auto-create NFT collection
+3️⃣	Monitor	Track opt-ins & progress
+4️⃣	Retry	Recover failed NFT minting
+</div>
+🎥 Live Demo
+<div align="center">
+🌐 Website	https://airvyb.co.ke
+🎬 Demo Video	Watch on YouTube
+🔗 HashScan	View NFT Collection
 Test Credentials
-
+text
 Email: demo@airvyb.co.ke
 Password: Demo123!
-HashScan Verification
-NFT Collection: https://hashscan.io/testnet/token/0.0.48764329
-
-Sample Transaction: https://hashscan.io/testnet/transaction/0.0.48764329-123456789-000000000
-
-🌍 Impact & Use Cases
-Social Impact
-Financial Inclusion - Low minimum investments enable participation
-
-Transparency - Immutable records build trust
-
-Accessibility - Simple interface for non-technical users
-
-Economic Impact
-Capital Formation - Aggregates small investments into larger deals
-
-Job Creation - Funds real business operations
-
-Wealth Building - Provides access to curated opportunities
-
-Hedera Network Impact
-Increased TPS - Thousands of transactions per deal
-
-New Accounts - Each member gets a Hedera wallet
-
-Network Usage - NFT minting + HCS messages
-
-Adoption - Real-world use case demonstrates value
-
-🗺️ Future Roadmap
-Phase 1: Core Platform (Current)
-✅ User registration & wallet creation
-
-✅ Deal browsing and opt-in
-
-✅ NFT minting on Hedera
-
-✅ HCS transaction logging
-
-Phase 2: Enhanced Features (Q3 2026)
-🔲 Secondary market for NFT trading
-
-🔲 Automated profit distributions
-
-🔲 Deal analytics dashboard
-
-🔲 Mobile app (React Native)
-
-Phase 3: Ecosystem Expansion (Q4 2026)
-🔲 Cross-chain compatibility
-
-🔲 DAO governance for deal selection
-
-🔲 DeFi integration (staking, lending)
-
-🔲 Global expansion to new markets
-
-Phase 4: Enterprise Solutions (2027)
-🔲 White-label platform for institutions
-
-🔲 Advanced compliance tools
-
-🔲 Custom deal structuring
-
-🔲 AI-powered risk assessment
-
+</div>
+🌍 Impact
+<div align="center">
+Social Impact	Economic Impact	Hedera Impact
+🎯 Financial Inclusion
+KES 500 minimum	💰 Capital Formation
+Aggregates small contributions	📈 Increased TPS
+Thousands of transactions
+🔍 Transparency
+Immutable records	👥 Job Creation
+Funds real operations	👤 New Accounts
+Each member gets wallet
+🤝 Accessibility
+Simple interface	🏗️ Wealth Building
+Curated opportunities	🌐 Network Usage
+NFTs + HCS messages
+</div>
+🗺️ Roadmap
+<div align="center">
+Phase	Status	Features
+Phase 1: Core Platform	✅ Complete	User registration • Wallet creation • Deal browsing • NFT minting • HCS logging
+Phase 2: Enhanced Features	🔲 Q3 2026	NFT marketplace • Automated distributions • Analytics • Mobile app
+Phase 3: Ecosystem Expansion	🔲 Q4 2026	Cross-chain • DAO governance • DeFi integration • Regional expansion
+Phase 4: Enterprise	🔲 2027	White-label • Compliance tools • Custom structuring • AI risk assessment
+</div>
 👥 Team
+<div align="center">
 Role	Name	GitHub
 Lead Developer	Titos Kipkoech	@devtitos
 Smart Contract Engineer	Titos Kipkoech	@devtitos
+</div>
 🙏 Acknowledgments
-Hedera - For providing the infrastructure and support
-
-IntaSend - For M-Pesa payment integration
-
-Airvyb Management Ltd - For deal sourcing and curation
-
-Hackathon Organizers - For creating this opportunity
-
+<div align="center">
+Partner	Support
+Hedera	Infrastructure & ecosystem support
+IntaSend	M-Pesa payment integration
+Airvyb Management Ltd	Deal sourcing & curation
+Hackathon Organizers	Creating this opportunity
+</div>
 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+<div align="center">
+This project is licensed under the MIT License — see the LICENSE file for details.
 
-📞 Contact
-Website: https://airvyb.co.ke
-
-Email: invest@airvyb.co.ke
-
-Discord: Join our community
-
-Twitter: @AirvybInvest
-
+</div>
+📞 Connect With Us
+<div align="center">
+🌐 Website	📧 Email	🐙 GitHub	🐦 Twitter
+</div>
 🔗 Quick Links
-Live Demo
-
-Demo Video
-
-GitHub Repository
-
-HashScan Explorer
-
-Pitch Deck
-
-<div align="center"> <strong>Built with ❤️ for the Hedera Hello Future Apex Hackathon 2026</strong> </div>
+<div align="center">
+🌐 Live Demo	🎬 Demo Video	📂 GitHub Repo
+🔍 HashScan	📊 Pitch Deck	📝 License
+</div>
+<div align="center"> <br> <strong>Built with ❤️ for the Hedera Hello Future Apex Hackathon 2026</strong> <br><br> <img src="media/5.png" alt="Hedera HashScan" width="250"> <br> <em>Every participation. Forever verifiable.</em> </div> 
