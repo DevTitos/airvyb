@@ -315,13 +315,13 @@ Retry - Recover failed NFT minting
 
 🎥 Demo
 Live Demo
-Website: https://airvyb-invest.vercel.app
+Website: https://airvyb.co.ke
 
-Demo Video: https://youtu.be/your-demo-link
+Demo Video: https://youtu.be/GGQNo683X8w
 
 Test Credentials
-text
-Email: demo@airvyb.com
+
+Email: demo@airvyb.co.ke
 Password: Demo123!
 HashScan Verification
 NFT Collection: https://hashscan.io/testnet/token/0.0.48764329
@@ -390,9 +390,9 @@ Phase 4: Enterprise Solutions (2027)
 🔲 AI-powered risk assessment
 
 👥 Team
-Role	Name	GitHub	LinkedIn
-Lead Developer	[Your Name]	@yourgithub	Your LinkedIn
-Smart Contract Engineer	[Name]	@github	LinkedIn
+Role	Name	GitHub
+Lead Developer	Titos Kipkoech	@devtitos
+Smart Contract Engineer	Titos Kipkoech	@devtitos
 🙏 Acknowledgments
 Hedera - For providing the infrastructure and support
 
