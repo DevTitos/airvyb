@@ -13,11 +13,11 @@
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="media/1.png" alt="Airvyb Dashboard" width="45%">
-  <img src="media/2.png" alt="Deal Details" width="45%">
+  <img src="media/1.png" alt="Fianace Dashboard" width="75%">
+  <img src="media/2.png" alt="Transactions" width="75%">
   <br><br>
-  <img src="media/3.png" alt="Opt-In Process" width="45%">
-  <img src="media/4.png" alt="NFT Proof" width="45%">
+  <img src="media/3.1.png" alt="Deals" width="75%">
+  <img src="media/4.png" alt="NFT Proof" width="75%">
   <br><br>
   <img src="media/5.png" alt="Hedera HashScan Verification" width="45%">
   <img src="media/6.png" alt="Member Dashboard" width="45%">
