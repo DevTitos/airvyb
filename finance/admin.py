@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Transaction
+from .models import Transaction, Wallet
 
 
 # Register your models here.
@@ -9,3 +9,5 @@ class TransactionAdmin(admin.ModelAdmin):
     list_filter = ['transaction_type', 'status', 'initiated_at']
     search_fields = ['reference', 'user__email', 'description']
     readonly_fields = ['initiated_at', 'completed_at']
+
+admin.site.register(Wallet)

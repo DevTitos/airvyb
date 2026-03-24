@@ -74,7 +74,7 @@ Traditional investment opportunities face several critical challenges:
 
 ### Flow Diagram
 
-```mermaid
+
 graph TD
     A[User Browses Deals] --> B[Selects Deal to Opt In]
     B --> C[Wallet Balance Check]
@@ -101,14 +101,14 @@ Verification - View transaction and NFT on HashScan
 1. Hedera Token Service (HTS) - NFT Collections
 Each deal is an NFT collection:
 
-python
+
 # Create NFT collection for a deal
 token_id = create_hedera_nft_collection(deal)
 # Returns: "0.0.1234567"
 2. Hedera Consensus Service (HCS) - Immutable Records
 Every transaction is timestamped and stored:
 
-python
+
 # Submit transaction to HCS
 hedera_data = {
     'type': 'deal_opt_in',
@@ -120,12 +120,12 @@ hedera_consensus.submit_message(hedera_data)
 3. Hedera Wallet Integration
 Auto-creation of Hedera accounts for users:
 
-python
+
 # Auto-create wallet on user verification
 account_data = HederaService.create_account(user.email)
 user.hedera_account_id = account_data['account_id']
 4. NFT Minting Process
-python
+
 def mint_opt_in_nft(opt_in):
     # Prepare metadata (under 100 bytes)
     metadata = f"{opt_in.reference[:8]}|{opt_in.user.id}|{opt_in.amount}"
@@ -140,7 +140,7 @@ def mint_opt_in_nft(opt_in):
     serial_number = receipt.serials[0]
     return serial_number
 🏗️ Technical Architecture
-text
+
 ┌─────────────────────────────────────────────────────────────┐
 │                     Frontend (Django Templates)              │
 ├─────────────────────────────────────────────────────────────┤
