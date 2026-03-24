@@ -1,90 +1,85 @@
-
-# Airvyb Invest - Tokenized Deal Participation Platform
+# Airvyb - Community Deal Participation Platform
 
 [![Hedera](https://img.shields.io/badge/Built%20on-Hedera-00c853?style=for-the-badge&logo=hedera&logoColor=white)](https://hedera.com)
 [![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![Hedera Hackathon](https://img.shields.io/badge/Hedera-Hello%20Future%20Apex%202026-ff0066?style=for-the-badge)](https://hellofuturehackathon.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-00c853?style=for-the-badge)](https://airvyb.co.ke)
 
-> **Transforming investment participation through NFT-backed proofs on Hedera**
-
-## 🎯 Track: DeFi & Tokenization
-
-Airvyb Invest democratizes access to curated investment opportunities by tokenizing deal participation as NFTs on the Hedera network. Each member who opts into a deal receives a unique, immutable NFT proof, creating a transparent, verifiable investment history.
+> **Every participation is verifiable. Every transaction is immortal. Every member has proof.**
 
 ---
 
-## 📋 Table of Contents
+## 📸 Screenshots
 
-- [Overview](#overview)
-- [Problem Statement](#problem-statement)
-- [Solution](#solution)
-- [How It Works](#how-it-works)
-- [Hedera Integration](#hedera-integration)
-- [Technical Architecture](#technical-architecture)
-- [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Demo](#demo)
-- [Impact & Use Cases](#impact--use-cases)
-- [Future Roadmap](#future-roadmap)
-- [Team](#team)
-- [License](#license)
+<div align="center">
+  <img src="media/1.png" alt="Airvyb Dashboard" width="45%">
+  <img src="media/2.png" alt="Deal Details" width="45%">
+  <br><br>
+  <img src="media/3.png" alt="Opt-In Process" width="45%">
+  <img src="media/4.png" alt="NFT Proof" width="45%">
+  <br><br>
+  <img src="media/5.png" alt="Hedera HashScan Verification" width="45%">
+  <img src="media/6.png" alt="Member Dashboard" width="45%">
+</div>
+
+---
+
+## 🎯 Track: DeFi & Tokenization
+
+Airvyb transforms community participation into verifiable, immutable proof using Hedera NFTs. When members opt into community deals, they receive a unique NFT — a permanent record of their contribution that lives forever on Hedera.
+
+**5 active members are already participating in real deals on our testnet. Their NFTs are live on HashScan.**
 
 ---
 
 ## 📖 Overview
 
-**Airvyb Invest** is a decentralized investment platform that enables members to discover, evaluate, and participate in curated deals sourced by Airvyb Management Ltd (AML). Each deal is represented as an NFT collection on Hedera, and when members opt in, they receive a unique NFT as immutable proof of participation. Every transaction is recorded on Hedera Consensus Service, creating a transparent, auditable history of all investments.
+**Airvyb** is a community participation platform that enables members to join curated deals managed by Airvyb Management Ltd (AML). Each deal represents a collective action — farm cooperatives, solar mini-grids, real estate acquisitions, or community programs.
 
-### Key Metrics
-- **💰 Prize Pool**: $250,000
-- **🚀 Track**: DeFi & Tokenization
-- **⏱️ Hackathon**: Hedera Hello Future Apex 2026
-- **🏆 Category**: Best Use of Hedera Token Service + Consensus Service
+When a member opts in:
+1. They contribute KES via M-Pesa
+2. A unique NFT is minted on Hedera Token Service
+3. Every transaction is recorded on Hedera Consensus Service
+4. They receive immutable proof of participation
 
----
-
-## 🔥 Problem Statement
-
-Traditional investment opportunities face several critical challenges:
-
-1. **Lack of Transparency** - No immutable proof of participation or investment history
-2. **High Barriers to Entry** - Minimum investments often exclude small investors
-3. **Centralized Record-Keeping** - Single points of failure and potential manipulation
-4. **No Verifiable Proof** - Investors cannot easily prove their stake or participation
-5. **Limited Accessibility** - Complex processes exclude non-technical users
+**Not a financial product.** Airvyb is a community participation tool with professional oversight, built for the Kenyan market.
 
 ---
 
-## 💡 Solution
+## 🔥 The Problem
 
-**Airvyb Invest** solves these problems by leveraging Hedera's high-performance network:
+| Challenge | Reality |
+|-----------|---------|
+| **No Verifiable Proof** | Participation records are PDFs — easily lost, easily forged |
+| **High Barriers** | Most platforms require KES 10,000+ or USD/crypto |
+| **No Transparency** | No way to independently verify participation |
+| **Centralized Records** | Single points of failure, potential manipulation |
 
-### Core Innovations
-
-1. **NFT-Backed Participation** - Each member who opts into a deal receives a unique NFT on Hedera, serving as immutable proof of their investment
-2. **Transparent Record-Keeping** - All transactions stored on Hedera Consensus Service, creating an auditable, tamper-proof history
-3. **Low Minimum Investment** - As low as KES 100/month, democratizing access
-4. **User-Friendly Interface** - Simple, intuitive dashboard for managing investments
-5. **Real-Time Verification** - View all transactions on HashScan with one click
+**13.7 million Kenyan youth want to participate in community initiatives. Most are excluded.**
 
 ---
-## ⚙️ How It Works
 
-### Flow Diagram
+## 💡 The Solution
 
+<div align="center">
+  <img src="media/1.png" alt="Airvyb Dashboard" width="80%">
+  <p><em>Member dashboard showing wallet balance and recent deals</em></p>
+</div>
 
+### How Airvyb Works
+
+```
 graph TD
-    A[User Browses Deals] --> B[Selects Deal to Opt In]
-    B --> C[Wallet Balance Check]
-    C --> D[Process Payment]
-    D --> E[Create Opt-In Record]
-    E --> F[Mint NFT on Hedera]
-    F --> G[User Receives NFT Proof]
-    G --> H[Transaction Stored on HCS]
-    H --> I[Viewable on HashScan]
-Step-by-Step Flow
+    A[Member Browses Deals] --> B[Selects Deal]
+    B --> C[Opts In with KES via M-Pesa]
+    C --> D[NFT Minted on Hedera Token Service]
+    D --> E[Transaction on Hedera Consensus Service]
+    E --> F[Member Receives NFT Proof]
+    F --> G[Verifiable on HashScan Forever]
+```
+
+# Step-by-Step Flow
 Discover Deals - Browse curated investment opportunities from AML
 
 Opt In - Select a deal and opt in using wallet balance
@@ -425,4 +420,4 @@ HashScan Explorer
 
 Pitch Deck
 
-<div align="center"> <strong>Built with ❤️ for the Hedera Hello Future Apex Hackathon 2026</strong> </div> ```
+<div align="center"> <strong>Built with ❤️ for the Hedera Hello Future Apex Hackathon 2026</strong> </div>
