@@ -236,7 +236,7 @@ class DealOptIn(models.Model):
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/airvyb.git
+git clone https://github.com/DevTitos/airvyb.git
 cd airvyb
 
 # Set up virtual environment
