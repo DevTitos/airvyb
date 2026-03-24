@@ -221,7 +221,18 @@ class DealOptIn(models.Model):
 
 </div>
 
-### 5-Minute Setup
+## 🚀 Quick Start
+
+### Prerequisites
+
+| Requirement | Version |
+|-------------|---------|
+| Python | 3.10+ |
+| PostgreSQL | 14+ |
+| Redis | 7+ (optional) |
+| Hedera Account | Testnet |
+
+### Installation
 
 ```bash
 # Clone the repository
@@ -229,7 +240,8 @@ git clone https://github.com/yourusername/airvyb.git
 cd airvyb
 
 # Set up virtual environment
-python -m venv venv && source venv/bin/activate
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -241,32 +253,34 @@ cp .env.example .env
 # Run migrations
 python manage.py migrate
 
+# Create superuser
+python manage.py createsuperuser
+
 # Start the server
 python manage.py runserver
-Environment Variables
-bash
-# .env file template
+Environment Variables (.env)
+env
+# Django
 SECRET_KEY=your-secret-key
 DEBUG=True
 
+# Database
 DATABASE_URL=postgresql://user:password@localhost:5432/airvyb
 
+# Hedera
 OPERATOR_ID=0.0.xxxxx
 OPERATOR_KEY=your-operator-private-key
 HEDERA_NETWORK=testnet
 HEDERA_ENCRYPTION_KEY=your-encryption-key
 
+# IntaSend
 INTASEND_TOKEN=your-intasend-token
 INTASEND_PUBLISHABLE_KEY=your-publishable-key
-🎮 How It Works
-<div align="center">
-Member Journey
 
+```
 
-
-
-
-
+# 🎮 How It Works
+## Member Journey
 Step	Action	Result
 1️⃣	Register	Create account with email/phone
 2️⃣	Add Funds	Deposit via M-Pesa
@@ -274,25 +288,21 @@ Step	Action	Result
 4️⃣	Opt In	Participate with KES
 5️⃣	Receive NFT	Get proof on Hedera
 6️⃣	Track	Monitor all participations
-Admin Flow
+## Admin Flow
 Step	Action	Result
 1️⃣	Create Deal	Set up new community deal
 2️⃣	Configure NFT	Auto-create NFT collection
 3️⃣	Monitor	Track opt-ins & progress
 4️⃣	Retry	Recover failed NFT minting
-</div>
 🎥 Live Demo
-<div align="center">
 🌐 Website	https://airvyb.co.ke
 🎬 Demo Video	Watch on YouTube
 🔗 HashScan	View NFT Collection
-Test Credentials
+## Test Credentials
 text
 Email: demo@airvyb.co.ke
 Password: Demo123!
-</div>
-🌍 Impact
-<div align="center">
+# 🌍 Impact
 Social Impact	Economic Impact	Hedera Impact
 🎯 Financial Inclusion
 KES 500 minimum	💰 Capital Formation
@@ -306,41 +316,29 @@ Each member gets wallet
 Simple interface	🏗️ Wealth Building
 Curated opportunities	🌐 Network Usage
 NFTs + HCS messages
-</div>
-🗺️ Roadmap
-<div align="center">
+# 🗺️ Roadmap
 Phase	Status	Features
 Phase 1: Core Platform	✅ Complete	User registration • Wallet creation • Deal browsing • NFT minting • HCS logging
 Phase 2: Enhanced Features	🔲 Q3 2026	NFT marketplace • Automated distributions • Analytics • Mobile app
 Phase 3: Ecosystem Expansion	🔲 Q4 2026	Cross-chain • DAO governance • DeFi integration • Regional expansion
 Phase 4: Enterprise	🔲 2027	White-label • Compliance tools • Custom structuring • AI risk assessment
-</div>
-👥 Team
-<div align="center">
+# 👥 Team
 Role	Name	GitHub
 Lead Developer	Titos Kipkoech	@devtitos
 Smart Contract Engineer	Titos Kipkoech	@devtitos
-</div>
 🙏 Acknowledgments
-<div align="center">
-Partner	Support
+# Partner	Support
 Hedera	Infrastructure & ecosystem support
 IntaSend	M-Pesa payment integration
 Airvyb Management Ltd	Deal sourcing & curation
 Hackathon Organizers	Creating this opportunity
-</div>
-📄 License
-<div align="center">
+# 📄 License
 This project is licensed under the MIT License — see the LICENSE file for details.
 
-</div>
-📞 Connect With Us
-<div align="center">
+# 📞 Connect With Us
 🌐 Website	📧 Email	🐙 GitHub	🐦 Twitter
-</div>
 🔗 Quick Links
-<div align="center">
 🌐 Live Demo	🎬 Demo Video	📂 GitHub Repo
 🔍 HashScan	📊 Pitch Deck	📝 License
-</div>
+
 <div align="center"> <br> <strong>Built with ❤️ for the Hedera Hello Future Apex Hackathon 2026</strong> <br><br> <img src="media/5.png" alt="Hedera HashScan" width="250"> <br> <em>Every participation. Forever verifiable.</em> </div> 
