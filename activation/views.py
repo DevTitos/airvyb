@@ -287,7 +287,6 @@ def process_mpesa_activation(request, user, activation, phone, amount, discount,
         if response and response.get('id') and response.get('invoice'):
             payment_id = response.get('id')
             invoice_id = response['invoice']['invoice_id']
-            print("one")
             # Create pending transaction
             transaction = Transaction.objects.create(
                 user=user,
@@ -311,7 +310,6 @@ def process_mpesa_activation(request, user, activation, phone, amount, discount,
                     'api_response': response
                 }
             )
-            print('two')
             # Link transaction to activation
             activation.transaction = transaction
             activation.status = 'processing'
